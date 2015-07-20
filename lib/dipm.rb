@@ -65,7 +65,7 @@ module Bioinform
           pos.each_index.map{|letter|
             numerator = pos[letter] + background[letter] * pseudocount
             denominator = background[letter] * (count + pseudocount)
-            Math.log(numerator / denominator)
+            Math.log(numerator.to_f / denominator)
           }
         }
 
@@ -79,9 +79,12 @@ module Bioinform
 end
 
 
-# str = File.read('models/pcm/di/all/ALX1_HUMAN~SDF~ALX1_HUMAN_DBD_0.dpcm')
-# parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16)
-# infos = parser.parse(str)
-# pcm = Bioinform::MotifModel::DiPCM.new(infos[:matrix]).named(infos[:name])
-# pwm = pcm.to_pwm
-# puts pwm
+# хорошо бы в macro-perfectos-ape JAVA встроить
+def dipcm_to_dipwm(from_file, to_file)
+  parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16)
+  infos = parser.parse(File.read(from_file))
+  name = infos[:name] || File.basename(from_file, '.dpcm')
+  pcm = Bioinform::MotifModel::DiPCM.new(infos[:matrix]).named(name)
+  pwm = pcm.to_pwm
+  File.write to_file, pwm.to_s
+end
