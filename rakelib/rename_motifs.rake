@@ -31,7 +31,9 @@ MotifToUniprotMapping = Struct.new(:collection, :motif_name, :uniprot_ids, :entr
 end
 
 
-# if a motif has several uniprots, it's cloned several times (one for each uniprot)
+# Designed to work with pcm-s/dipcm-s
+# It not only renames file but also renames a motif (first line of matrix)
+# If a motif has several uniprots, it's cloned several times (one for each uniprot)
 def rename_motifs(src_glob, dest_folder,
                   short_collection_id:,
                   conv_to_uniprot_ids: ->(motif_name){
@@ -42,9 +44,12 @@ def rename_motifs(src_glob, dest_folder,
     extname = File.extname(src)
     motif_name = File.basename(src, extname)
 
+    motif_text = File.readlines(src)
+    motif_text = motif_text.first.match(/^>?\s*[a-zA-Z]/) ? motif_text.drop(1).join : motif_text.join
     uniprot_ids = conv_to_uniprot_ids.call(motif_name)
     uniprot_ids.map{|uniprot_id|
-      cp src, File.join(dest_folder, "#{uniprot_id}~#{short_collection_id}~#{motif_name}#{extname}")
+      motif_full_name = "#{uniprot_id}~#{short_collection_id}~#{motif_name}"
+      File.write(File.join(dest_folder, "#{motif_full_name}#{extname}"), "> #{motif_full_name}\n#{motif_text}")
     }
   end
 end
