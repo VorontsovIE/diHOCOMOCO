@@ -8,3 +8,26 @@ ALX1_HUMAN_DBD_2 имеет внутри имя CART1^470
 
 
 нужен ли нам UNIPROBE (который PPM-ки дает?)
+
+Что готово:
+	- unpack: распаковывает архивы
+	- collect_and_normalize_data:
+		- collect_pcm: собирает pcm-ки по разным папкам в одну большую
+		- rename_motifs: преобразует имена мотивов в ассоцированные с юнипротом
+		- convert_pcm_to_pwm: делает из pcm-ок pwm-ки с однородным фоном
+	- calculate_local_backgrounds: считает фоновые распределения по наборам слов
+
+
+исходные данные:
+	check_result.xlsx
+	chipseq_models.zip
+	control.zip
+	FANTOM5_phase2_KNOWN_motifs_IDmapping.txt
+	htselex_mono_di.zip
+	htselex.zip
+	rocplotexample.zip
+	standard_motif_collections.tar.gz
+	training.zip
+
+	ape-2.0.1.jar
+	sarus.jar

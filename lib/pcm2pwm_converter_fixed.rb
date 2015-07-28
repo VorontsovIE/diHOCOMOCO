@@ -1,4 +1,5 @@
 require 'bioinform'
+require 'fileutils'
 
 module Bioinform
   module ConversionAlgorithms
@@ -53,6 +54,8 @@ end
 
 # хорошо бы в macro-perfectos-ape JAVA встроить
 def pcm_to_pwm(from_file, to_file)
+  output_dir = File.dirname(to_file)
+  FileUtils.mkdir_p(output_dir)  unless Dir.exist?(output_dir)
   parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 4)
   infos = parser.parse(File.read(from_file))
   name = infos[:name] || File.basename(from_file, '.pcm')

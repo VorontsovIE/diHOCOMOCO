@@ -48,8 +48,9 @@ def rename_motifs(src_glob, dest_folder,
     motif_text = motif_text.first.match(/^>?\s*[a-zA-Z]/) ? motif_text.drop(1).join : motif_text.join
     uniprot_ids = conv_to_uniprot_ids.call(motif_name)
     uniprot_ids.map{|uniprot_id|
+      mkdir_p File.join(dest_folder, uniprot_id)  unless Dir.exist?(File.join(dest_folder, uniprot_id))
       motif_full_name = "#{uniprot_id}~#{short_collection_id}~#{motif_name}"
-      File.write(File.join(dest_folder, "#{motif_full_name}#{extname}"), "> #{motif_full_name}\n#{motif_text}")
+      File.write(File.join(dest_folder, uniprot_id, "#{motif_full_name}#{extname}"), "> #{motif_full_name}\n#{motif_text}")
     }
   end
 end

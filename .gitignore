@@ -1,0 +1,15 @@
+*.zip
+*.gz
+*.tar
+*.pdf
+*.xls
+*.xlsx
+*.txt
+chipseq_models/
+control/
+htselex/
+htselex_mono_di/
+models/
+rocplotexample/
+standard_motif_collections/
+training/
