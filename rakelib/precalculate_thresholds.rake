@@ -18,7 +18,7 @@ FileList['control/control/*'].each do |control_fn|
     background = File.read(background_fn).split.map(&:to_f)
     background_opt = ['--background', background.join(',')]
 
-    script_cmd = ['java', '-cp', 'ape-2.0.1.jar', 'ru.autosome.ape.PrecalculateThresholds']
+    script_cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', 'ru.autosome.ape.PrecalculateThresholds']
     threshold_grid = ['--pvalues', ['1e-15', '1.0', '1.05', 'mul'].join(',')]
     sh *script_cmd, motif_dir, output_dir, *threshold_grid, '--silent', '--discretization', '1000', *background_opt
   end
@@ -41,7 +41,7 @@ FileList['control/control/*'].each do |control_fn|
     background = File.read(background_fn).split.map(&:to_f)
     background_opt = ['--background', background.join(',')]
 
-    script_cmd = ['java', '-cp', 'ape-2.0.1.jar', 'ru.autosome.ape.di.PrecalculateThresholds']
+    script_cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', 'ru.autosome.ape.di.PrecalculateThresholds']
     threshold_grid = ['--pvalues', ['1e-15', '1.0', '1.05', 'mul'].join(',')]
     sh *script_cmd, motif_dir, output_dir, *threshold_grid, '--silent', '--discretization', '1000', *background_opt
   end
