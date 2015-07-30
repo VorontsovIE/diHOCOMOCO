@@ -14,13 +14,14 @@ FileList['control/control/*'].each do |control_fn|
     uniprot = control_name[/^.+_(HUMAN|MOUSE)/]
     motif_dir = File.join('models/pwm/mono/all/', uniprot)
 
-    background_fn = control_fn.pathmap('control/local_backgrounds/mono/%n.txt')
+    # We use dinucleotide background even for mononucleotide models
+    background_fn = control_fn.pathmap('control/local_backgrounds/di/%n.txt')
     background = File.read(background_fn).split.map(&:to_f)
     background_opt = ['--background', background.join(',')]
 
-    script_cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', 'ru.autosome.ape.PrecalculateThresholds']
+    script_cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', 'ru.autosome.ape.di.PrecalculateThresholds']
     threshold_grid = ['--pvalues', ['1e-15', '1.0', '1.05', 'mul'].join(',')]
-    sh *script_cmd, motif_dir, output_dir, *threshold_grid, '--silent', '--discretization', '1000', *background_opt
+    sh *script_cmd, motif_dir, output_dir, *threshold_grid, '--from-mono', '--silent', '--discretization', '1000', *background_opt
   end
   task :precalculate_thresholds_mono => output_dir
 end
