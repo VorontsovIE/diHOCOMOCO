@@ -30,7 +30,7 @@ def calculate_local_mono_background(filename)
   counts = Hash.new(0)
   WeightedSequence.each_in_file(filename){|weighted_sequence|
     weighted_sequence.each_position{|letter, weight|
-      counts[letter] += weight
+      counts[letter] += 1 # weight
     }
   }
   # Nucleotides is ACGT; We count N's, but don't use them
@@ -43,7 +43,7 @@ def calculate_local_di_background(filename)
   WeightedSequence.each_in_file(filename){|weighted_sequence|
     weighted_sequence.each_position.each_cons(2){|(letter_1, weight_1), (letter_2, weight_2)|
       diletter = "#{letter_1}#{letter_2}"
-      counts[diletter] += (weight_1 + weight_2) / 2.0
+      counts[diletter] += 1 # (weight_1 + weight_2) / 2.0
     }
   }
   # Nucleotides is ACGT; We count N's, but don't use them
