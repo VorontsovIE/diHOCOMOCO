@@ -9,13 +9,17 @@ ALX1_HUMAN_DBD_2 имеет внутри имя CART1^470
 
 нужен ли нам UNIPROBE (который PPM-ки дает?)
 
-Что готово:
+Что готово (в порядке вызовов):
 	- unpack: распаковывает архивы
 	- collect_and_normalize_data:
 		- collect_pcm: собирает pcm-ки по разным папкам в одну большую
 		- rename_motifs: преобразует имена мотивов в ассоцированные с юнипротом
 		- convert_pcm_to_pwm: делает из pcm-ок pwm-ки с однородным фоном
 	- calculate_local_backgrounds: считает фоновые распределения по наборам слов
+	- precalculate_thresholds: считает пороги для каждой модели на локальном фоне
+		- precalculate_thresholds_mono
+		- precalculate_thresholds_di
+	- calculate_occurence_scores: считает скоры для каждой модели на каждом контроле
 
 
 исходные данные:
