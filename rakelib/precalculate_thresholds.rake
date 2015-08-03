@@ -16,8 +16,7 @@ FileList['control/control/*'].each do |control_fn|
 
     # We use dinucleotide background even for mononucleotide models
     background_fn = control_fn.pathmap('control/local_backgrounds/di/%n.txt')
-    background = File.read(background_fn).split.map(&:to_f)
-    background_opt = ['--background', background.join(',')]
+    background_opt = ['--background', File.read(background_fn)]
 
     script_cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', 'ru.autosome.ape.di.PrecalculateThresholds']
     threshold_grid = ['--pvalues', ['1e-15', '1.0', '1.05', 'mul'].join(',')]
@@ -39,8 +38,7 @@ FileList['control/control/*'].each do |control_fn|
     motif_dir = File.join('models/pwm/di/all/', uniprot)
 
     background_fn = control_fn.pathmap('control/local_backgrounds/di/%n.txt')
-    background = File.read(background_fn).split.map(&:to_f)
-    background_opt = ['--background', background.join(',')]
+    background_opt = ['--background', File.read(background_fn)]
 
     script_cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', 'ru.autosome.ape.di.PrecalculateThresholds']
     threshold_grid = ['--pvalues', ['1e-15', '1.0', '1.05', 'mul'].join(',')]
