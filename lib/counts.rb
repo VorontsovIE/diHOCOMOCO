@@ -25,12 +25,30 @@ class CountsBase
     @counts = counts
   end
 
+  def each_count_with_letter(&block)
+    @counts.zip(possible_letters).each(&block)
+  end
+
   def total_count
     @total_count ||= @counts.inject(0.0, &:+)
   end
 
   def frequencies
     create_frequencies( @counts.map{|count| count.to_f / total_count } )
+  end
+
+  private def revcomp(seq)
+    seq.tr('ACGTacgt','TGCAtgca').reverse
+  end
+
+  # adds counts for reverse complement keys
+  def plus_revcomp
+    counts_plus_revcomp = Hash.new(0)
+    each_count_with_letter{|count, letter| # letter can be diletter
+      counts_plus_revcomp[letter] += count
+      counts_plus_revcomp[revcomp(letter)] += count
+    }
+    self.class.from_hash(counts_plus_revcomp)
   end
 
   def self.from_string(str)

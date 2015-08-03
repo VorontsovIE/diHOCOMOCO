@@ -25,20 +25,15 @@ class SequenceDataset
     }
   end
 
-  private def revcomp(seq)
-    seq.tr('ACGTacgt','TGCAtgca').reverse
-  end
-
   def local_mono_background
     @local_mono_background ||= begin
       counts = Hash.new(0)
       each_sequence{|weighted_sequence|
         weighted_sequence.each_position{|letter, weight|
           counts[letter] += 1 # weight
-          counts[revcomp(letter)] += 1 # weight
         }
       }
-      MonoCounts.from_hash(counts).frequencies
+      MonoCounts.from_hash(counts).plus_revcomp.frequencies
     end
   end
 
@@ -49,10 +44,9 @@ class SequenceDataset
         weighted_sequence.each_position.each_cons(2){|(letter_1, weight_1), (letter_2, weight_2)|
           diletter = "#{letter_1}#{letter_2}"
           counts[diletter] += 1 # (weight_1 + weight_2) / 2.0
-          counts[revcomp(diletter)] += 1 # (weight_1 + weight_2) / 2.0
         }
       }
-      DiCounts.from_hash(counts).frequencies
+      DiCounts.from_hash(counts).plus_revcomp.frequencies
     end
   end
 
