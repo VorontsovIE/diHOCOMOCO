@@ -1,48 +1,34 @@
-# Наверное надо не по всем контролям, а только по контролям мотива
+require 'ape_precalculate_thresholds'
+
 desc 'Precalculate thresholds'
 task :precalculate_thresholds => [:precalculate_thresholds_mono, :precalculate_thresholds_di]
-
 
 desc 'Precalculate thresholds for mononucleotide models'
 task :precalculate_thresholds_mono
 
-FileList['control/control/*'].each do |control_fn|
-  control_name = control_fn.pathmap('%n')
-  output_dir = File.join('models/thresholds/mono/all/', control_name)
-  directory output_dir do
-    mkdir_p output_dir
-    uniprot = control_name[/^.+_(HUMAN|MOUSE)/]
-    motif_dir = File.join('models/pwm/mono/all/', uniprot)
-
-    # We use dinucleotide background even for mononucleotide models
-    background_fn = control_fn.pathmap('control/local_backgrounds/di/%n.txt')
-    background_opt = ['--background', File.read(background_fn)]
-
-    script_cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', 'ru.autosome.ape.di.PrecalculateThresholds']
-    threshold_grid = ['--pvalues', ['1e-15', '1.0', '1.05', 'mul'].join(',')]
-    sh *script_cmd, motif_dir, output_dir, *threshold_grid, '--from-mono', '--silent', '--discretization', '1000', *background_opt
-  end
-  task :precalculate_thresholds_mono => output_dir
-end
-
-
 desc 'Precalculate thresholds for dinucleotide models'
 task :precalculate_thresholds_di
 
-FileList['control/control/*'].each do |control_fn|
-  control_name = control_fn.pathmap('%n')
-  output_dir = File.join('models/thresholds/di/all/', control_name)
-  directory output_dir do
-    mkdir_p output_dir
-    uniprot = control_name[/^.+_(HUMAN|MOUSE)/]
-    motif_dir = File.join('models/pwm/di/all/', uniprot)
-
-    background_fn = control_fn.pathmap('control/local_backgrounds/di/%n.txt')
-    background_opt = ['--background', File.read(background_fn)]
-
-    script_cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', 'ru.autosome.ape.di.PrecalculateThresholds']
-    threshold_grid = ['--pvalues', ['1e-15', '1.0', '1.05', 'mul'].join(',')]
-    sh *script_cmd, motif_dir, output_dir, *threshold_grid, '--silent', '--discretization', '1000', *background_opt
+SequenceDataset.each_file_by_glob('control/control/*.mfa') do |control|
+  task "precalculate_thresholds_mono:#{control.name}" do
+    Ape.run_precalculate_thresholds File.join('models/pwm/mono/all/', control.uniprot),
+                                    output_folder: File.join('models/thresholds/mono/all/', control.name),
+                                    background: File.read(control.local_di_background_path), # we always use dinucleotide background
+                                    threshold_grid: ['1e-15', '1.0', '1.01', 'mul'],
+                                    discretization: 1000,
+                                    additional_options: ['--from-mono'], # same reasons: dinucleotide background
+                                    mode: :di
   end
-  task :precalculate_thresholds_di => output_dir
+  task :precalculate_thresholds_mono => "precalculate_thresholds_mono:#{control.name}"
+
+
+  task "precalculate_thresholds_di:#{control.name}" do
+    Ape.run_precalculate_thresholds File.join('models/pwm/di/all/', control.uniprot),
+                                    output_folder: File.join('models/thresholds/di/all/', control.name),
+                                    background: File.read(control.local_di_background_path),
+                                    threshold_grid: ['1e-15', '1.0', '1.01', 'mul'],
+                                    discretization: 1000,
+                                    mode: :di
+  end
+  task :precalculate_thresholds_di => "precalculate_thresholds_di:#{control.name}"
 end

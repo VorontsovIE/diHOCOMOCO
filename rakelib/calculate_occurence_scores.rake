@@ -1,49 +1,32 @@
+require 'sarus_results'
+
 desc 'Calculate scores for each model on each control'
 task :calculate_occurence_scores => [:calculate_occurence_scores_mono, :calculate_occurence_scores_di]
-
 
 desc 'Calculate scores for each model on each mononucleotide control'
 task :calculate_occurence_scores_mono
 
-FileList['control/control/*.mfa'].sort.each do |control_fn|
-  cmd = ['java', '-cp', 'sarus.jar', 'ru.autosome.SARUS']
-  control_name = control_fn.pathmap('%n')
-  uniprot = control_name[/^.+_(HUMAN|MOUSE)/]
-  output_dir = File.join('occurences/scores/mono/', uniprot)
-
-  directory output_dir do
-    mkdir_p output_dir
-
-    FileList["models/pwm/mono/all/#{uniprot}/*.pwm"].each do |pwm_fn|
-      pwm_name = pwm_fn.pathmap('%n')
-      mkdir_p File.join(output_dir, pwm_name)
-      output_fn = File.join(output_dir, pwm_name, "#{control_name}.txt")
-      sh *cmd, control_fn, pwm_fn, 'besthit', 'suppress', {out: output_fn}, {}
-    end
-  end
-  task :calculate_occurence_scores_mono => output_dir
-end
-
-
 desc 'Calculate scores for each model on each dinucleotide control'
 task :calculate_occurence_scores_di
 
-FileList['control/control/*.mfa'].sort.each do |control_fn|
-  cmd = ['java', '-cp', 'sarus.jar', 'ru.autosome.di.SARUS']
-  control_name = control_fn.pathmap('%n')
-  uniprot = control_name[/^.+_(HUMAN|MOUSE)/]
-  output_dir = File.join('occurences/scores/di/', uniprot)
-
-  directory output_dir do
-    mkdir_p output_dir
-
-    FileList["models/pwm/di/all/#{uniprot}/*.dpwm"].each do |pwm_fn|
-      pwm_name = pwm_fn.pathmap('%n')
-      mkdir_p File.join(output_dir, pwm_name)
-      output_fn = File.join(output_dir, pwm_name, "#{control_name}.txt")
-      sh *cmd, control_fn, pwm_fn, 'besthit', 'suppress', {out: output_fn}, {}
+SequenceDataset.each_file_by_glob('control/control/*.mfa') do |control|
+  task "calculate_occurence_scores_mono:#{control.name}" do
+    Models.mono_models.each do |model|
+      Sarus.run_besthits  control.filename,
+                          model.path_to_pwm,
+                          output_file: File.join('occurences/scores/mono/', control.uniprot, model.full_name, "#{control.name}.txt"),
+                          mode: :mono
     end
   end
-  task :calculate_occurence_scores_di => output_dir
-end
+  task :calculate_occurence_scores_mono => "calculate_occurence_scores_mono:#{control.name}"
 
+  task "calculate_occurence_scores_di:#{control.name}" do
+    Models.di_models.each do |model|
+      Sarus.run_besthits  control.filename,
+                          model.path_to_pwm,
+                          output_file: File.join('occurences/scores/di/', control.uniprot, model.full_name, "#{control.name}.txt"),
+                          mode: :di
+    end
+  end
+  task :calculate_occurence_scores_di => "calculate_occurence_scores_di:#{control.name}"
+end

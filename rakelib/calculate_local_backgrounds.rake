@@ -8,7 +8,7 @@ task :calculate_local_backgrounds do
   mkdir_p 'control/local_backgrounds/di'
 
   SequenceDataset.each_file_by_glob('control/control/*.mfa') {|dataset|
-    File.write("control/local_backgrounds/mono/#{dataset.name}.txt", dataset.local_mono_background)
-    File.write("control/local_backgrounds/di/#{dataset.name}.txt", dataset.local_di_background)
+    File.write(dataset.local_mono_background_path, dataset.local_mono_background(ignore_disk_cache: true))
+    File.write(dataset.local_di_background_path, dataset.local_di_background(ignore_disk_cache: true))
   }
 end

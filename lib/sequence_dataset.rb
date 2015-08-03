@@ -25,6 +25,14 @@ class SequenceDataset
     }
   end
 
+  def local_mono_background_path
+    "control/local_backgrounds/mono/#{name}.txt"
+  end
+
+  def local_di_background_path
+    "control/local_backgrounds/di/#{name}.txt"
+  end
+
   def local_mono_background
     @local_mono_background ||= begin
       counts = Hash.new(0)

@@ -12,8 +12,7 @@ SequenceDataset.each_file_by_glob('control/control/*.mfa') do |control|
       scores = SarusResults.each_in_file(scores_fn).map(&:score)
       precalc_opts = ['--precalc', File.join('models/thresholds/di/all/', control.name)]
       
-      background_fn = control_fn.pathmap('control/local_backgrounds/di/%n.txt')
-      background_opt = ['--background', File.read(background_fn)]
+      background_opt = ['--background', File.read(control.local_di_background_path)]
       
       output_fn = File.join('occurences/pvalues/di/', control.uniprot, model.full_name, "#{control.name}.txt")
       sh *di_cmd, model.path_to_pwm, *scores.map(&:to_s) *pvalues, *precalc_opts, *background_opt, {out: output_fn}, {} 
@@ -30,8 +29,7 @@ SequenceDataset.each_file_by_glob('control/control/*.mfa') do |control|
       scores = SarusResults.each_in_file(scores_fn).map(&:score)
       precalc_opts = ['--precalc', File.join('models/thresholds/mono/all/', control.name)]
 
-      background_fn = control_fn.pathmap('control/local_backgrounds/di/%n.txt')
-      background_opt = ['--background', File.read(background_fn)]
+      background_opt = ['--background', File.read(control.local_di_background_path)]
 
       output_fn = File.join('occurences/pvalues/mono/', control.uniprot, model.full_name, "#{control.name}.txt")
       sh *di_cmd, model.path_to_pwm, *scores.map(&:to_s) *pvalues, *precalc_opts, *background_opt, '--from-mono', {out: output_fn}, {} 

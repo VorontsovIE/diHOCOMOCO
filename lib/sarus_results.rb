@@ -12,3 +12,23 @@ SarusResults = Struct.new(:score, :position, :orientation) do
     end
   end
 end
+
+module Sarus
+  def self.run_besthits(control_filename, model_filename, output_file:, mode:)
+    case mode
+    when /^mono$/
+      package = 'ru.autosome.SARUS'
+    when /^di$/
+      package = 'ru.autosome.di.SARUS'
+    else
+      raise "Unknown mode `#{mode}`"
+    end
+      
+    output_folder = File.dirname(output_file)
+    mkdir_p output_folder  unless Dir.exist?(output_folder)
+
+    cmd = ['java', '-Xmx1G', '-cp', 'sarus.jar', package]
+    opts = ['besthit', 'suppress']
+    sh *cmd, control_filename, model_filename, *opts, {out: output_file}, {}
+  end
+end
