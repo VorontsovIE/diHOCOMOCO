@@ -18,6 +18,7 @@ module Ape
     mkdir_p output_folder  unless Dir.exist?(output_folder)
 
     cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', package]
+
     opts = []
     opts += ['--silent']
     opts += ['--pvalues', threshold_grid.join(',')]  if threshold_grid
@@ -25,7 +26,6 @@ module Ape
     opts += ['--background', background.to_s]  if background
     opts += additional_options
     
-    sh *cmd, control_filename, model_filename, *opts, {out: output_file}, {}
-    sh *script_cmd, motifs_folder, output_folder, *opts
+    sh *cmd, models_folder, output_folder, *opts
   end
 end
