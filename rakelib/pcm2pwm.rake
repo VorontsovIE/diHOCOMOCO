@@ -1,6 +1,6 @@
 require 'bioinform'
-require_relative '../lib/dipm'
-require_relative '../lib/pcm2pwm_converter_fixed'
+require 'dipm'
+require 'pcm2pwm_converter_fixed'
 
 namespace :collect_and_normalize_data do
   desc 'Convert PCM --> PWM'

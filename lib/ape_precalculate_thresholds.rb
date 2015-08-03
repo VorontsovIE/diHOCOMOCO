@@ -1,3 +1,5 @@
+require 'rake/file_utils_ext'
+
 module Ape
   def self.run_precalculate_thresholds(models_folder, 
                                       output_folder:,
@@ -15,7 +17,7 @@ module Ape
       raise "Unknown mode `#{mode}`"
     end
       
-    mkdir_p output_folder  unless Dir.exist?(output_folder)
+    FileUtils.mkdir_p output_folder  unless Dir.exist?(output_folder)
 
     cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', package]
 
@@ -26,6 +28,6 @@ module Ape
     opts += ['--background', background.to_s]  if background
     opts += additional_options
     
-    sh *cmd, models_folder, output_folder, *opts
+    Rake::FileUtilsExt.sh *cmd, models_folder, output_folder, *opts
   end
 end

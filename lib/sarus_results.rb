@@ -1,3 +1,5 @@
+require 'rake/file_utils_ext'
+
 # for `besthit suppress` mode
 SarusResults = Struct.new(:score, :position, :orientation) do
   def self.from_string(str)
@@ -25,10 +27,10 @@ module Sarus
     end
       
     output_folder = File.dirname(output_file)
-    mkdir_p output_folder  unless Dir.exist?(output_folder)
+    FileUtils.mkdir_p output_folder  unless Dir.exist?(output_folder)
 
     cmd = ['java', '-Xmx1G', '-cp', 'sarus.jar', package]
     opts = ['besthit', 'suppress']
-    sh *cmd, control_filename, model_filename, *opts, {out: output_file}, {}
+    Rake::FileUtilsExt.sh *cmd, control_filename, model_filename, *opts, {out: output_file}, {}
   end
 end

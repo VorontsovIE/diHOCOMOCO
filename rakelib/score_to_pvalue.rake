@@ -1,3 +1,4 @@
+require 'models'
 require 'sarus_results'
 require 'ape_find_pvalue'
 require 'find_pvalue_results'
@@ -13,7 +14,7 @@ task :scores_to_pvalues_di
 
 SequenceDataset.each_file_by_glob('control/control/*.mfa') do |control|
   task "scores_to_pvalues_mono:#{control.name}" do
-    Models.mono_models.each do |model|
+    Models.mono_models_by_uniprot(control.uniprot).each do |model|
       scores_fn = File.join('occurences/scores/mono/', control.uniprot, model.full_name, "#{control.name}.txt")
       scores = SarusResults.each_in_file(scores_fn).map(&:score)
       Ape.run_find_pvalue   model.path_to_pwm,
@@ -29,7 +30,7 @@ SequenceDataset.each_file_by_glob('control/control/*.mfa') do |control|
 
 
   task "scores_to_pvalues_di:#{control.name}" do
-    Models.di_models.each do |model|
+    Models.di_models_by_uniprot(control.uniprot).each do |model|
       scores_fn = File.join('occurences/scores/di/', control.uniprot, model.full_name, "#{control.name}.txt")
       scores = SarusResults.each_in_file(scores_fn).map(&:score)
       Ape.run_find_pvalue   model.path_to_pwm,

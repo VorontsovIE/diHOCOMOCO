@@ -1,3 +1,5 @@
+require 'rake/file_utils_ext'
+
 module Ape
   def self.run_find_pvalue(model_filename, scores,
                           output_file:,
@@ -13,8 +15,9 @@ module Ape
     else
       raise "Unknown mode `#{mode}`"
     end
-      
-    mkdir_p output_folder  unless Dir.exist?(output_folder)
+
+    output_folder = File.dirname(output_file)
+    FileUtils.mkdir_p output_folder  unless Dir.exist?(output_folder)
 
     cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', package]
     opts = []
@@ -22,6 +25,6 @@ module Ape
     opts += ['--background', background.to_s]  if background
     opts += additional_options
     
-    sh *cmd, model_filename, *scores.map(&:to_s), *opts, {out: output_file}, {}
+    Rake::FileUtilsExt.sh *cmd, model_filename, *scores.map(&:to_s), *opts, {out: output_file}, {}
   end
 end

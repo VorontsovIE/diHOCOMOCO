@@ -35,14 +35,14 @@ class Model
   end
 
   def pwm_extension; @mono_or_di_mode.pwm_extension; end
-  def pwm_extension; @mono_or_di_mode.pcm_extension;; end
+  def pcm_extension; @mono_or_di_mode.pcm_extension;; end
 
   def full_name
     [@uniprot, @collection_short_name, @model_name].join('~')
   end
 
   def path_to_pwm
-    File.join('models/pwm', @mono_or_di_mode.to_s, 'all', uniprot, "#{full_name}.pwm")
+    File.join('models/pwm', @mono_or_di_mode.to_s, 'all', uniprot, "#{full_name}.#{pwm_extension}")
   end
 
   def to_s; "<#{@mono_or_di_mode}: #{full_name}>"; end
