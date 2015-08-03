@@ -1,6 +1,6 @@
 require_relative 'weighted_sequence'
 require_relative 'counts'
-require_relative 'background'
+require_relative 'frequencies'
 
 class SequenceDataset
   attr_reader :filename
@@ -50,8 +50,8 @@ class SequenceDataset
     end
   end
 
-  def self.each_by_glob(glob)
-    return enum_for(:each_by_glob, glob)  unless block_given?
+  def self.each_file_by_glob(glob)
+    return enum_for(:each_file_by_glob, glob)  unless block_given?
     FileList[glob].each{|filename|
       yield SequenceDataset.new(filename)
     }

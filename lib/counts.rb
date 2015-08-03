@@ -1,5 +1,5 @@
 require_relative 'support'
-require_relative 'background'
+require_relative 'frequencies'
 
 # abstract class
 class CountsBase
