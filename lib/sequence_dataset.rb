@@ -25,25 +25,25 @@ class SequenceDataset
     }
   end
 
-  def local_mono_background_path
-    "control/local_backgrounds/mono/#{name}.txt"
-  end
+  # def local_mono_background_path
+  #   "control/local_backgrounds/mono/#{name}.txt"
+  # end
 
   def local_di_background_path
     "control/local_backgrounds/di/#{name}.txt"
   end
 
-  def local_mono_background
-    @local_mono_background ||= begin
-      counts = Hash.new(0)
-      each_sequence{|weighted_sequence|
-        weighted_sequence.each_position{|letter, weight|
-          counts[letter] += 1 # weight
-        }
-      }
-      MonoCounts.from_hash(counts).plus_revcomp.frequencies
-    end
-  end
+  # def local_mono_background
+  #   @local_mono_background ||= begin
+  #     counts = Hash.new(0)
+  #     each_sequence{|weighted_sequence|
+  #       weighted_sequence.each_position{|letter, weight|
+  #         counts[letter] += 1 # weight
+  #       }
+  #     }
+  #     MonoCounts.from_hash(counts).plus_revcomp.frequencies
+  #   end
+  # end
 
   def local_di_background
     @local_di_background ||= begin
