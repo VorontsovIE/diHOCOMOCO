@@ -1,3 +1,4 @@
+require 'stringio'
 require 'rake/file_utils_ext'
 
 module Ape
@@ -25,6 +26,7 @@ module Ape
     opts += ['--background', background.to_s]  if background
     opts += additional_options
     
-    Rake::FileUtilsExt.sh *cmd, model_filename, *scores.map(&:to_s), *opts, {out: output_file}, {}
+    scores_io = StringIO.new(scores.map(&:to_s).join("\n"))
+    Rake::FileUtilsExt.sh *cmd, model_filename, *opts, {out: output_file, in: scores_io}, {}
   end
 end
