@@ -19,7 +19,7 @@ module Ape
     output_folder = File.dirname(output_file)
     FileUtils.mkdir_p output_folder  unless Dir.exist?(output_folder)
 
-    cmd = ['java', '-Xmx1G', '-cp', 'ape-2.0.1.jar', package]
+    cmd = ['java', '-Xmx1G', '-cp', 'ape.jar', package]
     opts = []
     opts += ['--discretization', discretization.to_s]  if discretization
     opts += ['--background', background.to_s]  if background
