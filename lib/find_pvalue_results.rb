@@ -1,7 +1,9 @@
-FindPvalueResults = Struct.new(:threshold, :num_words, :pvalue) do
+# threshold, pvalue pairs
+# num_words is printed only to terminal
+FindPvalueResults = Struct.new(:threshold, :pvalue) do
   def self.from_string(str)
-    threshold, num_words, pvalue = str.chomp.split("\t")
-    self.new(threshold.to_f, num_words.to_f, pvalue.to_f)
+    threshold, pvalue = str.chomp.split("\t")
+    self.new(threshold.to_f, pvalue.to_f)
   end
 
   def self.each_in_file(filename)
