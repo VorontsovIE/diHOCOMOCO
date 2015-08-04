@@ -16,12 +16,30 @@ module ModelKind
     def pwm_extension; 'pwm'; end
     def pcm_extension; 'pcm'; end
     def to_s; 'mono'; end
+    def read_pcm(path_to_pcm)
+      Bioinform::MotifModel::PCM.from_file(path_to_pcm)
+    end
+    def read_pwm(path_to_pwm)
+      Bioinform::MotifModel::PWM.from_file(path_to_pwm)
+    end
   end
 
   class Di
     def pwm_extension; 'dpwm'; end
     def pcm_extension; 'dpcm'; end
     def to_s; 'di'; end
+    def read_pcm(path_to_pcm)
+      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16)
+      infos = parser.parse(File.read(path_to_pcm))
+      name = infos[:name] || File.basename(path_to_pcm, ".#{pcm_extension}")
+      Bioinform::MotifModel::DiPCM.new(infos[:matrix]).named(name)
+    end
+    def read_pwm(path_to_pwm)
+      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16)
+      infos = parser.parse(File.read(path_to_pwm))
+      name = infos[:name] || File.basename(path_to_pwm, ".#{pwm_extension}")
+      Bioinform::MotifModel::DiPWM.new(infos[:matrix]).named(name)
+    end
   end
 end
 
@@ -34,11 +52,21 @@ class Model
     @mono_or_di_mode = ModelKind.get(mono_or_di_mode)
   end
 
+
+
+  def pcm; @pcm ||= @mono_or_di_mode.read_pcm(path_to_pcm); end
+  def pwm; @pwm ||= @mono_or_di_mode.read_pwm(path_to_pwm); end
+  def length; pcm.length; end
+
   def pwm_extension; @mono_or_di_mode.pwm_extension; end
-  def pcm_extension; @mono_or_di_mode.pcm_extension;; end
+  def pcm_extension; @mono_or_di_mode.pcm_extension; end
 
   def full_name
     [@uniprot, @collection_short_name, @model_name].join('~')
+  end
+
+  def path_to_pcm
+    File.join('models/pcm', @mono_or_di_mode.to_s, 'all', uniprot, "#{full_name}.#{pcm_extension}")
   end
 
   def path_to_pwm

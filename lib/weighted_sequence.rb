@@ -6,6 +6,10 @@ class WeightedSequence
     @weights = weights
   end
 
+  def length
+    sequence.length
+  end
+
   # yields nucleotide and weight for each position
   def each_position(&block)
     sequence.each_char.zip(weights).each(&block)
