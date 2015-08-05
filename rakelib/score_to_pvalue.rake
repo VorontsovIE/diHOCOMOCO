@@ -12,7 +12,7 @@ task :scores_to_pvalues_mono
 desc 'Convert scores of motif occurences into pvalues for dinucleotide models'
 task :scores_to_pvalues_di
 
-SequenceDataset.each_file_by_glob('control/control/*.mfa') do |control|
+SequenceDataset.each_dataset do |control|
   task "scores_to_pvalues_mono:#{control.name}" do
     Models.mono_models_by_uniprot(control.uniprot).each do |model|
       scores_fn = File.join('occurences/scores/mono/', control.uniprot, model.full_name, "#{control.name}.txt")

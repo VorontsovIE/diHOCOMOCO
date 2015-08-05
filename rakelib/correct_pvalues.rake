@@ -25,7 +25,7 @@ desc 'Correct pvalues for sequence length for dinucleotide models'
 task :corrected_pvalues_di
 
 
-SequenceDataset.each_file_by_glob('control/control/*.mfa') do |control|
+SequenceDataset.each_dataset do |control|
   task "corrected_pvalues_mono:#{control.name}" do
     lengths = control.each_sequence.map(&:length)
     median_length = lengths.sort[lengths.size / 2]

@@ -64,4 +64,16 @@ class SequenceDataset
       yield SequenceDataset.new(filename)
     }
   end
+
+  def self.each_dataset(&block)
+    each_file_by_glob('control/control/*.mfa', &block)
+  end
+
+  def self.each_for_uniprot(uniprot, &block)
+    each_file_by_glob("control/control/#{uniprot}^*.mfa", &block)
+  end
+
+  def self.each_uniprot(&block)
+    each_dataset.map(&:uniprot).uniq.sort.each(&block)
+  end
 end

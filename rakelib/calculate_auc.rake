@@ -6,9 +6,7 @@ desc 'Calculate model AUC on existing datasets'
 task :calculate_auc => [:calculate_auc_mono, :calculate_auc_di]
 
 task :calculate_auc_mono do
-  uniprots = SequenceDataset.each_file_by_glob('control/control/*.mfa').map(&:uniprot).uniq.sort
-
-  uniprots.each do |uniprot|
+  SequenceDataset.each_uniprot do |uniprot|
     output_dir = File.join('occurences/auc/mono/', uniprot)
     mkdir_p(output_dir)  unless Dir.exist?(output_dir)
 
@@ -16,7 +14,7 @@ task :calculate_auc_mono do
       output_fn = File.join(output_dir, "#{model.full_name}.txt")
 
       File.open(output_fn, 'w') do |fw|
-        SequenceDataset.each_file_by_glob("control/control/#{uniprot}^*.mfa") do |control|
+        SequenceDataset.each_for_uniprot(uniprot) do |control|
           corrected_pvalues_fn = File.join('occurences/corrected_pvalues/mono/', control.uniprot, model.full_name, "#{control.name}.txt")
           corrected_pvalues = File.readlines(corrected_pvalues_fn).map(&:to_f)
           roc = roc_curve(corrected_pvalues)
@@ -30,9 +28,7 @@ task :calculate_auc_mono do
 end
 
 task :calculate_auc_di do
-  uniprots = SequenceDataset.each_file_by_glob('control/control/*.mfa').map(&:uniprot).uniq.sort
-
-  uniprots.each do |uniprot|
+  SequenceDataset.each_uniprot do |uniprot|
     output_dir = File.join('occurences/auc/di/', uniprot)
     mkdir_p(output_dir)  unless Dir.exist?(output_dir)
 
@@ -40,7 +36,7 @@ task :calculate_auc_di do
       output_fn = File.join(output_dir, "#{model.full_name}.txt")
 
       File.open(output_fn, 'w') do |fw|
-        SequenceDataset.each_file_by_glob("control/control/#{uniprot}^*.mfa") do |control|
+        SequenceDataset.each_for_uniprot(uniprot) do |control|
           corrected_pvalues_fn = File.join('occurences/corrected_pvalues/di/', control.uniprot, model.full_name, "#{control.name}.txt")
           corrected_pvalues = File.readlines(corrected_pvalues_fn).map(&:to_f)
           roc = roc_curve(corrected_pvalues)

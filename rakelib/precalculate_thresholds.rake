@@ -9,7 +9,7 @@ task :precalculate_thresholds_mono
 desc 'Precalculate thresholds for dinucleotide models'
 task :precalculate_thresholds_di
 
-SequenceDataset.each_file_by_glob('control/control/*.mfa') do |control|
+SequenceDataset.each_dataset do |control|
   task "precalculate_thresholds_mono:#{control.name}" do
     Ape.run_precalculate_thresholds File.join('models/pwm/mono/all/', control.uniprot),
                                     output_folder: File.join('models/thresholds/mono/all/', control.name),

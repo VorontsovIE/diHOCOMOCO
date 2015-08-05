@@ -23,7 +23,6 @@ desc 'Calculate model AUC on existing datasets'
 task :median_auc
 
 task :median_auc do
-  uniprots = SequenceDataset.each_file_by_glob('control/control/*.mfa').map(&:uniprot).uniq.sort
 
   output_dir_mono = File.join('occurences/median_auc/mono/')
   mkdir_p(output_dir_mono)  unless Dir.exist?(output_dir_mono)
@@ -31,7 +30,7 @@ task :median_auc do
   output_dir_di = File.join('occurences/median_auc/di/')
   mkdir_p(output_dir_di)  unless Dir.exist?(output_dir_di)
 
-  uniprots.each do |uniprot|
+  SequenceDataset.each_uniprot do |uniprot|
     median_auc_by_model_mono = Models.mono_models_by_uniprot(uniprot).map{|model|
       model_auc_fn = File.join('occurences/auc/mono/', uniprot, "#{model.full_name}.txt")
       [model, median_auc_in_file(model_auc_fn)]
