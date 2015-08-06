@@ -61,7 +61,7 @@ class SequenceDataset
   def self.each_file_by_glob(glob)
     return enum_for(:each_file_by_glob, glob)  unless block_given?
     FileList[glob].each{|filename|
-      yield SequenceDataset.new(filename)
+      yield self.new(filename)
     }
   end
 
@@ -75,5 +75,9 @@ class SequenceDataset
 
   def self.each_uniprot(&block)
     each_dataset.map(&:uniprot).uniq.sort.each(&block)
+  end
+
+  def self.by_name(dataset_name)
+    self.new("control/control/#{dataset_name}.mfa")
   end
 end

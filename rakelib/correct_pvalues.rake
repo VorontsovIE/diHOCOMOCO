@@ -16,36 +16,17 @@ def correct_pvalues(from_file, to_file, median_length:, model_length:)
 end
 
 desc 'Correct pvalues for sequence length'
-task :correct_pvalues => [:corrected_pvalues_mono, :corrected_pvalues_di]
+task :correct_pvalues
 
-desc 'Correct pvalues for sequence length for mononucleotide models'
-task :corrected_pvalues_mono
-
-desc 'Correct pvalues for sequence length for dinucleotide models'
-task :corrected_pvalues_di
-
-
-SequenceDataset.each_dataset do |control|
-  task "corrected_pvalues_mono:#{control.name}" do
+task :correct_pvalues do
+  SequenceDataset.each_dataset do |control|
     lengths = control.each_sequence.map(&:length)
     median_length = lengths.sort[lengths.size / 2]
-    Models.mono_models_by_uniprot(control.uniprot).each do |model|
-      pvalues_fn = File.join('occurences/pvalues/mono/', control.uniprot, model.full_name, "#{control.name}.txt")
-      corrected_pvalues_fn = File.join('occurences/corrected_pvalues/mono/', control.uniprot, model.full_name, "#{control.name}.txt")
-      correct_pvalues(pvalues_fn, corrected_pvalues_fn, median_length: median_length, model_length: model.length)
+    Models.all_models_by_uniprot(control.uniprot).each do |model|
+      correct_pvalues(File.join('occurences/pvalues/', model.arity_type, control.uniprot, model.full_name, "#{control.name}.txt"),
+                      File.join('occurences/corrected_pvalues/', model.arity_type, control.uniprot, model.full_name, "#{control.name}.txt"),
+                      median_length: median_length,
+                      model_length: model.length)
     end
   end
-  task :corrected_pvalues_mono => "corrected_pvalues_mono:#{control.name}"
-
-
-  task "corrected_pvalues_di:#{control.name}" do
-    lengths = control.each_sequence.map(&:length)
-    median_length = lengths.sort[lengths.size / 2]
-    Models.di_models_by_uniprot(control.uniprot).each do |model|
-      pvalues_fn = File.join('occurences/pvalues/di/', control.uniprot, model.full_name, "#{control.name}.txt")
-      corrected_pvalues_fn = File.join('occurences/corrected_pvalues/di/', control.uniprot, model.full_name, "#{control.name}.txt")
-      correct_pvalues(pvalues_fn, corrected_pvalues_fn, median_length: median_length, model_length: model.length)
-    end
-  end
-  task :corrected_pvalues_di => "corrected_pvalues_di:#{control.name}"
 end

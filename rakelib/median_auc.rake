@@ -20,8 +20,6 @@ def print_sorted_hash_to_file(filename, hsh)
 end
 
 desc 'Calculate model AUC on existing datasets'
-task :median_auc
-
 task :median_auc do
 
   output_dir_mono = File.join('occurences/median_auc/mono/')

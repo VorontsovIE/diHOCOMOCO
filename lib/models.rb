@@ -13,6 +13,7 @@ module ModelKind
   end
 
   class Mono
+    def arity_type; 'mono'; end
     def pwm_extension; 'pwm'; end
     def pcm_extension; 'pcm'; end
     def to_s; 'mono'; end
@@ -25,6 +26,7 @@ module ModelKind
   end
 
   class Di
+    def arity_type; 'di'; end
     def pwm_extension; 'dpwm'; end
     def pcm_extension; 'dpcm'; end
     def to_s; 'di'; end
@@ -52,11 +54,10 @@ class Model
     @mono_or_di_mode = ModelKind.get(mono_or_di_mode)
   end
 
-
-
   def pcm; @pcm ||= @mono_or_di_mode.read_pcm(path_to_pcm); end
   def pwm; @pwm ||= @mono_or_di_mode.read_pwm(path_to_pwm); end
   def length; pcm.length; end
+  def arity_type; @mono_or_di_mode.arity_type; end
 
   def pwm_extension; @mono_or_di_mode.pwm_extension; end
   def pcm_extension; @mono_or_di_mode.pcm_extension; end
@@ -87,6 +88,10 @@ module Models
     @di_models ||= FileList["models/pcm/di/all/*/*.dpcm"].pathmap('%n').map{|name| Model.new(name, :di) }
   end
 
+  def self.all_models
+    @all_models ||= mono_models + di_models
+  end
+
   def self.mono_models_by_uniprot(uniprot)
     @mono_models_by_uniprot ||= mono_models.group_by(&:uniprot)
     @mono_models_by_uniprot[uniprot]
@@ -97,11 +102,20 @@ module Models
     @di_models_by_uniprot[uniprot]
   end
 
+  def self.all_models_by_uniprot(uniprot)
+    @all_models_by_uniprot ||= all_models.group_by(&:uniprot)
+    @all_models_by_uniprot[uniprot]
+  end
+
   def self.mono_uniprots
     mono_models.map(&:uniprot).uniq
   end
 
   def self.di_uniprots
     di_models.map(&:uniprot).uniq
+  end
+
+  def self.all_uniprots
+    all_models.map(&:uniprot).uniq
   end
 end
