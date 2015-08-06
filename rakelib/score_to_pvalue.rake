@@ -19,7 +19,7 @@ SequenceDataset.each_dataset do |control|
       scores = SarusResults.each_in_file(scores_fn).map(&:score)
       Ape.run_find_pvalue   model.path_to_pwm,
                             scores,
-                            output_file: File.join('occurences/pvalues/mono/', control.uniprot, model.full_name, "#{control.name}.txt"),
+                            output_file: File.join('occurences/pvalues/', control.uniprot, model.full_name, "#{control.name}.txt"),
                             background: File.read(control.local_di_background_path),
                             discretization: 1000,
                             additional_options: ['--precalc', File.join('models/thresholds/mono/all/', control.name)] + ['--from-mono'],
@@ -35,7 +35,7 @@ SequenceDataset.each_dataset do |control|
       scores = SarusResults.each_in_file(scores_fn).map(&:score)
       Ape.run_find_pvalue   model.path_to_pwm,
                             scores,
-                            output_file: File.join('occurences/pvalues/di/', control.uniprot, model.full_name, "#{control.name}.txt"),
+                            output_file: File.join('occurences/pvalues/', control.uniprot, model.full_name, "#{control.name}.txt"),
                             background: File.read(control.local_di_background_path),
                             discretization: 1000,
                             additional_options: ['--precalc', File.join('models/thresholds/di/all/', control.name)],

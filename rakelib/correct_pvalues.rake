@@ -16,15 +16,13 @@ def correct_pvalues(from_file, to_file, median_length:, model_length:)
 end
 
 desc 'Correct pvalues for sequence length'
-task :correct_pvalues
-
 task :correct_pvalues do
   SequenceDataset.each_dataset do |control|
     lengths = control.each_sequence.map(&:length)
     median_length = lengths.sort[lengths.size / 2]
     Models.all_models_by_uniprot(control.uniprot).each do |model|
-      correct_pvalues(File.join('occurences/pvalues/', model.arity_type, control.uniprot, model.full_name, "#{control.name}.txt"),
-                      File.join('occurences/corrected_pvalues/', model.arity_type, control.uniprot, model.full_name, "#{control.name}.txt"),
+      correct_pvalues(File.join('occurences/pvalues/', control.uniprot, model.full_name, "#{control.name}.txt"),
+                      File.join('occurences/corrected_pvalues/', control.uniprot, model.full_name, "#{control.name}.txt"),
                       median_length: median_length,
                       model_length: model.length)
     end
