@@ -1,12 +1,13 @@
+require 'median'
 require 'models'
 require 'sequence_dataset'
 
 def median_auc_in_file(filename)
-  model_auc = File.readlines(filename).map{|line|
+  model_aucs = File.readlines(filename).map{|line|
     control_name, auc = line.chomp.split("\t")
     auc.to_f
   }
-  median_auc = model_auc.sort[model_auc.size / 2]
+  median(model_aucs)
 end
 
 def print_sorted_hash_to_file(filename, hsh)

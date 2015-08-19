@@ -1,3 +1,4 @@
+require 'median'
 require 'models'
 require 'sarus_results'
 require 'ape_find_pvalue'
@@ -19,11 +20,10 @@ desc 'Correct pvalues for sequence length'
 task :correct_pvalues do
   SequenceDataset.each_dataset do |control|
     lengths = control.each_sequence.map(&:length)
-    median_length = lengths.sort[lengths.size / 2]
     Models.all_models_by_uniprot(control.uniprot).each do |model|
       correct_pvalues(File.join('occurences/pvalues/', control.uniprot, model.full_name, "#{control.name}.txt"),
                       File.join('occurences/corrected_pvalues/', control.uniprot, model.full_name, "#{control.name}.txt"),
-                      median_length: median_length,
+                      median_length: median(lengths),
                       model_length: model.length)
     end
   end
