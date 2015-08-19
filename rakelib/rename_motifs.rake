@@ -47,7 +47,7 @@ def rename_motifs(src_glob, dest_folder,
     motif_text = File.readlines(src)
     motif_text = motif_text.first.match(/^>?\s*[a-zA-Z]/) ? motif_text.drop(1).join : motif_text.join
     uniprot_ids = conv_to_uniprot_ids.call(motif_name)
-    uniprot_ids.map{|uniprot_id|
+    uniprot_ids.each{|uniprot_id|
       mkdir_p File.join(dest_folder, uniprot_id)  unless Dir.exist?(File.join(dest_folder, uniprot_id))
       motif_full_name = "#{uniprot_id}~#{short_collection_id}~#{motif_name}"
       File.write(File.join(dest_folder, uniprot_id, "#{motif_full_name}#{extname}"), "> #{motif_full_name}\n#{motif_text}")
@@ -63,7 +63,7 @@ namespace :collect_and_normalize_data do
     rename_motifs 'models/pcm/mono/hocomoco_legacy/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'HL', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['HOCOMOCO'][motif] }
     rename_motifs 'models/pcm/mono/homer/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'HO', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['HOMER'][motif] }
     rename_motifs 'models/pcm/mono/swissregulon/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SR', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['SWISSREGULON'][motif] }
-    rename_motifs 'models/pcm/mono/jaspar/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'JA', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['JASPAR'][motif] }
+    rename_motifs 'models/pcm/mono/jaspar/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'JA', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['JASPAR'][motif.split.first] }
 
     rename_motifs 'models/pcm/mono/selex_ftr/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SE'
     rename_motifs 'models/pcm/mono/selex_rebuilt_ftr/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SMF'
