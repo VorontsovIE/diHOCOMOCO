@@ -5,6 +5,8 @@
 *.xls
 *.xlsx
 *.txt
+*.csv
+*.tsv
 chipseq_models/
 control/
 htselex/
