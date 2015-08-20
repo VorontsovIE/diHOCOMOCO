@@ -2,6 +2,7 @@ require 'uniprot_info'
 
 module Jaspar
   MatrixInfo = Struct.new(:matrix_id, :collection, :base_id, :version, :name, :pcm_matrix, :uniprot_acs, :uniprot_ids, :species_ids, :species_names) do
+    # Actually uniprot_ac can also be refseq / EMBL identifier
     def full_name; "#{base_id}.#{version} #{name}"; end
     def matrix_str
       matrix_wo_name_str = pcm_matrix.map{|row| row.join("\t") }.join("\n")
@@ -24,6 +25,7 @@ module Jaspar
       @species_name_by_species_id = Infos.load_species_name_by_id(taxonomy_filename)
 
       @species_ids_by_matrix_id = Infos.load_matrix_species(matrix_species_filename)
+      # Actually uniprot_ac can also be refseq / EMBL identifier
       @matrix_uniprot_acs = Infos.load_matrix_uniprot_acs(matrix_proteins_filename)
 
       @matrix_name_info_by_id = MatrixNameInfo.each_in_file(matrix_name_infos_filename).map{|matrix_info|
@@ -33,6 +35,9 @@ module Jaspar
       @uniprot_id_by_uniprot_ac = uniprot_infos.map{|info|
         [info.uniprot_ac, info.uniprot_id]
       }.to_h
+
+      @uniprot_ids_by_refseq = group_list_by(uniprot_infos, :refseq_ids, :uniprot_id)
+      @uniprot_ids_by_embl = group_list_by(uniprot_infos, :embl_ids, :uniprot_id)
     end
 
     def each_matrix
@@ -41,7 +46,10 @@ module Jaspar
         matrix_name_info = @matrix_name_info_by_id[matrix_id]
 
         uniprot_acs = @matrix_uniprot_acs[matrix_id] || []
-        uniprot_ids = uniprot_acs.map{|uniprot_ac| @uniprot_id_by_uniprot_ac[uniprot_ac] }.compact
+        uniprot_ids = uniprot_acs.flat_map{|uniprot_ac|
+          # Actually uniprot_ac can also be refseq / embl
+          [@uniprot_id_by_uniprot_ac[uniprot_ac], *@uniprot_ids_by_refseq[uniprot_ac], *@uniprot_ids_by_embl[uniprot_ac]]
+        }.compact.uniq
 
         species_ids = @species_ids_by_matrix_id[matrix_id] || []
         species_names = species_ids.map{|species_id|  @species_name_by_species_id[species_id]  }.compact
@@ -58,6 +66,18 @@ module Jaspar
       end
     end
 
+    def group_list_by(list, groups_key, target_key)
+      list.flat_map{|info|
+        info.send(groups_key).map{|group|
+          [group, info.send(target_key)]
+        }
+      }.group_by{|group, target|
+        group
+      }.map{|group, group_target_pairs|
+        [group, group_target_pairs.map(&:last)]
+      }.to_h
+    end
+    private :group_list_by
 
     def self.load_matrix_species(filename)
       File.readlines(filename).map{|line|
