@@ -39,10 +39,17 @@ namespace :collect_and_normalize_data do
       matrix_name_infos_filename: 'standard_motif_collections_update/jaspar_2014/MATRIX.txt',
       uniprot_infos: uniprot_infos
     )
-    jaspar_infos.each_matrix.select{|info|
-      info.fit_species?('Homo sapiens') || info.fit_species?('Mus musculus')
+    jaspar_matrices = jaspar_infos.each_matrix.select{|info|
+      # There is the only motif for Vertebrata taxon: HNF1A_HUMAN and is not linked to HNF1A_MOUSE
+      # But there are no more HNF1A_MOUSE motifs so we don't care
+      # ...and nevertheless it has no uniprot_id (because it can't be linked via provided identifiers)
+      info.fit_species?('Homo sapiens') || info.fit_species?('Mus musculus') || info.fit_species?('Vertebrata')
+    }.select{|info|
+      info.collection == 'CORE'
     }.reject{|info|
       info.uniprot_ids.empty?
+    }.group_by(&:name).each_value.map{|infos|
+      infos.max_by(&:version)
     }.each{|info|
       info.uniprot_ids.each do |uniprot_id|
         mkdir_p File.join('models/pcm/mono/all/', uniprot_id)
