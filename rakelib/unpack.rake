@@ -9,6 +9,7 @@ end
 task :unpack_motif_collections do
   mkdir_p 'standard_motif_collections'
   sh 'tar', '-zxf', 'standard_motif_collections.tar.gz', '-C', 'standard_motif_collections'
+  sh 'tar', '-zxf', 'standard_motif_collections_update.tar.gz'
   ['pcm', 'pwm', 'ppm'].each do |model_type|
     mkdir_p File.join('standard_motif_collections', model_type)
     Dir.glob(File.join('standard_motif_collections', "*_#{model_type}.tar.gz")).each{|subarchive|
