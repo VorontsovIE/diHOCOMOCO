@@ -18,6 +18,10 @@ class SequenceDataset
     name.split('^').first
   end
 
+  def mono_models; Models.mono_models_by_uniprot(uniprot); end
+  def di_models; Models.di_models_by_uniprot(uniprot); end
+  def all_models; Models.all_models_by_uniprot(uniprot); end
+
   def each_sequence
     return enum_for(:each_sequence)  unless block_given?
     WeightedSequence.each_in_file(filename){|weighted_sequence|
