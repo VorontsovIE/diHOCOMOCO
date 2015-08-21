@@ -66,6 +66,8 @@ class Model
     [@uniprot, @collection_short_name, @model_name].join('~')
   end
 
+  def species; @uniprot.split('_').last; end
+
   def path_to_pcm
     File.join('models/pcm', @mono_or_di_mode.to_s, 'all', uniprot, "#{full_name}.#{pcm_extension}")
   end
