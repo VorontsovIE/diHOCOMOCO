@@ -44,6 +44,7 @@ ALX1_HUMAN_DBD_2 имеет внутри имя CART1^470
 	training.zip
 	uniprot_HomoSapiens_and_MusMusculus.txt
 	HOCOMOCOv9_motifs2uniprot.txt
+	hocomoco_genes_infos.csv
 
 	ape-2.0.1.jar
 	sarus.jar

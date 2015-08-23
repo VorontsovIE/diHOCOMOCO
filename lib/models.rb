@@ -79,6 +79,9 @@ class Model
   def to_s; "<#{@mono_or_di_mode}: #{full_name}>"; end
   def inspect; to_s; end
 
+  def self.get_original_model_name(model_fullname)
+    model_fullname.split('~')[2]
+  end
   def self.get_uniprot(model_fullname)
     model_fullname.split('~')[0]
   end
