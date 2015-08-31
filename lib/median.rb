@@ -9,3 +9,8 @@ def median(arr)
     (sorted_arr[center_index_ceiled] + sorted_arr[center_index_ceiled - 1]) / 2.0
   end
 end
+
+def mean(values)
+  raise 'Mean of an empty array is undefined'  if values.empty?
+  values.inject(0.0, &:+) / values.size
+end
