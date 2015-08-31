@@ -14,11 +14,7 @@ def histogram(thresholds, data)
 end
 
 def load_hocomoco_qualities(filename)
-  File.readlines(filename).drop(1).map{|line|
-    line.chomp.split("\t")
-  }.map{|row|
-    [row[0],row[2]]
-  }.to_h
+  File.readlines(filename).map{|line|  line.chomp.split("\t")  }.to_h
 end
 
 def aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, hocomoco_qualities, quality)
@@ -83,7 +79,7 @@ task :hocomoco_auc_distribution do
   }
 
   thresholds = (0.0..1.0).step(0.04)
-  hocomoco_qualities = load_hocomoco_qualities('hocomoco_genes_infos.csv')
+  hocomoco_qualities = load_hocomoco_qualities('hocomoco_qualities.tsv')
 
   result_total = []
   ['A', 'B', 'C', 'D'].each do |quality|

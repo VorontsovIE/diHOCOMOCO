@@ -21,7 +21,7 @@ task :filter_motifs_and_datasets do
   collections = filtering.model_names.map{|model_name| Model.get_collection_short_name(model_name) }.uniq.sort
   mono_collections = ['HL', 'HO', 'SR', 'JA', 'SE', 'SMF', 'SMS', 'CM']
   di_collections = ['SDF', 'SDS', 'CD']
-  hocomoco_qualities = File.readlines('hocomoco_genes_infos.csv').map{|line| line.chomp.split("\t") }.map{|row| [row[0],row[2]] }.to_h
+  hocomoco_qualities = File.readlines('hocomoco_qualities.tsv').map{|line| line.chomp.split("\t") }.to_h
 
   File.open('collection_perfomances.tsv', 'w') do |fw|
 

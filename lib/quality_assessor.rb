@@ -1,6 +1,6 @@
 class QualityAssessor
   def initialize(filtering)
-    @hocomoco_qualities = self.class.load_hocomoco_qualities('hocomoco_genes_infos.csv')
+    @hocomoco_qualities = self.class.load_hocomoco_qualities('hocomoco_qualities.tsv')
     @filtering = filtering
     @survived_models_by_uniprot = filtering.model_names.group_by{|model_name|
       Model.get_uniprot(model_name)
@@ -8,11 +8,7 @@ class QualityAssessor
   end
 
   def self.load_hocomoco_qualities(filename)
-    File.readlines(filename).drop(1).map{|line|
-      line.chomp.split("\t")
-    }.map{|row|
-      [row[0],row[2]]
-    }.to_h
+    File.readlines(filename).map{|line|  line.chomp.split("\t")  }.to_h
   end
 
   def num_datasets(model_name)
