@@ -10,7 +10,8 @@ class AUCInfosFiltering
   attr_reader :auc_infos
   extend Forwardable
   def_delegators :@auc_infos, :remove_models!, :remove_datasets!, :remove_models_wo_datasets!, :remove_datasets_wo_models!
-  def_delegators :@auc_infos, :model_names, :dataset_names, :aucs_for_dataset
+  def_delegators :@auc_infos, :auc
+  def_delegators :@auc_infos, :model_names, :dataset_names, :aucs_for_dataset, :aucs_for_model
   def_delegators :@auc_infos, :dataset_names_for_model, :model_names_for_dataset
 
   def initialize(auc_infos)

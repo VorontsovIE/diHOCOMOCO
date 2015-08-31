@@ -23,20 +23,40 @@ class QualityAssessor
     @hocomoco_qualities[Model.get_original_model_name(model_name)]
   end
 
+  def num_datasets_passing_auc(model_name, auc_threshold)
+    @filtering.aucs_for_model(model_name).count{|auc| auc >= auc_threshold }
+  end
+
   def calculate_quality(model_name)
     is_hocomoco_model = model_name.match(/~HL~/)
     is_chipseq_model = model_name.match(/~CM~|~CD~/)
-    
-    raise 'Impossible: best model doesn\'t pass filters'  if num_datasets(model_name) < 1
-    return hocomoco_quality(model_name)  if is_hocomoco_model
 
-    if num_datasets(model_name) >= 2
-      'A'
-    else      
-      if is_chipseq_model
-        (num_survived_models(model_name) > 1) ? 'C' : 'D'
-      else
+    num_datasets_pass_highquality_auc = num_datasets_passing_auc(model_name, 0.9)
+    num_datasets_pass_optimal_auc = num_datasets_passing_auc(model_name, 0.7)
+    num_datasets_pass_minimal_auc = num_datasets_passing_auc(model_name, 0.6)
+    
+    # raise 'Impossible: best model doesn\'t pass filters'  if num_datasets(model_name) < 1
+    # return hocomoco_quality(model_name)  if is_hocomoco_model
+
+    if num_datasets_pass_optimal_auc >= 2
+      return (num_datasets_pass_highquality_auc >= 1) ? 'A+' : 'A'
+    elsif num_datasets_pass_optimal_auc == 1
+      if !is_chipseq_model
         'B'
+      elsif is_chipseq_model && num_datasets_pass_minimal_auc >= 2
+        'B'
+      else # is_chipseq_model && num_datasets_pass_minimal_auc == 1 
+        'C'
+      end
+    else # num_datasets_pass_optimal_auc == 0
+      if num_datasets_pass_minimal_auc >= 2 
+        'C'
+      elsif num_datasets_pass_minimal_auc == 1
+        'D'
+      elsif is_hocomoco_model
+        hocomoco_quality(model_name)
+      else
+        'E'
       end
     end
   end
