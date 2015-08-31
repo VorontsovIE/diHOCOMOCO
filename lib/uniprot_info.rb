@@ -1,6 +1,6 @@
 UniprotInfo = Struct.new(:uniprot_ac, :uniprot_id,  :primary_gene_name, :synonym_gene_names, :protein_names, :refseq_ids, :embl_ids, :organism_id) do
   def all_gene_names
-    primary_gene_name + synonym_gene_names
+    [primary_gene_name] + synonym_gene_names
   end
 
   def self.from_string(line)
