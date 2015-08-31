@@ -11,8 +11,10 @@ task :precalculate_thresholds_di
 
 SequenceDataset.each_dataset do |control|
   task "precalculate_thresholds_mono:#{control.name}" do
+    output_folder = File.join('models/thresholds/mono/all/', control.name)
+    next  if Dir.exist?(output_folder)
     Ape.run_precalculate_thresholds File.join('models/pwm/mono/all/', control.uniprot),
-                                    output_folder: File.join('models/thresholds/mono/all/', control.name),
+                                    output_folder: output_folder,
                                     background: File.read(control.local_di_background_path), # we always use dinucleotide background
                                     threshold_grid: ['1e-15', '1.0', '1.01', 'mul'],
                                     discretization: 1000,
@@ -23,8 +25,10 @@ SequenceDataset.each_dataset do |control|
 
 
   task "precalculate_thresholds_di:#{control.name}" do
+    output_folder = File.join('models/thresholds/di/all/', control.name)
+    next  if Dir.exist?(output_folder)
     Ape.run_precalculate_thresholds File.join('models/pwm/di/all/', control.uniprot),
-                                    output_folder: File.join('models/thresholds/di/all/', control.name),
+                                    output_folder: output_folder,
                                     background: File.read(control.local_di_background_path),
                                     threshold_grid: ['1e-15', '1.0', '1.01', 'mul'],
                                     discretization: 1000,

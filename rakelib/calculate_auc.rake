@@ -10,6 +10,8 @@ task :calculate_auc do
 
     Models.all_models_by_uniprot(uniprot).each do |model|
       output_fn = File.join(output_dir, "#{model.full_name}.txt")
+      next  if File.exist?(output_fn)
+      $stderr.puts "Calculate AUC: #{output_fn}"
 
       File.open(output_fn, 'w') do |fw|
         SequenceDataset.each_for_uniprot(uniprot) do |control|

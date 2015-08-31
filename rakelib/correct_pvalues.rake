@@ -7,6 +7,8 @@ require 'find_pvalue_results'
 # from_file - is a threshold-pvalue list
 # to_file - is a list of corrected pvalues
 def correct_pvalues(from_file, to_file, median_length:, model_length:)
+  return  if File.exist?(to_file)
+  $stderr.puts "Correct pvalues: #{from_file} --> #{to_file}"
   pvalues = FindPvalueResults.each_in_file(from_file).map(&:pvalue)
   corrected_pvalues = pvalues.map{|pvalue|
     1.0 - (1.0 - pvalue) ** (2 * (median_length - model_length + 1))

@@ -50,7 +50,10 @@ def rename_motifs(src_glob, dest_folder,
     uniprot_ids.each{|uniprot_id|
       mkdir_p File.join(dest_folder, uniprot_id)  unless Dir.exist?(File.join(dest_folder, uniprot_id))
       motif_full_name = "#{uniprot_id}~#{short_collection_id}~#{motif_name}"
-      File.write(File.join(dest_folder, uniprot_id, "#{motif_full_name}#{extname}"), "> #{motif_full_name}\n#{motif_text}")
+      dest = File.join(dest_folder, uniprot_id, "#{motif_full_name}#{extname}")
+      next  if File.exist?(dest)
+      $stderr.puts "Rename #{src} --> #{dest}"
+      File.write(dest, "> #{motif_full_name}\n#{motif_text}")
     }
   end
 end
@@ -68,6 +71,8 @@ namespace :collect_and_normalize_data do
 
     rename_motifs 'models/pcm/mono/homer/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'HO', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['HOMER'][motif] }
     rename_motifs 'models/pcm/mono/swissregulon/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SR', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['SWISSREGULON'][motif] }
+
+    # Jaspar has already been put into this folder at the previous step by collect_pcm_jaspar task
     # rename_motifs 'models/pcm/mono/jaspar/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'JA', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['JASPAR'][motif.split.first] }
 
     rename_motifs 'models/pcm/mono/selex_ftr/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SE'

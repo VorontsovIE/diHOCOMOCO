@@ -17,9 +17,11 @@ SequenceDataset.each_dataset do |control|
     control.mono_models.each do |model|
       scores_fn = File.join('occurences/scores/mono/', control.uniprot, model.full_name, "#{control.name}.txt")
       scores = SarusResults.each_in_file(scores_fn).map(&:score)
+      output_file = File.join('occurences/pvalues/', control.uniprot, model.full_name, "#{control.name}.txt")
+      next  if File.exist?(output_file)
       Ape.run_find_pvalue   model.path_to_pwm,
                             scores,
-                            output_file: File.join('occurences/pvalues/', control.uniprot, model.full_name, "#{control.name}.txt"),
+                            output_file: output_file,
                             background: File.read(control.local_di_background_path),
                             discretization: 1000,
                             additional_options: ['--precalc', File.join('models/thresholds/mono/all/', control.name)] + ['--from-mono'],
@@ -33,9 +35,11 @@ SequenceDataset.each_dataset do |control|
     control.di_models.each do |model|
       scores_fn = File.join('occurences/scores/di/', control.uniprot, model.full_name, "#{control.name}.txt")
       scores = SarusResults.each_in_file(scores_fn).map(&:score)
+      output_file = File.join('occurences/pvalues/', control.uniprot, model.full_name, "#{control.name}.txt")
+      next  if File.exist?(output_file)
       Ape.run_find_pvalue   model.path_to_pwm,
                             scores,
-                            output_file: File.join('occurences/pvalues/', control.uniprot, model.full_name, "#{control.name}.txt"),
+                            output_file: output_file,
                             background: File.read(control.local_di_background_path),
                             discretization: 1000,
                             additional_options: ['--precalc', File.join('models/thresholds/di/all/', control.name)],

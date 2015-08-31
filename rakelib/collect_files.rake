@@ -1,9 +1,11 @@
 require 'jaspar'
 require 'uniprot_info'
 
+# mapping should map a file into a file name, not a folder name!
 def copy_files(src_glob, mapping)
   FileList[src_glob].each do |src|
     dest = src.pathmap(mapping)
+    next  if File.exist?(dest)
     dir = File.dirname(dest)
     mkdir_p dir  unless Dir.exist?(dir)
     cp src, dest
