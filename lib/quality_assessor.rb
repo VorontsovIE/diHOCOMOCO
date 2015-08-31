@@ -8,7 +8,7 @@ class QualityAssessor
   end
 
   def self.load_hocomoco_qualities(filename)
-    File.readlines(filename).map{|line|
+    File.readlines(filename).drop(1).map{|line|
       line.chomp.split("\t")
     }.map{|row|
       [row[0],row[2]]
