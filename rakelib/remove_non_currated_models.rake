@@ -8,8 +8,13 @@ task :remove_non_currated_models do
     rm model.path_to_pwm
 
     SequenceDataset.each_for_uniprot(model.uniprot) do |control|
-      rm File.join('models/thresholds/mono/all/', control.name, "#{model.full_name}.thr")
-      rm File.join('models/thresholds/di/all/', control.name, "#{model.full_name}.thr")
+      if model.arity_type == 'mono'
+        rm File.join('models/thresholds/mono/all/', control.name, "#{model.full_name}.thr")
+      elsif model.arity_type == 'di'
+        rm File.join('models/thresholds/di/all/', control.name, "#{model.full_name}.thr")
+      else
+        raise 'Unknown model arity'
+      end
     end
 
     rm_rf  File.join('occurences/scores/mono/', model.uniprot, model.full_name)
