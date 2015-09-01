@@ -20,11 +20,6 @@ class AUCInfosFiltering
   end
 
   def remove_bad_datasets_and_models!(dataset_quality_by_name, min_auc)
-    # Models were manually currated, some of models are inquality.
-    # One should remove models not passed curration step before dataset assessment
-    remove_models!(models_failed_curration(dataset_quality_by_name))
-    # remove_datasets_wo_models!
-
     # bad datasets are those not passing threshold
     bad_datasets = datasets_not_passing_auc_check(min_auc)
     remove_datasets!(bad_datasets)
@@ -36,11 +31,6 @@ class AUCInfosFiltering
     }
     remove_models!(models_by_bad_datasets)
     remove_datasets_wo_models!
-  end
-
-
-  def models_failed_curration(dataset_quality_by_name)
-    dataset_quality_by_name.each_value.reject(&:pass_quality_control?).flat_map(&:model_names)
   end
 
   def datasets_not_passing_auc_check(min_auc)
