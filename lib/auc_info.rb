@@ -31,6 +31,28 @@ class AUCInfo
     }.to_h
   end
 
+  # {uniprot => {model => auc} }
+  def model_perfomances_by_uniprot
+    median_aucs_by_model.group_by{|model_name, auc|
+      Model.get_uniprot(model_name)
+    }.map{|uniprot, model_auc_pairs|
+      [uniprot, model_auc_pairs.to_h]
+    }.to_h
+  end
+
+  # {uniprot => {collection => [model, auc] } }
+  def model_perfomances_collections_grouped
+    model_perfomances_by_uniprot.map{|uniprot, auc_by_model|
+      best_model_with_auc_by_collection = auc_by_model.group_by{|model_name, auc|
+        Model.get_collection_short_name(model_name)
+      }.map{|short_collection_id, model_aucs|
+        [short_collection_id, model_aucs.max_by{|model_name, auc| auc }]
+      }.to_h
+      [uniprot, best_model_with_auc_by_collection]
+    }.to_h
+  end
+
+
   # Dataset removal operations
   def remove_dataset!(dataset_name)
     @auc_by_dataset_and_model.delete(dataset_name)
