@@ -4,14 +4,14 @@ task :remove_non_currated_models do
   models_failed_curration = dataset_qualities.reject(&:pass_quality_control?).flat_map(&:models)
   models_failed_curration.each do |model|
     $stderr.puts "Remove non-currated model #{model.full_name}"
-    rm model.path_to_pcm
-    rm model.path_to_pwm
+    rm_f model.path_to_pcm
+    rm_f model.path_to_pwm
 
     SequenceDataset.each_for_uniprot(model.uniprot) do |control|
       if model.arity_type == 'mono'
-        rm File.join('models/thresholds/mono/all/', control.name, "#{model.full_name}.thr")
+        rm_f File.join('models/thresholds/mono/all/', control.name, "#{model.full_name}.thr")
       elsif model.arity_type == 'di'
-        rm File.join('models/thresholds/di/all/', control.name, "#{model.full_name}.thr")
+        rm_f File.join('models/thresholds/di/all/', control.name, "#{model.full_name}.thr")
       else
         raise 'Unknown model arity'
       end
