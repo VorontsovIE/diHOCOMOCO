@@ -14,7 +14,7 @@ task  :sequence_logos do
     opts = []
     opts += ['--logo-folder', logo_folder]
     Open3.popen2('sequence_logo', *opts){|fread, fwrite|
-      fread.puts pcm_files
+      fread.puts Shellwords.join(pcm_files)
       fread.close
     }
   end
@@ -33,7 +33,7 @@ task  :sequence_logos do
     opts += ['--logo-folder', logo_folder]
     opts += ['--dinucleotide']
     Open3.popen2('sequence_logo', *opts){|fread, fwrite|
-      fread.puts pcm_files
+      fread.puts Shellwords.join(pcm_files)
       fread.close
     }
   end
