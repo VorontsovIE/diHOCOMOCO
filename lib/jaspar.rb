@@ -4,9 +4,9 @@ module Jaspar
   MatrixInfo = Struct.new(:matrix_id, :collection, :base_id, :version, :name, :pcm_matrix, :uniprot_acs, :uniprot_ids, :species_ids, :species_names) do
     # Actually uniprot_ac can also be refseq / EMBL identifier
     def full_name; "#{base_id}.#{version} #{name}"; end
-    def matrix_str
+    def matrix_str(matrix_name: nil)
       matrix_wo_name_str = pcm_matrix.map{|row| row.join("\t") }.join("\n")
-        ">#{full_name}\n#{matrix_wo_name_str}"
+        ">#{matrix_name || full_name}\n#{matrix_wo_name_str}"
     end
     def to_s; full_name; end
     def inspect; to_s; end

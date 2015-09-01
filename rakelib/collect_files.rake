@@ -61,7 +61,7 @@ namespace :collect_and_normalize_data do
         pcm_filename_2 = File.join('models/pcm/mono/all/', uniprot_id, "#{uniprot_id}~JA~#{info.full_name}.pcm")
         $stderr.puts "Writing #{uniprot_id}~JA~#{info.full_name}"
         File.write(pcm_filename_1, info.matrix_str)
-        File.write(pcm_filename_2, info.matrix_str)
+        File.write(pcm_filename_2, info.matrix_str(matrix_name: "#{uniprot_id}~JA~#{info.full_name}"))
       end
     }
   end
