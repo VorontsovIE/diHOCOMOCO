@@ -30,6 +30,7 @@ class QualityAssessor
   def calculate_quality(model_name)
     is_hocomoco_model = model_name.match(/~HL~/)
     is_chipseq_model = model_name.match(/~CM~|~CD~/)
+    is_selex_rebuilt_model = model_name.match(/~SMF~|~SMS~|~SDF~|~SDS~/)
 
     num_datasets_pass_highquality_auc = num_datasets_passing_auc(model_name, 0.9)
     num_datasets_pass_optimal_auc = num_datasets_passing_auc(model_name, 0.7)
@@ -53,10 +54,14 @@ class QualityAssessor
         'C'
       elsif num_datasets_pass_minimal_auc == 1
         'D'
-      elsif is_hocomoco_model
-        hocomoco_quality(model_name)
-      else
-        'E'
+      else # num_datasets_pass_minimal_auc == 0
+        if is_hocomoco_model
+          hocomoco_quality(model_name)
+        elsif is_selex_rebuilt_model
+          'E'
+        else
+          'N/A'
+        end
       end
     end
   end
