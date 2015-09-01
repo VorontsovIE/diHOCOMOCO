@@ -28,9 +28,10 @@ class QualityAssessor
   end
 
   def calculate_quality(model_name)
-    is_hocomoco_model = model_name.match(/~HL~/)
-    is_chipseq_model = model_name.match(/~CM~|~CD~/)
-    is_selex_rebuilt_model = model_name.match(/~SMF~|~SMS~|~SDF~|~SDS~/)
+    collection_name = Model.get_collection_short_name(model_name)
+    is_hocomoco_model = (collection_name == 'HL')
+    is_chipseq_model = Models::ChipseqCollections.include?(collection_name)
+    is_selex_rebuilt_model = Models::SelexRebuiltCollections.include?(collection_name)
 
     num_datasets_pass_highquality_auc = num_datasets_passing_auc(model_name, 0.9)
     num_datasets_pass_optimal_auc = num_datasets_passing_auc(model_name, 0.7)

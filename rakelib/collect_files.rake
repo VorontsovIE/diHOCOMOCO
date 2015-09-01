@@ -23,11 +23,13 @@ namespace :collect_and_normalize_data do
     copy_files 'htselex/TAIPALE_uniprot.pcm/*.pat', 'models/pcm/mono/selex_ftr/%n.pcm'
     copy_files 'htselex_mono_di/mono_ftr/*.pcm', 'models/pcm/mono/selex_rebuilt_ftr/%n.pcm'
     copy_files 'htselex_mono_di/mono_sub/*.pcm', 'models/pcm/mono/selex_rebuilt_sub/%n.pcm'
+    copy_files 'selex_integrated/mono_fp/*.pcm', 'models/pcm/mono/selex_integrated/%n_HUMAN.pcm'
     copy_files 'chipseq_models/mono/*.pcm', 'models/pcm/mono/chipseq/%n.pcm'
 
     copy_files 'chipseq_models/di/*.dpcm', 'models/pcm/di/chipseq/%n.dpcm'
     copy_files 'htselex_mono_di/di_ftr/*.dpcm', 'models/pcm/di/selex_rebuilt_ftr/%n.dpcm'
     copy_files 'htselex_mono_di/di_sub/*.dpcm', 'models/pcm/di/selex_rebuilt_sub/%n.dpcm'
+    copy_files 'selex_integrated/di_fp/*.dpcm', 'models/pcm/di/selex_integrated/%n_HUMAN.dpcm'
   end
 
   task :collect_pcm_jaspar do

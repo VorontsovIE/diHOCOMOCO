@@ -130,4 +130,9 @@ module Models
   def self.all_uniprots
     all_models.map(&:uniprot).uniq
   end
+
+  MonoCollections = ['HL', 'HO', 'SR', 'JA', 'SE', 'SMF', 'SMS', 'SMI', 'CM']
+  DiCollections = ['SDF', 'SDS', 'SDI', 'CD']
+  ChipseqCollections = ['CM', 'CD']
+  SelexRebuiltCollections = ['SMF', 'SMS', 'SMI', 'SDF', 'SDS', 'SDI']
 end

@@ -78,25 +78,12 @@ namespace :collect_and_normalize_data do
     rename_motifs 'models/pcm/mono/selex_ftr/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SE'
     rename_motifs 'models/pcm/mono/selex_rebuilt_ftr/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SMF'
     rename_motifs 'models/pcm/mono/selex_rebuilt_sub/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SMS'
+    rename_motifs 'models/pcm/mono/selex_integrated/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SMI'
     rename_motifs 'models/pcm/mono/chipseq/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'CM'
 
     rename_motifs 'models/pcm/di/selex_rebuilt_ftr/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'SDF'
     rename_motifs 'models/pcm/di/selex_rebuilt_sub/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'SDS'
+    rename_motifs 'models/pcm/di/selex_integrated/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'SDI'
     rename_motifs 'models/pcm/di/chipseq/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'CD'
-
-    #####################
-    # rename_motifs 'models/words/mono/hocomoco_legacy/*.words', 'models/words/mono/all/', short_collection_id: 'HL', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['HOCOMOCO'][motif] }
-    # rename_motifs 'models/words/mono/homer/*.words', 'models/words/mono/all/', short_collection_id: 'HO', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['HOMER'][motif] }
-    # rename_motifs 'models/words/mono/swissregulon/*.words', 'models/words/mono/all/', short_collection_id: 'SR', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['SWISSREGULON'][motif] }
-    # rename_motifs 'models/words/mono/jaspar/*.words', 'models/words/mono/all/', short_collection_id: 'JA', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['JASPAR'][motif] }
-
-    # rename_motifs 'models/words/mono/selex_ftr/*.words', 'models/words/mono/all/', short_collection_id: 'SE'
-    # rename_motifs 'models/words/mono/selex_rebuilt_ftr/*.words', 'models/words/mono/all/', short_collection_id: 'SMF'
-    # rename_motifs 'models/words/mono/selex_rebuilt_sub/*.words', 'models/words/mono/all/', short_collection_id: 'SMS'
-    # rename_motifs 'models/words/mono/chipseq/*.words', 'models/words/mono/all/', short_collection_id: 'CM'
-
-    # rename_motifs 'models/words/di/selex_rebuilt_ftr/*.words', 'models/words/di/all/', short_collection_id: 'SDF'
-    # rename_motifs 'models/words/di/selex_rebuilt_sub/*.words', 'models/words/di/all/', short_collection_id: 'SDS'
-    # rename_motifs 'models/words/di/chipseq/*.words', 'models/words/di/all/', short_collection_id: 'CD'
   end
 end
