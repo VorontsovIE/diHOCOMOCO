@@ -15,10 +15,10 @@ task :scores_to_pvalues_di
 SequenceDataset.each_dataset do |control|
   task "scores_to_pvalues_mono:#{control.name}" do
     control.mono_models.each do |model|
-      scores_fn = File.join('occurences/scores/mono/', control.uniprot, model.full_name, "#{control.name}.txt")
-      scores = SarusResults.each_in_file(scores_fn).map(&:score)
       output_file = File.join('occurences/pvalues/', control.uniprot, model.full_name, "#{control.name}.txt")
       next  if File.exist?(output_file)
+      scores_fn = File.join('occurences/scores/mono/', control.uniprot, model.full_name, "#{control.name}.txt")
+      scores = SarusResults.each_in_file(scores_fn).map(&:score)
       Ape.run_find_pvalue   model.path_to_pwm,
                             scores,
                             output_file: output_file,
@@ -33,10 +33,10 @@ SequenceDataset.each_dataset do |control|
 
   task "scores_to_pvalues_di:#{control.name}" do
     control.di_models.each do |model|
-      scores_fn = File.join('occurences/scores/di/', control.uniprot, model.full_name, "#{control.name}.txt")
-      scores = SarusResults.each_in_file(scores_fn).map(&:score)
       output_file = File.join('occurences/pvalues/', control.uniprot, model.full_name, "#{control.name}.txt")
       next  if File.exist?(output_file)
+      scores_fn = File.join('occurences/scores/di/', control.uniprot, model.full_name, "#{control.name}.txt")
+      scores = SarusResults.each_in_file(scores_fn).map(&:score)
       Ape.run_find_pvalue   model.path_to_pwm,
                             scores,
                             output_file: output_file,
