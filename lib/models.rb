@@ -106,17 +106,17 @@ module Models
 
   def self.mono_models_by_uniprot(uniprot)
     @mono_models_by_uniprot ||= mono_models.group_by(&:uniprot)
-    @mono_models_by_uniprot[uniprot]
+    @mono_models_by_uniprot.fetch(uniprot) { [] }
   end
 
   def self.di_models_by_uniprot(uniprot)
     @di_models_by_uniprot ||= di_models.group_by(&:uniprot)
-    @di_models_by_uniprot[uniprot]
+    @di_models_by_uniprot.fetch(uniprot) { [] }
   end
 
   def self.all_models_by_uniprot(uniprot)
     @all_models_by_uniprot ||= all_models.group_by(&:uniprot)
-    @all_models_by_uniprot[uniprot]
+    @all_models_by_uniprot.fetch(uniprot) { [] }
   end
 
   def self.mono_uniprots
