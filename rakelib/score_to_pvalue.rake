@@ -22,7 +22,7 @@ SequenceDataset.each_dataset do |control|
       Ape.run_find_pvalue   model.path_to_pwm,
                             scores,
                             output_file: output_file,
-                            background: File.read(control.local_di_background_path),
+                            background: File.read(control.local_di_background_path), # background is unnecessary when thresholds are precalculated
                             discretization: 1000,
                             additional_options: ['--precalc', File.join('models/thresholds/mono/all/', control.name)] + ['--from-mono'],
                             mode: :di
@@ -40,7 +40,7 @@ SequenceDataset.each_dataset do |control|
       Ape.run_find_pvalue   model.path_to_pwm,
                             scores,
                             output_file: output_file,
-                            background: File.read(control.local_di_background_path),
+                            background: File.read(control.local_di_background_path), # background is unnecessary when thresholds are precalculated
                             discretization: 1000,
                             additional_options: ['--precalc', File.join('models/thresholds/di/all/', control.name)],
                             mode: :di
