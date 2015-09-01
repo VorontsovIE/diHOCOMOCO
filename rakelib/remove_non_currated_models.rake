@@ -7,6 +7,10 @@ task :remove_non_currated_models do
     rm_f model.path_to_pcm
     rm_f model.path_to_pwm
 
+    # Normally done above is enough but
+    # if one has already calculated thresholds etc
+    # we'd better remove them too
+
     SequenceDataset.each_for_uniprot(model.uniprot) do |control|
       if model.arity_type == 'mono'
         rm_f File.join('models/thresholds/mono/all/', control.name, "#{model.full_name}.thr")

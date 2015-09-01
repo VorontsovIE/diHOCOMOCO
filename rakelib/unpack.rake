@@ -20,10 +20,3 @@ end
 
 desc 'Unpack archives'
 task :unpack => [:unpack_zips, :unpack_motif_collections]
-
-desc 'Move all motifs/words into their folders, normalize their names, convert to PWMs and so on'
-task 'collect_and_normalize_data' do
-  Rake::Task['collect_and_normalize_data:collect_pcm'].invoke
-  Rake::Task['collect_and_normalize_data:rename_motifs'].invoke
-  Rake::Task['collect_and_normalize_data:convert_pcm_to_pwm'].invoke
-end
