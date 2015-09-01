@@ -26,12 +26,16 @@ DatasetQuality = Struct.new(:dataset_name,
     obj.to_s.downcase
   end
 
-  def model_names; [monoPWM, diPWM]; end
-  def monoPWM; "#{tf}~CM~#{dataset_name}";  end
-  def diPWM; "#{tf}~CD~#{dataset_name}";  end
+  def model_names; [monoPWM_name, diPWM_name]; end
+  def monoPWM_name; "#{tf}~CM~#{dataset_name}";  end
+  def diPWM_name; "#{tf}~CD~#{dataset_name}";  end
+
+  def models; [monoPWM_model, diPWM_model]; end
+  def monoPWM_model; Model.new(monoPWM_name, :mono);  end
+  def diPWM_model; Model.new(diPWM_name, :di);  end
 
   def self.from_row(row)
-    chipseq_peak,  diPWM, di_selex_similarity, di_hocomoco_similarity,  monoPWM, mono_selex_similarity, mono_hocomoco_similarity,
+    chipseq_peak,  _diPWM, di_selex_similarity, di_hocomoco_similarity,  _monoPWM, mono_selex_similarity, mono_hocomoco_similarity,
     tf, best_similarity,  similarity_check, consistency_check, motif_check,  chance_to_save = row.size.times.map{|i| row[i] ? row[i].value : '' }
     self.new("#{tf}^#{chipseq_peak}", # dataset_name in table has no info about uniprot, so we extract its name from model name
             nullable_float(di_selex_similarity), nullable_float(di_hocomoco_similarity),
