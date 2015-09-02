@@ -33,7 +33,7 @@ class QualityAssessor
     is_chipseq_model = Models::ChipseqCollections.include?(collection_name)
     is_selex_rebuilt_model = Models::SelexRebuiltCollections.include?(collection_name)
 
-    num_datasets_pass_highquality_auc = num_datasets_passing_auc(model_name, 0.9)
+    # num_datasets_pass_highquality_auc = num_datasets_passing_auc(model_name, 0.9)
     num_datasets_pass_optimal_auc = num_datasets_passing_auc(model_name, 0.7)
     num_datasets_pass_minimal_auc = num_datasets_passing_auc(model_name, 0.6)
     
@@ -41,7 +41,8 @@ class QualityAssessor
     # return hocomoco_quality(model_name)  if is_hocomoco_model
 
     if num_datasets_pass_optimal_auc >= 2
-      return (num_datasets_pass_highquality_auc >= 1) ? 'A+' : 'A'
+      # return (num_datasets_pass_highquality_auc >= 1) ? 'A+' : 'A'
+      'A'
     elsif num_datasets_pass_optimal_auc == 1
       if !is_chipseq_model
         'B'
