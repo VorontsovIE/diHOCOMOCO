@@ -1,6 +1,4 @@
 require 'dataset_qualities'
-require 'models'
-require 'sequence_dataset'
 require 'median'
 require 'auc_info'
 require 'forwardable'
@@ -17,9 +15,12 @@ class AUCInfosFiltering
 
   def initialize(auc_infos)
     @auc_infos = auc_infos
+    @dataset_quality_by_name = DatasetQuality.each_in_xlsx('check_result.xlsx').map{|infos|
+      [infos.dataset_name, infos]
+    }.to_h
   end
 
-  def remove_bad_datasets_and_models!(dataset_quality_by_name, min_auc)
+  def remove_bad_datasets_and_models!(min_auc)
     # bad datasets are those not passing threshold
     bad_datasets = datasets_not_passing_auc_check(min_auc)
     remove_datasets!(bad_datasets)
@@ -27,7 +28,7 @@ class AUCInfosFiltering
 
     # remove models created by bad datasets
     models_by_bad_datasets = bad_datasets.flat_map{|dataset_name|
-      dataset_quality_by_name[dataset_name].model_names
+      @dataset_quality_by_name[dataset_name].model_names
     }
     remove_models!(models_by_bad_datasets)
     remove_datasets_wo_models!
