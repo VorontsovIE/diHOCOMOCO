@@ -135,11 +135,10 @@ module Models
     all_models.map(&:uniprot).uniq
   end
 
-  MonoCollections = ['HL', 'HO', 'SR', 'JA', 'SE', 'SMF', 'SMS', 'SMI', 'CM']
-  DiCollections = ['SDF', 'SDS', 'SDI', 'CD']
+  MonoCollections = ['HL', 'HO', 'SR', 'JA', 'SE', 'SMF', 'SMI', 'CM']
+  DiCollections = ['SDF', 'SDI', 'CD']
   ChipseqCollections = ['CM', 'CD']
-  SelexRebuiltCollections = ['SMF', 'SMS', 'SMI', 'SDF', 'SDS', 'SDI']
-  SelexIntegratedCollections = ['SMI', 'SDI']
+  SelexRebuiltCollections = ['SMF', 'SMI', 'SDF', 'SDI']
 
   # We take only denovo collections and hocomoco legacy for a final bundle
   CollectionsForFinalBundle = ChipseqCollections + SelexRebuiltCollections + ['HL']
