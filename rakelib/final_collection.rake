@@ -13,6 +13,7 @@ task :make_final_collection do
   ['HUMAN', 'MOUSE'].each{|species|
     mkdir_p "final_bundle/#{species}/mono/pcm/"
     mkdir_p "final_bundle/#{species}/mono/pwm/"
+    mkdir_p "final_bundle/#{species}/mono/logo/"
   }
   best_models_mono = []
   best_models_mono += best_models_with_benchmark(collection_perfomances, Models::CollectionsForFinalBundle & Models::MonoCollections, :mono)
@@ -20,11 +21,13 @@ task :make_final_collection do
   best_models_mono.each{|model|
     cp model.path_to_pcm, "final_bundle/#{model.species}/mono/pcm/"
     cp model.path_to_pwm, "final_bundle/#{model.species}/mono/pwm/"
+    cp model.path_to_logo, "final_bundle/#{model.species}/mono/logo/"
   }
 
   ['HUMAN', 'MOUSE'].each{|species|
     mkdir_p "final_bundle/#{species}/di/pcm/"
     mkdir_p "final_bundle/#{species}/di/pwm/"
+    mkdir_p "final_bundle/#{species}/di/logo/"
   }
   best_models_di = []
   best_models_di += best_models_with_benchmark(collection_perfomances, Models::CollectionsForFinalBundle & Models::DiCollections, :di)
@@ -33,5 +36,6 @@ task :make_final_collection do
   best_models_di.each{|model|
     cp model.path_to_pcm, "final_bundle/#{model.species}/di/pcm/"
     cp model.path_to_pwm, "final_bundle/#{model.species}/di/pwm/"
+    cp model.path_to_logo, "final_bundle/#{model.species}/di/logo/"
   }
 end

@@ -76,6 +76,10 @@ class Model
     File.join('models/pwm', @mono_or_di_mode.to_s, 'all', uniprot, "#{full_name}.#{pwm_extension}")
   end
 
+  def path_to_logo
+    File.join('models/logo', uniprot, "#{full_name}.png")
+  end
+
   def to_s; "<#{@mono_or_di_mode}: #{full_name}>"; end
   def inspect; to_s; end
 
