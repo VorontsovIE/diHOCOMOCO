@@ -50,29 +50,6 @@ task :final_collection_summary do
 
   hocomoco_qualities = File.readlines('hocomoco_qualities.tsv').map{|line| line.chomp.split("\t") }.to_h
 
-  # We don't add any dinucleotide models w/o validation, only mononucleotide
-  best_models_wo_validation = best_models_wo_benchmark(collection_perfomances, ['HL', 'SMI', 'CM'], :mono)
-  best_models_wo_validation.each do |best_model|
-    model_collection = best_model.collection_short_name
-    num_hocomoco_models = Models.mono_models_by_uniprot(best_model.uniprot).count{|model| model.collection_short_name == 'HL' }
-    if model_collection == 'HL'
-      quality = hocomoco_qualities[best_model.model_name]
-    elsif model_collection == 'SMI'
-      quality = 'E'
-    else
-      raise "Model `#{best_model}` can\'t be selected without benchmark. Only HL and SMI models can, CM can't be here too"
-    end
-    results << [
-      best_model.uniprot, best_model.species,
-      nil, Models::CollectionNames[model_collection], best_model.full_name, quality,
-      num_hocomoco_models,
-      'Mono',
-      nil, Models::CollectionNames[model_collection], best_model.full_name, quality,
-      nil, nil, nil, nil,
-      *[nil] * collections.size
-    ]
-  end
-
   File.open('collection_perfomances.tsv', 'w') do |fw|
     fw.puts headers.join("\t")
     results.each{|row|
