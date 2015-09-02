@@ -10,7 +10,7 @@ GEM
       nokogiri (>= 1.4.4)
       rubyzip (>= 1.1.6)
     rubyzip (1.1.7)
-    sequence_logo (1.1.2)
+    sequence_logo (1.2.0)
       rmagick (~> 2.13.1)
 
 PLATFORMS
@@ -19,7 +19,7 @@ PLATFORMS
 DEPENDENCIES
   bioinform
   rubyXL
-  sequence_logo
+  sequence_logo (~> 1.2.0)
 
 BUNDLED WITH
    1.10.6
