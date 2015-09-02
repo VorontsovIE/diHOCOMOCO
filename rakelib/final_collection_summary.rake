@@ -7,7 +7,7 @@ require 'quality_assessor'
 desc 'Make final collection summary table (which model won etc)'
 task :final_collection_summary do
   filtering = AUCInfosFiltering.new(AUCInfo.load_all_infos)
-  filtering.remove_bad_datasets_and_models!(0.6)
+  filtering.remove_bad_datasets_and_models!(0.65)
   quality_assessor = QualityAssessor.new(filtering)
   # not_filtered_aucs = AUCInfo.load_all_infos # Don't use it in AUCInfosFiltering because it will modify this variable
   collection_perfomances = filtering.model_perfomances_collections_grouped

@@ -1,7 +1,7 @@
 require 'rubyXL'
 
-# similarity check: ["FAIL", "IMPOSSIBLE", "PASS"]
-# consistency check: ["IMPOSSIBLE", "NOT REQUIRED", "-", "FAIL", "PASS", "FAIl", nil]
+# similarity check: ["FAIL", "IMPOSSIBLE", "PASS", "-"]
+# consistency check: ["IMPOSSIBLE", "NOT REQUIRED", "-", "FAIL", "PASS", "FAIl"]
 # motif check: ["FAIL", "NOT REQUIRED", "WRONG", "PASS", "-", "CONSISTENT", "FAIl", "UNKNOWN"]
 #
 # chance to save: ["+", "NOT REQUIRED", "-"]

@@ -3,6 +3,7 @@ require 'sequence_dataset'
 require 'median'
 
 class AUCInfo
+  attr_reader :auc_by_dataset_and_model, :auc_by_model_and_dataset
   def initialize
     @auc_by_model_and_dataset = Hash.new{|h,k| h[k] = {} }
     @auc_by_dataset_and_model = Hash.new{|h,k| h[k] = {} }
@@ -25,15 +26,25 @@ class AUCInfo
     median(aucs_for_model(model_name))
   end
 
+  def max_auc(model_name)
+    aucs_for_model(model_name).max
+  end
+
   def median_aucs_by_model
     model_names.map{|model_name|
       [model_name, median_auc(model_name)]
     }.to_h
   end
 
+  def max_aucs_by_model
+    model_names.map{|model_name|
+      [model_name, max_auc(model_name)]
+    }.to_h
+  end
+
   # {uniprot => {model => auc} }
   def model_perfomances_by_uniprot
-    median_aucs_by_model.group_by{|model_name, auc|
+    max_aucs_by_model.group_by{|model_name, auc|
       Model.get_uniprot(model_name)
     }.map{|uniprot, model_auc_pairs|
       [uniprot, model_auc_pairs.to_h]

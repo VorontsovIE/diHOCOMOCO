@@ -26,17 +26,19 @@ class AUCInfosFiltering
     remove_datasets!(bad_datasets)
     remove_models_wo_datasets!
 
-    # remove models created by bad datasets
-    models_by_bad_datasets = bad_datasets.flat_map{|dataset_name|
-      @dataset_quality_by_name[dataset_name].model_names
-    }
-    remove_models!(models_by_bad_datasets)
-    remove_datasets_wo_models!
+    # # remove models created by bad datasets
+    # models_by_bad_datasets = bad_datasets.flat_map{|dataset_name|
+    #   @dataset_quality_by_name[dataset_name].model_names
+    # }
+    # remove_models!(models_by_bad_datasets)
+    # remove_datasets_wo_models!
   end
 
   def datasets_not_passing_auc_check(min_auc)
     dataset_names.select{|dataset_name|
-      aucs_for_dataset(dataset_name).empty? || aucs_for_dataset(dataset_name).max < min_auc
+      aucs = aucs_for_dataset(dataset_name)
+      num_models_passing_auc = aucs.count{|auc| auc >= min_auc }
+      aucs.empty? || num_models_passing_auc < 1 || (num_models_passing_auc <= 1 && aucs.size >= 2)
     }
   end
 end

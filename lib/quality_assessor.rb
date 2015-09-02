@@ -35,7 +35,7 @@ class QualityAssessor
 
     # num_datasets_pass_highquality_auc = num_datasets_passing_auc(model_name, 0.9)
     num_datasets_pass_optimal_auc = num_datasets_passing_auc(model_name, 0.7)
-    num_datasets_pass_minimal_auc = num_datasets_passing_auc(model_name, 0.6)
+    num_datasets_pass_minimal_auc = num_datasets_passing_auc(model_name, 0.65)
     
     # raise 'Impossible: best model doesn\'t pass filters'  if num_datasets(model_name) < 1
     # return hocomoco_quality(model_name)  if is_hocomoco_model

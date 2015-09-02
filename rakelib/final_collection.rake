@@ -6,7 +6,7 @@ require 'auc_infos_filtering'
 desc 'Collect final collection'
 task :make_final_collection do
   filtering = AUCInfosFiltering.new(AUCInfo.load_all_infos)
-  filtering.remove_bad_datasets_and_models!(0.6)
+  filtering.remove_bad_datasets_and_models!(0.65)
 
   collection_perfomances = filtering.model_perfomances_collections_grouped
 
