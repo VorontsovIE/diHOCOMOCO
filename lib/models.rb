@@ -135,4 +135,15 @@ module Models
   DiCollections = ['SDF', 'SDS', 'SDI', 'CD']
   ChipseqCollections = ['CM', 'CD']
   SelexRebuiltCollections = ['SMF', 'SMS', 'SMI', 'SDF', 'SDS', 'SDI']
+  SelexIntegratedCollections = ['SMI', 'SDI']
+
+  # We take only denovo collections and hocomoco legacy for a final bundle
+  CollectionsForFinalBundle = ChipseqCollections + SelexRebuiltCollections + ['HL']
+
+  ## We take only integrated collections from SELEX rebuilt when validation not available
+  ## And we don't take any SELEX motifs for dinucleotide models
+  ##
+  ## CollectionsForFinalBundleWithoutValidation - has an actual but unused value
+  ## (because ordered lists are used instead of sets to prioritize models by collection)
+  # CollectionsForFinalBundleWithoutValidation = ['HL', 'CM', 'CD', 'SMI']
 end
