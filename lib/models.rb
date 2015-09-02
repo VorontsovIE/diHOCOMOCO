@@ -149,4 +149,20 @@ module Models
   ## CollectionsForFinalBundleWithoutValidation - has an actual but unused value
   ## (because ordered lists are used instead of sets to prioritize models by collection)
   # CollectionsForFinalBundleWithoutValidation = ['HL', 'CM', 'CD', 'SMI']
+
+  CollectionNames = {
+    'HL' => 'HOCOMOCO-v9',
+    'HO' => 'HOMER',
+    'JA' => 'JASPAR',
+    'SR' => 'SWISSREGULON',
+    'SE' => 'HTSELEX',
+
+    'CM' => 'CHIPSEQ',
+    'SMF' => 'HTSELEX-R',
+    'SMI' => 'HTSELEX-I',
+
+    'CD' => 'DI-CHIPSEQ',
+    'SDF' => 'DI-HTSELEX-R',
+    'SDI' => 'DI-HTSELEX-I',
+  }
 end

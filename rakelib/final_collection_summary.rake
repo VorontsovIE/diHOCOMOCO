@@ -39,11 +39,11 @@ task :final_collection_summary do
 
     results << [
       uniprot, uniprot[/_(?<species>HUMAN|MOUSE)$/,:species],
-      *best_infos_total.values_at(:auc, :collection, :model, :quality),
+      *best_infos_total.values_at(:auc, :collection_fullname, :model, :quality),
       num_hocomoco_models,
       Models::MonoCollections.include?(best_infos_total[:collection]) ? 'Mono' : 'Di',
-      *best_infos_mono.values_at(:auc, :collection, :model, :quality),
-      *best_infos_di.values_at(:auc, :collection, :model, :quality),
+      *best_infos_mono.values_at(:auc, :collection_fullname, :model, :quality),
+      *best_infos_di.values_at(:auc, :collection_fullname, :model, :quality),
       *aucs
     ]
   end
@@ -64,10 +64,10 @@ task :final_collection_summary do
     end
     results << [
       best_model.uniprot, best_model.species,
-      nil, model_collection, best_model.full_name, quality,
+      nil, Models::CollectionNames[model_collection], best_model.full_name, quality,
       num_hocomoco_models,
       'Mono',
-      nil, model_collection, best_model.full_name, quality,
+      nil, Models::CollectionNames[model_collection], best_model.full_name, quality,
       nil, nil, nil, nil,
       *[nil] * collections.size
     ]

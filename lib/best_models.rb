@@ -16,6 +16,7 @@ def best_model_infos(model_infos_by_collection, quality_assessor, collections_of
   best_model, best_auc = model_infos_by_collection[best_collection]
   {
     collection: best_collection,
+    collection_fullname: Models::CollectionNames[best_collection],
     model: best_model,
     auc: best_auc,
     quality: quality_assessor.calculate_quality(best_model)
