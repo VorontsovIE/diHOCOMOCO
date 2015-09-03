@@ -56,7 +56,7 @@ end
 def pcm_to_pwm(from_file, to_file)
   output_dir = File.dirname(to_file)
   FileUtils.mkdir_p(output_dir)  unless Dir.exist?(output_dir)
-  parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 4)
+  parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 4, nucleotides_in: :columns)
   infos = parser.parse(File.read(from_file))
   name = infos[:name] || File.basename(from_file, '.pcm')
   pcm = Bioinform::MotifModel::PCM.new(infos[:matrix]).named(name)

@@ -18,10 +18,16 @@ module ModelKind
     def pcm_extension; 'pcm'; end
     def to_s; 'mono'; end
     def read_pcm(path_to_pcm)
-      Bioinform::MotifModel::PCM.from_file(path_to_pcm)
+      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 4, nucleotides_in: :columns)
+      infos = parser.parse(File.read(path_to_pcm))
+      name = infos[:name] || File.basename(path_to_pcm, ".#{pcm_extension}")
+      Bioinform::MotifModel::PCM.new(infos[:matrix]).named(name)
     end
     def read_pwm(path_to_pwm)
-      Bioinform::MotifModel::PWM.from_file(path_to_pwm)
+      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 4, nucleotides_in: :columns)
+      infos = parser.parse(File.read(path_to_pwm))
+      name = infos[:name] || File.basename(path_to_pwm, ".#{pwm_extension}")
+      Bioinform::MotifModel::PWM.new(infos[:matrix]).named(name)
     end
   end
 
@@ -31,13 +37,13 @@ module ModelKind
     def pcm_extension; 'dpcm'; end
     def to_s; 'di'; end
     def read_pcm(path_to_pcm)
-      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16)
+      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16, nucleotides_in: :columns)
       infos = parser.parse(File.read(path_to_pcm))
       name = infos[:name] || File.basename(path_to_pcm, ".#{pcm_extension}")
       Bioinform::MotifModel::DiPCM.new(infos[:matrix]).named(name)
     end
     def read_pwm(path_to_pwm)
-      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16)
+      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16, nucleotides_in: :columns)
       infos = parser.parse(File.read(path_to_pwm))
       name = infos[:name] || File.basename(path_to_pwm, ".#{pwm_extension}")
       Bioinform::MotifModel::DiPWM.new(infos[:matrix]).named(name)

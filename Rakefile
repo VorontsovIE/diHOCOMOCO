@@ -16,8 +16,6 @@ task :default do
   Rake::Task['calculate_local_backgrounds'].invoke # 5m
   Rake::Task['precalculate_thresholds'].invoke # 8950m; parallelizable
 
-#####  НАДО ПРОВЕРИТЬ ЧТО ПРИ ПЕРЕСЧЕТЕ НЕОБЯЗАТЕЛЬНО УДАЛЯТЬ СТАРЫЕ ПАПКИ
-
   Rake::Task['calculate_occurence_scores'].invoke # 770m; parallelizable
   Rake::Task['scores_to_pvalues'].invoke # 3570m; parallelizable; Sometimes can hang, kill hanged process remove result and run again
   Rake::Task['correct_pvalues'].invoke # 5m25s
