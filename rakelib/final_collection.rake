@@ -8,7 +8,7 @@ task :make_final_collection do
   filtering = AUCInfosFiltering.new(AUCInfo.load_all_infos)
   filtering.remove_bad_datasets_and_models!(0.65)
 
-  collection_perfomances = filtering.model_perfomances_collections_grouped
+  collection_perfomances = filtering.max_model_perfomances_collections_grouped
 
   ['HUMAN', 'MOUSE'].each{|species|
     mkdir_p "final_bundle/#{species}/mono/pcm/"

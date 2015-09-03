@@ -12,6 +12,8 @@ class AUCInfosFiltering
   def_delegators :@auc_infos, :model_names, :dataset_names, :aucs_for_dataset, :aucs_for_model
   def_delegators :@auc_infos, :dataset_names_for_model, :model_names_for_dataset
   def_delegators :@auc_infos, :model_perfomances_by_uniprot, :model_perfomances_collections_grouped
+  def_delegators :@auc_infos, :max_model_perfomances_by_uniprot, :max_model_perfomances_collections_grouped
+  def_delegators :@auc_infos, :median_model_perfomances_by_uniprot, :median_model_perfomances_collections_grouped
 
   def initialize(auc_infos)
     @auc_infos = auc_infos

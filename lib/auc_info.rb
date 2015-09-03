@@ -22,20 +22,24 @@ class AUCInfo
     @auc_by_model_and_dataset[model_name][dataset_name]
   end
 
+  # median AUC over datasets
   def median_auc(model_name)
     median(aucs_for_model(model_name))
   end
 
+  # max AUC over datasets
   def max_auc(model_name)
     aucs_for_model(model_name).max
   end
 
+  # {model => auc}
   def median_aucs_by_model
     model_names.map{|model_name|
       [model_name, median_auc(model_name)]
     }.to_h
   end
 
+  # {model => auc}
   def max_aucs_by_model
     model_names.map{|model_name|
       [model_name, max_auc(model_name)]
@@ -43,17 +47,25 @@ class AUCInfo
   end
 
   # {uniprot => {model => auc} }
-  def model_perfomances_by_uniprot
-    max_aucs_by_model.group_by{|model_name, auc|
+  def model_perfomances_by_uniprot(aucs_by_model)
+    aucs_by_model.group_by{|model_name, auc|
       Model.get_uniprot(model_name)
     }.map{|uniprot, model_auc_pairs|
       [uniprot, model_auc_pairs.to_h]
     }.to_h
   end
 
+  def max_model_perfomances_by_uniprot
+    model_perfomances_by_uniprot(max_aucs_by_model)
+  end
+
+  def median_model_perfomances_by_uniprot
+    model_perfomances_by_uniprot(median_aucs_by_model)
+  end
+
   # {uniprot => {collection => [model, auc] } }
-  def model_perfomances_collections_grouped
-    model_perfomances_by_uniprot.map{|uniprot, auc_by_model|
+  def model_perfomances_collections_grouped(aucs_by_model)
+    model_perfomances_by_uniprot(aucs_by_model).map{|uniprot, auc_by_model|
       best_model_with_auc_by_collection = auc_by_model.group_by{|model_name, auc|
         Model.get_collection_short_name(model_name)
       }.map{|short_collection_id, model_aucs|
@@ -63,6 +75,13 @@ class AUCInfo
     }.to_h
   end
 
+  def max_model_perfomances_collections_grouped
+    model_perfomances_collections_grouped(max_aucs_by_model)
+  end
+
+  def median_model_perfomances_collections_grouped
+    model_perfomances_collections_grouped(median_aucs_by_model)
+  end
 
   # Dataset removal operations
   def remove_dataset!(dataset_name)

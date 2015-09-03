@@ -10,17 +10,17 @@ task :final_collection_summary do
   filtering.remove_bad_datasets_and_models!(0.65)
   quality_assessor = QualityAssessor.new(filtering)
   # not_filtered_aucs = AUCInfo.load_all_infos # Don't use it in AUCInfosFiltering because it will modify this variable
-  collection_perfomances = filtering.model_perfomances_collections_grouped
+  collection_perfomances = filtering.max_model_perfomances_collections_grouped
 
   collections = (Models::MonoCollections + Models::DiCollections).sort
 
   headers = [
     'Uniprot', 'Species',
-    'Median AUC of best model', 'Best collection', 'Best model', 'Best model quality',
+    'Max AUC of best model', 'Best collection', 'Best model', 'Best model quality',
     'Number of hocomoco models for TF',
     'Mono or dinucleotide win',
-    'Median AUC of best mononucleotide model', 'Best mononucleotide collection', 'Best mononucleotide model', 'Best mononucleotide model quality',
-    'Median AUC of best dinucleotide model', 'Best dinucleotide collection', 'Best dinucleotide model', 'Best dinucleotide model quality',
+    'Max AUC of best mononucleotide model', 'Best mononucleotide collection', 'Best mononucleotide model', 'Best mononucleotide model quality',
+    'Max AUC of best dinucleotide model', 'Best dinucleotide collection', 'Best dinucleotide model', 'Best dinucleotide model quality',
     *collections
   ]
 
