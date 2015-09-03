@@ -13,7 +13,7 @@ task :default do
   Rake::Task['collect_and_normalize_data'].invoke # 1m
   Rake::Task['remove_non_currated_models'].invoke # 17s
 
-  Rake::Task['calculate_local_backgrounds'].invoke
+  Rake::Task['calculate_local_backgrounds'].invoke # 5m
   Rake::Task['precalculate_thresholds'].invoke # 8950m; parallelizable
 
   Rake::Task['calculate_occurence_scores'].invoke # 770m; parallelizable

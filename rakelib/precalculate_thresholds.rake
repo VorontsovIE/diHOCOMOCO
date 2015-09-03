@@ -14,6 +14,7 @@ SequenceDataset.each_dataset do |control|
     pwm_folder = File.join('models/pwm/mono/all/', control.uniprot)
     output_folder = File.join('models/thresholds/mono/all/', control.name)
     next  if Dir.exist?(output_folder) && FileList[File.join(pwm_folder, '*.pwm')].pathmap('%n').sort == FileList[File.join(output_folder, '*.thr')].pathmap('%n').sort
+    rm_rf output_folder
     Ape.run_precalculate_thresholds pwm_folder,
                                     output_folder: output_folder,
                                     background: File.read(control.local_di_background_path), # we always use dinucleotide background
@@ -29,6 +30,7 @@ SequenceDataset.each_dataset do |control|
     pwm_folder = File.join('models/pwm/di/all/', control.uniprot)
     output_folder = File.join('models/thresholds/di/all/', control.name)
     next  if Dir.exist?(output_folder)  &&  FileList[File.join(pwm_folder, '*.dpwm')].pathmap('%n').sort == FileList[File.join(output_folder, '*.thr')].pathmap('%n').sort
+    rm_rf output_folder
     Ape.run_precalculate_thresholds pwm_folder,
                                     output_folder: output_folder,
                                     background: File.read(control.local_di_background_path),
