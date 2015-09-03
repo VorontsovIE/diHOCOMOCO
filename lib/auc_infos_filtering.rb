@@ -17,7 +17,7 @@ class AUCInfosFiltering
 
   def initialize(auc_infos)
     @auc_infos = auc_infos
-    @dataset_quality_by_name = DatasetQuality.each_in_xlsx('check_result.xlsx').map{|infos|
+    @dataset_quality_by_name = DatasetQuality.each_in_tsv('check_result.tsv').map{|infos|
       [infos.dataset_name, infos]
     }.to_h
   end

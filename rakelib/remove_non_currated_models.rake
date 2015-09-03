@@ -1,6 +1,6 @@
 desc 'Remove models, failed curration'
 task :remove_non_currated_models do
-  dataset_qualities = DatasetQuality.each_in_xlsx('check_result.xlsx').to_a
+  dataset_qualities = DatasetQuality.each_in_tsv('check_result.tsv').to_a
   models_failed_curration = dataset_qualities.reject(&:pass_quality_control?).flat_map(&:models)
   models_failed_curration.each do |model|
     $stderr.puts "Remove non-currated model #{model.full_name}"
