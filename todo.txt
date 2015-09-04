@@ -59,7 +59,6 @@ ALX1_HUMAN_DBD_2 имеет внутри имя CART1^470
 	- scores_to_pvalues: переводит скоры в пвальюсы (для каждой модели на каждом контроле)
 	- correct_pvalues: переводит пвальюсы сайтов в пвальюсы сиквенсов (вероятность вытащить случайный сиквенс, такой что в нем будет хоть один сайт)
 	- calculate_auc: по пвальюсам сиквенсов считает площадь под ROC-кривой
-	- pluripotency_factors.zip
 
 исходные данные:
 	check_result.tsv
@@ -68,13 +67,13 @@ ALX1_HUMAN_DBD_2 имеет внутри имя CART1^470
 	FANTOM5_phase2_KNOWN_motifs_IDmapping.txt
 	htselex_mono_di.zip
 	htselex.zip
-	rocplotexample.zip
 	standard_motif_collections.tar.gz
-	training.zip
+	standard_motif_collections_update.tar.gz
 	uniprot_HomoSapiens_and_MusMusculus.txt
 	HOCOMOCOv9_motifs2uniprot.txt
 	hocomoco_qualities.tsv
 	selex_integrated.zip
+	pluripotency_factors.zip
 
 	ape-2.0.1.jar
 	sarus.jar
