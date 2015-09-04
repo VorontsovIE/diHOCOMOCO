@@ -20,6 +20,9 @@ namespace :collect_and_normalize_data do
     copy_files 'standard_motif_collections/pcm/swissregulon/*.pcm', 'models/pcm/mono/swissregulon/%n.pcm'
     # copy_files 'standard_motif_collections/pcm/jaspar/*.pcm', 'models/pcm/mono/jaspar/%n.pcm'
 
+    copy_files 'pluripotency_factors/mono/*.pcm', 'models/pcm/mono/papatsenko/%n.pcm'
+    copy_files 'pluripotency_factors/di/*.dpcm', 'models/pcm/di/papatsenko/%n.dpcm'
+
     copy_files 'htselex/TAIPALE_uniprot.pcm/*.pat', 'models/pcm/mono/selex_ftr/%n.pcm'
     copy_files 'htselex_mono_di/mono_ftr/*.pcm', 'models/pcm/mono/selex_rebuilt_ftr/%n.pcm'
     copy_files 'htselex_mono_di/mono_sub/*.pcm', 'models/pcm/mono/selex_rebuilt_sub/%n.pcm'

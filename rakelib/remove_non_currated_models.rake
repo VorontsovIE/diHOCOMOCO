@@ -1,5 +1,11 @@
 desc 'Remove models, failed curration'
 task :remove_non_currated_models do
+  # Datasets not in check_result.tsv are treated as good and passing curration
+  # (thus corresponding models are not removed).
+  #
+  # There're such models and datasets from Papatsenko et al. (2015)
+  # "Single-Cell Analyses of ESCs Reveal Alternative Pluripotent Cell States and
+  #  Molecular Mechanisms that Control Self-Renewal."
   dataset_qualities = DatasetQuality.each_in_tsv('check_result.tsv').to_a
   models_failed_curration = dataset_qualities.reject(&:pass_quality_control?).flat_map(&:models)
   models_failed_curration.each do |model|

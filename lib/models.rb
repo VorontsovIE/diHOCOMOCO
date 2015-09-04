@@ -164,13 +164,13 @@ module Models
     all_models.map(&:uniprot).uniq
   end
 
-  MonoCollections = ['HL', 'HO', 'SR', 'JA', 'SE', 'SMF', 'SMI', 'CM']
-  DiCollections = ['SDF', 'SDI', 'CD']
+  MonoCollections = ['HL', 'HO', 'SR', 'JA', 'SE', 'SMF', 'SMI', 'CM', 'PAPAM']
+  DiCollections = ['SDF', 'SDI', 'CD', 'PAPAD']
   ChipseqCollections = ['CM', 'CD']
   SelexRebuiltCollections = ['SMF', 'SMI', 'SDF', 'SDI']
 
   # We take only denovo collections and hocomoco legacy for a final bundle
-  CollectionsForFinalBundle = ChipseqCollections + SelexRebuiltCollections + ['HL']
+  CollectionsForFinalBundle = ChipseqCollections + SelexRebuiltCollections + ['HL', 'PAPAM', 'PAPAD']
 
   ## We take only integrated collections from SELEX rebuilt when validation not available
   ## And we don't take any SELEX motifs for dinucleotide models
@@ -193,5 +193,8 @@ module Models
     'CD' => 'DI-CHIPSEQ',
     'SDF' => 'DI-HTSELEX-R',
     'SDI' => 'DI-HTSELEX-I',
+
+    'PAPAM' => 'PAPATSENKO',
+    'PAPAD' => 'DI-PAPATSENKO',
   }
 end
