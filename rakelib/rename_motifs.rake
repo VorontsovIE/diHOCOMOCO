@@ -87,13 +87,13 @@ namespace :collect_and_normalize_data do
     rename_motifs 'models/pcm/di/chipseq/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'CD'
 
     FileList['models/pcm/mono/papatsenko/*.pcm'].each do |fn|
-      model_name = fn.pathmap('%n').sub('~PAPA~', '~PAPAM~')
+      model_name = fn.pathmap('%n')
       uniprot = model_name.split('~').first
       cp fn, "models/pcm/mono/all/#{uniprot}/#{model_name}.pcm"
     end
 
     FileList['models/pcm/di/papatsenko/*.dpcm'].each do |fn|
-      model_name = fn.pathmap('%n').sub('~PAPA~', '~PAPAD~')
+      model_name = fn.pathmap('%n')
       uniprot = model_name.split('~').first
       cp fn, "models/pcm/di/all/#{uniprot}/#{model_name}.dpcm"
     end
