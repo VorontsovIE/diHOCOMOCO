@@ -1,12 +1,12 @@
 require 'models'
 
 desc 'Draw sequence logos for all motifs'
-task  :sequence_logos do
-  Models.mono_uniprots.each do |uniprot|
-    pcm_files = Dir.glob(File.join('models/pcm/mono/all/', uniprot, '*.pcm'))
+task :sequence_logos => ['sequence_logos:mono', 'sequence_logos:di']
 
+Models.mono_uniprots.each do |uniprot|
+  task "sequence_logos:mono:#{uniprot}" do
+    pcm_files = FileList[File.join('models/pcm/mono/all/', uniprot, '*.pcm')]
     next  if pcm_files.empty?
-    $stderr.puts pcm_files
 
     logo_folder = File.join('models/logo/', uniprot)
     mkdir_p logo_folder  unless Dir.exist?(logo_folder)
@@ -18,13 +18,14 @@ task  :sequence_logos do
       fread.close
     }
   end
+  task 'sequence_logos:mono' => "sequence_logos:mono:#{uniprot}"
+end
 
 
-  Models.di_uniprots.each do |uniprot|
-    pcm_files = Dir.glob(File.join('models/pcm/di/all/', uniprot, '*.dpcm'))
-
+Models.di_uniprots.each do |uniprot|
+  task "sequence_logos:di:#{uniprot}" do
+    pcm_files = FileList[File.join('models/pcm/di/all/', uniprot, '*.dpcm')]
     next  if pcm_files.empty?
-    $stderr.puts pcm_files
 
     logo_folder = File.join('models/logo/', uniprot)
     mkdir_p logo_folder  unless Dir.exist?(logo_folder)
@@ -37,4 +38,5 @@ task  :sequence_logos do
       fread.close
     }
   end
+  task 'sequence_logos:di' => "sequence_logos:di:#{uniprot}"
 end
