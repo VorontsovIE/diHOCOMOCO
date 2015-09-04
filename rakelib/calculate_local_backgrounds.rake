@@ -1,4 +1,4 @@
-require 'weighted_sequence'
+require 'fasta_sequence'
 require 'sequence_dataset'
 require 'frequencies'
 

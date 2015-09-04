@@ -1,4 +1,4 @@
-require_relative 'weighted_sequence'
+require_relative 'fasta_sequence'
 require_relative 'counts'
 require_relative 'frequencies'
 
@@ -24,8 +24,8 @@ class SequenceDataset
 
   def each_sequence
     return enum_for(:each_sequence)  unless block_given?
-    WeightedSequence.each_in_file(filename){|weighted_sequence|
-      yield weighted_sequence
+    FastaSequence.each_in_file(filename){|fasta_sequence|
+      yield fasta_sequence
     }
   end
 
@@ -40,9 +40,9 @@ class SequenceDataset
   # def local_mono_background
   #   @local_mono_background ||= begin
   #     counts = Hash.new(0)
-  #     each_sequence{|weighted_sequence|
-  #       weighted_sequence.each_position{|letter, weight|
-  #         counts[letter] += 1 # weight
+  #     each_sequence{|fasta_sequence|
+  #       fasta_sequence.each_position{|letter|
+  #         counts[letter] += 1
   #       }
   #     }
   #     MonoCounts.from_hash(counts).plus_revcomp.frequencies
@@ -52,10 +52,10 @@ class SequenceDataset
   def local_di_background
     @local_di_background ||= begin
       counts = Hash.new(0)
-      each_sequence{|weighted_sequence|
-        weighted_sequence.each_position.each_cons(2){|(letter_1, weight_1), (letter_2, weight_2)|
+      each_sequence{|fasta_sequence|
+        fasta_sequence.each_position.each_cons(2){|letter_1, letter_2|
           diletter = "#{letter_1}#{letter_2}"
-          counts[diletter] += 1 # (weight_1 + weight_2) / 2.0
+          counts[diletter] += 1
         }
       }
       DiCounts.from_hash(counts).plus_revcomp.frequencies
