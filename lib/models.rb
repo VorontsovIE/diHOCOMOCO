@@ -52,12 +52,26 @@ module ModelKind
 end
 
 class Model
-  attr_reader :uniprot, :collection_short_name, :model_name
+  attr_reader :uniprot, :collection_short_name, :model_name, :mono_or_di_mode
 
   # AEBP2_HUMAN~CD~AEBP2_HUMAN^PEAKS030225, :di
   def initialize(model_fullname, mono_or_di_mode)
     @uniprot, @collection_short_name, @model_name = model_fullname.split('~')
     @mono_or_di_mode = ModelKind.get(mono_or_di_mode)
+  end
+
+  def ==(other)
+    other.is_a?(Model) && \
+    @uniprot == other.uniprot && \
+    @collection_short_name == other.collection_short_name && \
+    @model_name == other.model_name && \
+    @mono_or_di_mode == other.mono_or_di_mode
+  end
+  def eql?(other)
+    other.class == self.class && self == other
+  end
+  def hash
+    [@uniprot, @collection_short_name, @model_name, @mono_or_di_mode].hash
   end
 
   def pcm; @pcm ||= @mono_or_di_mode.read_pcm(path_to_pcm); end
@@ -97,6 +111,15 @@ class Model
   end
   def self.get_collection_short_name(model_fullname)
     model_fullname.split('~')[1]
+  end
+
+  def self.new_by_name(fullname)
+    collection = fullname.split('~')[1]
+    in_mono_collection = Models::MonoCollections.include?(collection)
+    in_di_collection = Models::DiCollections.include?(collection)
+    raise "Oops. Collection `#{collection}` is both mono and dinucleotide" if in_mono_collection && in_di_collection
+    raise "Oops. Collection `#{collection}` is neither mono nor dinucleotide" if !in_mono_collection && !in_di_collection
+    self.new(fullname, (in_mono_collection ? :mono : :di))
   end
 end
 
