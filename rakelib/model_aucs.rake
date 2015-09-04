@@ -119,7 +119,7 @@ task :model_logos_table do
     next  unless best_model_mono || best_model_di
 
     num_models += 1
-    
+
     print '<tr class="mono">'
     print "<td rowspan=2>#{uniprot}</td>"
     if best_model_mono
