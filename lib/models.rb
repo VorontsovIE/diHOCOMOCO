@@ -74,6 +74,10 @@ class Model
     [@uniprot, @collection_short_name, @model_name, @mono_or_di_mode].hash
   end
 
+  def <=>(other)
+    full_name <=> other.full_name
+  end
+
   def pcm; @pcm ||= @mono_or_di_mode.read_pcm(path_to_pcm); end
   def pwm; @pwm ||= @mono_or_di_mode.read_pwm(path_to_pwm); end
   def length; pcm.length; end

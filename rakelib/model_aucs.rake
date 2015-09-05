@@ -1,8 +1,12 @@
 require 'median'
 require 'models'
 
+# AUCs represents AUC values for a single TF (several models, several datasets; AUC for each model over each dataset)
 class AUCs
   attr_reader :auc_by_model_and_dataset
+
+  # {model => {dataset => auc}}
+  # model should be an instance of class Model (see #best_model_among_collections)
   def initialize(auc_by_model_and_dataset)
     @auc_by_model_and_dataset = auc_by_model_and_dataset
   end
@@ -20,8 +24,20 @@ class AUCs
     end
   end
 
+  def to_s
+    "<#{auc_by_model_and_dataset}>"
+  end
+
+  def ==(other)
+    other.is_a?(self.class) && auc_by_model_and_dataset == other.auc_by_model_and_dataset
+  end
+
+  def empty?
+    models.empty? || datasets.empty?
+  end
+
   def models
-    auc_by_model_and_dataset.keys
+    auc_by_model_and_dataset.keys.sort
   end
 
   def datasets
@@ -46,11 +62,12 @@ class AUCs
     end
   end
 
-  # def best_model_among_collections(collections)
-  #    best_model_mono, best_auc_mono = model_aucs.select{|model, auc|
-  #     (Models::CollectionsForFinalBundle & Models::MonoCollections).include?(model.collection_short_name)
-  #   }.max_by{|model, auc| auc }
-  # end
+  def best_model_among_collections(collections)
+     best_model, best_auc = weighted_model_aucs.select{|model, auc|
+      collections.include?(model.collection_short_name)
+    }.max_by{|model, auc| auc }
+    best_model
+  end
 
   def without_bad_datasets(min_auc)
     datasets_to_retain = datasets.select{|dataset|
@@ -65,6 +82,14 @@ class AUCs
     self.class.new(auc_by_model_and_dataset_retain)
   end
 
+  def without_bad_models(min_auc)
+    auc_by_model_and_dataset_retain = auc_by_model_and_dataset.select{|model, auc_by_dataset|
+      weighted_model_aucs[model] >= min_auc
+    }.to_h
+    self.class.new(auc_by_model_and_dataset_retain)
+  end
+
+  # Loads data for a single TF
   def self.from_folder(glob)
     auc_by_model_and_dataset = FileList[glob].map{|fn|
       model = Model.new_by_name(fn.pathmap('%n'))
@@ -84,18 +109,15 @@ task :model_logos_table do
   auc_infos_for_uniprot = uniprots.map{|uniprot|
     [uniprot, AUCs.from_folder("occurences/auc/#{uniprot}/*.txt")]
   }.map{|uniprot, auc_infos|
-    [uniprot, auc_infos.without_bad_datasets(0.65)]
+    auc_infos_prev = nil
+    while auc_infos != auc_infos_prev
+      auc_infos_prev = auc_infos
+      auc_infos = auc_infos.without_bad_datasets(0.65).without_bad_models(0.65)
+    end
+    [uniprot, auc_infos]
+  }.reject{|uniprot,auc_infos|
+    auc_infos.empty?
   }.to_h;
-
-  model_aucs_for_uniprot = auc_infos_for_uniprot.map{|uniprot, auc_infos|
-    [uniprot, auc_infos.weighted_model_aucs]
-  }.map{|uniprot, model_aucs|
-    good_model_aucs = model_aucs.select{|model, auc| auc >= 0.65 }
-    [uniprot, good_model_aucs]
-  }.reject{|uniprot, model_aucs|
-    model_aucs.empty?
-  }.to_h;
-
 
   puts '<html><head><style>'
   puts 'table, tr, td{ border: 1px solid black; border-collapse: collapse; }'
@@ -107,14 +129,9 @@ task :model_logos_table do
   puts '<table>'
 
   num_models = num_mono_models = num_di_models = 0
-  model_aucs_for_uniprot.each{|uniprot, model_aucs|
-    best_model_mono, best_auc_mono = model_aucs.select{|model, auc|
-      (Models::CollectionsForFinalBundle & Models::MonoCollections).include?(model.collection_short_name)
-    }.max_by{|model, auc| auc }
-
-    best_model_di, best_auc_di = model_aucs.select{|model, auc|
-      (Models::CollectionsForFinalBundle & Models::DiCollections).include?(model.collection_short_name)
-    }.max_by{|model, auc| auc }
+  auc_infos_for_uniprot.each{|uniprot, auc_infos|
+    best_model_mono = auc_infos.best_model_among_collections(Models::CollectionsForFinalBundle & Models::MonoCollections)
+    best_model_di = auc_infos.best_model_among_collections(Models::CollectionsForFinalBundle & Models::DiCollections)
 
     next  unless best_model_mono || best_model_di
 
@@ -124,7 +141,8 @@ task :model_logos_table do
     print "<td rowspan=2>#{uniprot}</td>"
     if best_model_mono
       num_mono_models += 1
-      print "<td>#{best_auc_mono}</td>"
+      best_auc_mono = auc_infos.weighted_model_aucs[best_model_mono]
+      print "<td>#{best_auc_mono.round(3)}</td>"
       print "<td>#{best_model_mono.full_name}</td>"
       print "<td><img src='#{best_model_mono.path_to_logo}'/></td>"
     end
@@ -132,7 +150,8 @@ task :model_logos_table do
     print '<tr class="di">'
     if best_model_di
       num_di_models += 1
-      print "<td>#{best_auc_di}</td>"
+      best_auc_di = auc_infos.weighted_model_aucs[best_model_di]
+      print "<td>#{best_auc_di.round(3)}</td>"
       print "<td>#{best_model_di.full_name}</td>"
       print "<td><img src='#{best_model_di.path_to_logo}'/></td>"
     end
