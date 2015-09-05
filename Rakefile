@@ -21,7 +21,7 @@ task :default do
   Rake::Task['correct_pvalues'].invoke # 5m25s
   Rake::Task['calculate_auc'].invoke # 2m
 
-  Rake::Task['sequence_logos'].invoke # 30m
+  Rake::Task['sequence_logos'].invoke # 30m; parallelizable
   Rake::Task['make_final_collection'].invoke
   Rake::Task['final_collection_summary'].invoke
 end

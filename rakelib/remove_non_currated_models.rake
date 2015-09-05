@@ -1,3 +1,5 @@
+require 'dataset_qualities'
+
 desc 'Remove models, failed curration'
 task :remove_non_currated_models do
   # Datasets not in check_result.tsv are treated as good and passing curration
