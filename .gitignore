@@ -14,6 +14,8 @@ htselex_mono_di/
 models/
 rocplotexample/
 standard_motif_collections/
+pluripotency_factors/
 training/
 selex_integrated/
 final_bundle/
+.idea/
