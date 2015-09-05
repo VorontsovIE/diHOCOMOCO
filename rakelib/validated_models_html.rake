@@ -2,19 +2,7 @@ require 'auc_infos'
 require 'models'
 
 task :validated_models_html do
-  uniprots = FileList['occurences/auc/*'].pathmap('%n');
-  auc_infos_for_uniprot = uniprots.map{|uniprot|
-    [uniprot, AUCs.from_folder("occurences/auc/#{uniprot}/*.txt")]
-  }.map{|uniprot, auc_infos|
-    auc_infos_prev = nil
-    while auc_infos != auc_infos_prev
-      auc_infos_prev = auc_infos
-      auc_infos = auc_infos.without_bad_datasets(0.65).without_bad_models(0.65)
-    end
-    [uniprot, auc_infos]
-  }.reject{|uniprot,auc_infos|
-    auc_infos.empty?
-  }.to_h;
+  auc_infos_for_uniprot = AUCs.load_auc_infos_for_uniprot(min_weight_for_dataset: 0.65, min_auc_for_model: 0.65)
 
   puts '<html><head><style>'
   puts 'table, tr, td{ border: 1px solid black; border-collapse: collapse; }'

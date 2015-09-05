@@ -101,4 +101,22 @@ class AUCs
     }.to_h
     self.new(auc_by_model_and_dataset)
   end
+
+  # Load hash {uniprot => AUCs} with iteratively filtered datasets and models
+  def self.load_auc_infos_for_uniprot(min_weight_for_dataset:, min_auc_for_model:)
+    uniprots = FileList['occurences/auc/*'].pathmap('%n')
+
+    uniprots.map{|uniprot|
+      [uniprot, self.from_folder("occurences/auc/#{uniprot}/*.txt")]
+    }.map{|uniprot, auc_infos|
+      auc_infos_prev = nil
+      while auc_infos != auc_infos_prev
+        auc_infos_prev = auc_infos
+        auc_infos = auc_infos.without_bad_datasets(min_weight_for_dataset).without_bad_models(min_auc_for_model)
+      end
+      [uniprot, auc_infos]
+    }.reject{|uniprot,auc_infos|
+      auc_infos.empty?
+    }.to_h
+  end
 end
