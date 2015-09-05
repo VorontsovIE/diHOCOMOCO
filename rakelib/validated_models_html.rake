@@ -1,7 +1,7 @@
 require 'auc_infos'
 require 'models'
 
-task :model_logos_table do
+task :validated_models_html do
   uniprots = FileList['occurences/auc/*'].pathmap('%n');
   auc_infos_for_uniprot = uniprots.map{|uniprot|
     [uniprot, AUCs.from_folder("occurences/auc/#{uniprot}/*.txt")]
