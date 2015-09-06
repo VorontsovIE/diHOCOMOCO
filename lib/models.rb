@@ -1,3 +1,5 @@
+require 'bioinform'
+
 module ModelKind
   def self.get(mode)
     case mode
@@ -172,6 +174,25 @@ module Models
   DiCollections = ['SDF', 'SDI', 'CD', 'PAPAD']
   ChipseqCollections = ['CM', 'CD']
   SelexRebuiltCollections = ['SMF', 'SMI', 'SDF', 'SDI']
+
+  def self.hocomoco_qualities
+    @hocomoco_qualities ||= File.readlines('hocomoco_qualities.tsv').map{|line|
+      line.chomp.split("\t")
+    }.to_h
+  end
+
+  # Models to take when no validation supplied in order of reliability
+  MonoCollectionsReliability = [
+    'PAPAM',
+    ->(model){
+      model.collection_short_name == 'HL' && ['A', 'B', 'C'].include?( hocomoco_qualities[model.model_name] )
+    },
+    'CM',
+    ->(model){
+      model.collection_short_name == 'HL' && hocomoco_qualities[model.model_name] == 'D'
+    },
+    'SMI', 'SMF']
+  DiCollectionsReliability = ['PAPAD', 'CD']
 
   # We take only denovo collections and hocomoco legacy for a final bundle
   CollectionsForFinalBundle = ChipseqCollections + SelexRebuiltCollections + ['HL', 'PAPAM', 'PAPAD']

@@ -1,14 +1,9 @@
 class QualityAssessor
   def initialize(filtering)
-    @hocomoco_qualities = self.class.load_hocomoco_qualities('hocomoco_qualities.tsv')
     @filtering = filtering
     @survived_models_by_uniprot = filtering.model_names.group_by{|model_name|
       Model.get_uniprot(model_name)
     }
-  end
-
-  def self.load_hocomoco_qualities(filename)
-    File.readlines(filename).map{|line|  line.chomp.split("\t")  }.to_h
   end
 
   def num_datasets(model_name)
@@ -20,7 +15,7 @@ class QualityAssessor
   end
 
   def hocomoco_quality(model_name)
-    @hocomoco_qualities[Model.get_original_model_name(model_name)]
+    Models.hocomoco_qualities[Model.get_original_model_name(model_name)]
   end
 
   def num_datasets_passing_auc(model_name, auc_threshold)

@@ -13,13 +13,9 @@ def histogram(thresholds, data)
   }
 end
 
-def load_hocomoco_qualities(filename)
-  File.readlines(filename).map{|line|  line.chomp.split("\t")  }.to_h
-end
-
-def aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, hocomoco_qualities, quality)
+def aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, quality)
   hocomoco_models.select{|model|
-    hocomoco_qualities[model.model_name] == quality
+    Models.hocomoco_qualities[model.model_name] == quality
   }.map{|model|
     aucs_by_model_and_control[model.full_name].values
   }
@@ -79,14 +75,13 @@ task :hocomoco_auc_distribution do
   }
 
   thresholds = (0.0..1.0).step(0.04)
-  hocomoco_qualities = load_hocomoco_qualities('hocomoco_qualities.tsv')
 
   result_total = []
   ['A', 'B', 'C', 'D'].each do |quality|
-    max_vals = aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, hocomoco_qualities, quality).map(&:max)
-    min_vals = aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, hocomoco_qualities, quality).map(&:min)
-    mean_vals = aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, hocomoco_qualities, quality).map{|vals| mean(vals) }
-    median_vals = aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, hocomoco_qualities, quality).map{|vals| median(vals) }
+    max_vals = aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, quality).map(&:max)
+    min_vals = aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, quality).map(&:min)
+    mean_vals = aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, quality).map{|vals| mean(vals) }
+    median_vals = aucs_for_hocomoco(hocomoco_models, aucs_by_model_and_control, quality).map{|vals| median(vals) }
 
     result = []
     result << ["Quality: #{quality}", '', '', '', '']

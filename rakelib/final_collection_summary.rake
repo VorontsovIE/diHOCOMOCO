@@ -1,7 +1,7 @@
 require 'models'
 require 'best_models'
-require 'auc_info'
-require 'auc_infos_filtering'
+# require 'auc_info'
+# require 'auc_infos_filtering'
 require 'quality_assessor'
 
 desc 'Make final collection summary table (which model won etc)'
@@ -47,8 +47,6 @@ task :final_collection_summary do
       *aucs
     ]
   end
-
-  hocomoco_qualities = File.readlines('hocomoco_qualities.tsv').map{|line| line.chomp.split("\t") }.to_h
 
   File.open('collection_perfomances.tsv', 'w') do |fw|
     fw.puts headers.join("\t")
