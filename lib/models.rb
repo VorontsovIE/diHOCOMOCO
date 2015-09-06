@@ -175,6 +175,7 @@ module Models
   ChipseqCollections = ['CM', 'CD']
   SelexRebuiltCollections = ['SMF', 'SMI', 'SDF', 'SDI']
 
+
   def self.hocomoco_qualities
     @hocomoco_qualities ||= File.readlines('hocomoco_qualities.tsv').map{|line|
       line.chomp.split("\t")
@@ -196,6 +197,9 @@ module Models
 
   # We take only denovo collections and hocomoco legacy for a final bundle
   CollectionsForFinalBundle = ChipseqCollections + SelexRebuiltCollections + ['HL', 'PAPAM', 'PAPAD']
+
+  MonoCollectionsForFinalBundle = CollectionsForFinalBundle & MonoCollections
+  DiCollectionsForFinalBundle = CollectionsForFinalBundle & DiCollections
 
   ## We take only integrated collections from SELEX rebuilt when validation not available
   ## And we don't take any SELEX motifs for dinucleotide models

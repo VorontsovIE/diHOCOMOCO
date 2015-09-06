@@ -15,8 +15,8 @@ task :validated_models_html do
 
   num_models = num_mono_models = num_di_models = 0
   auc_infos_for_uniprot.each{|uniprot, auc_infos|
-    best_model_mono = auc_infos.best_model_among_collections(Models::CollectionsForFinalBundle & Models::MonoCollections)
-    best_model_di = auc_infos.best_model_among_collections(Models::CollectionsForFinalBundle & Models::DiCollections)
+    best_model_mono = auc_infos.best_model_among_collections(Models::MonoCollectionsForFinalBundle)
+    best_model_di = auc_infos.best_model_among_collections(Models::DiCollectionsForFinalBundle)
 
     next  unless best_model_mono || best_model_di
 
