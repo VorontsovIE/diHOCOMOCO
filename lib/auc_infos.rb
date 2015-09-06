@@ -8,7 +8,11 @@ class AUCs
   # {model => {dataset => auc}}
   # model should be an instance of class Model (see #best_model_among_collections)
   def initialize(auc_by_model_and_dataset)
-    @auc_by_model_and_dataset = auc_by_model_and_dataset
+    @auc_by_model_and_dataset = auc_by_model_and_dataset.map{|model, dataset_aucs|
+      [model, dataset_aucs.sort_by{|dataset, auc| -auc }.to_h]
+    }.reject{|model, dataset_aucs|
+      dataset_aucs.empty?
+    }.to_h
   end
 
   def auc_by_dataset_and_model
@@ -58,13 +62,15 @@ class AUCs
           auc_by_model_and_dataset[model][dataset] * dataset_qualities[dataset]
         }.inject(0.0, &:+) / quality_norm_factor
         [model, weighted_auc]
-      }.to_h
+      }.sort_by{|model, auc| -auc }.to_h
     end
   end
 
-  def best_model_among_collections(collections)
+  def best_model_among_collections(collections, banned: [])
      best_model, best_auc = weighted_model_aucs.select{|model, auc|
       collections.include?(model.collection_short_name)
+    }.reject{|model, auc|
+      banned.include?(model)
     }.max_by{|model, auc| auc }
     best_model
   end
