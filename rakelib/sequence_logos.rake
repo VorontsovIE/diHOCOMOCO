@@ -13,6 +13,7 @@ Models.mono_uniprots.each do |uniprot|
 
     opts = []
     opts += ['--logo-folder', logo_folder]
+    opts += ['--orientation', 'both']
     Open3.popen2('sequence_logo', *opts){|fread, fwrite|
       fread.puts Shellwords.join(pcm_files)
       fread.close
@@ -33,6 +34,7 @@ Models.di_uniprots.each do |uniprot|
     opts = []
     opts += ['--logo-folder', logo_folder]
     opts += ['--dinucleotide']
+    opts += ['--orientation', 'both']
     Open3.popen2('sequence_logo', *opts){|fread, fwrite|
       fread.puts Shellwords.join(pcm_files)
       fread.close

@@ -103,7 +103,15 @@ class Model
   end
 
   def path_to_logo
-    File.join('models/logo', uniprot, "#{full_name}.png")
+    File.join('models/logo', uniprot, "#{full_name}_direct.png")
+  end
+
+  def path_to_logo_direct
+    File.join('models/logo', uniprot, "#{full_name}_direct.png")
+  end
+
+  def path_to_logo_revcomp
+    File.join('models/logo', uniprot, "#{full_name}_revcomp.png")
   end
 
   def to_s; "<#{@mono_or_di_mode}: #{full_name}>"; end

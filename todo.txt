@@ -4,6 +4,11 @@
 
 - перевернуть лого на нужную нить
 - вингендеровские семейства
+- meth/singlebox(вернее secondary)
+- склеить модели, когда несколько одинаковых моделей имеют разные юнипроты
+- селекс лучше чем HOCOMOCO-D
+
+# ! склеить модели, когда несколько одинаковых моделей имеют разные юнипроты
 
 
 сейчас посмотрю сколько уникальных юнипроотов у тайпале
@@ -75,6 +80,9 @@ ALX1_HUMAN_DBD_2 имеет внутри имя CART1^470
 	hocomoco_qualities.tsv
 	selex_integrated.zip
 	pluripotency_factors.zip
+	human_secondary.txt
+	mouse_secondary.txt
+	banned.txt
 
 	ape-2.0.1.jar
 	sarus.jar

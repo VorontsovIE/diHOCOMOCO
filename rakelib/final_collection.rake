@@ -1,6 +1,7 @@
 require 'models'
 require 'best_models'
 require 'auc_infos'
+require 'html_table_output'
 
 desc 'Collect final collection'
 task :make_final_collection do
@@ -118,12 +119,22 @@ task :make_final_collection do
   best_models_mono.each{|model|
     cp model.path_to_pcm, "final_bundle/#{model.species}/mono/pcm/"
     cp model.path_to_pwm, "final_bundle/#{model.species}/mono/pwm/"
-    cp model.path_to_logo, "final_bundle/#{model.species}/mono/logo/"
+    # cp model.path_to_logo, "final_bundle/#{model.species}/mono/logo/"
   }
 
   best_models_di.each{|model|
     cp model.path_to_pcm, "final_bundle/#{model.species}/di/pcm/"
     cp model.path_to_pwm, "final_bundle/#{model.species}/di/pwm/"
-    cp model.path_to_logo, "final_bundle/#{model.species}/di/logo/"
+    # cp model.path_to_logo, "final_bundle/#{model.species}/di/logo/"
   }
+
+  best_models = best_models_mono + best_models_di
+  File.open('final_collection.html', 'w') do |fw|
+    print_html_table_for_grouped_models(
+      auc_infos_for_uniprot,
+      best_models.group_by(&:uniprot),
+      secondary_models: secondary_models,
+      stream: fw
+    )
+  end
 end
