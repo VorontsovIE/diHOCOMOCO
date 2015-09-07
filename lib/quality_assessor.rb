@@ -11,7 +11,7 @@ class QualityAssessor
 
   def aucs_by_dataset(model)
     auc_infos = auc_infos_for_uniprot[model.uniprot]
-    auc_infos && auc_infos.auc_by_model_and_dataset[model]
+    auc_infos && auc_infos.aucs_for_model(model)
   end
 
   def num_datasets_passing_auc(model, threshold_auc)
@@ -23,7 +23,7 @@ class QualityAssessor
   # or model was rejected because failed 0.65 threshold for weighted AUC
   def not_validated?(model)
     auc_infos = auc_infos_for_uniprot[model.uniprot]
-    !auc_infos || !auc_infos.weighted_model_aucs[model]
+    !auc_infos || !auc_infos.weighted_auc(model)
   end
 
   def calculate_quality(model)

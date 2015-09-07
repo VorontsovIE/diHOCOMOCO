@@ -13,7 +13,7 @@ def histogram(thresholds, data)
   }
 end
 
-def aucs_for_hocomoco(hocomoco_models, auc_infos_for_uniprot, auc_infos_for_uniprot_not_filtered, quality)
+def aucs_for_hocomoco(hocomoco_models, auc_infos_for_uniprot, quality)
   hocomoco_models.select{|model|
     Models.hocomoco_qualities[model.model_name] == quality
   }.map{|model|
@@ -23,8 +23,8 @@ def aucs_for_hocomoco(hocomoco_models, auc_infos_for_uniprot, auc_infos_for_unip
       {
         dataset: dataset,
         model: model,
-        auc: auc_infos_for_uniprot_not_filtered[uniprot].auc_by_model_and_dataset[model][dataset],
-        dataset_quality: auc_infos_for_uniprot[uniprot].dataset_qualities[dataset],
+        auc: auc_infos_for_uniprot[uniprot].auc(model, dataset),
+        dataset_quality: auc_infos_for_uniprot[uniprot].dataset_quality(dataset),
       }
     }
   }
@@ -73,9 +73,7 @@ task :auc_distribution_plot do
 end
 
 task :hocomoco_auc_distribution do
-  auc_infos_for_uniprot_not_filtered = AUCs.load_auc_infos_for_uniprot
   auc_infos_for_uniprot = AUCs.load_auc_infos_for_uniprot(min_weight_for_dataset: 0.65, min_auc_for_model: 0.65)
-  # auc_infos_for_uniprot = auc_by_model_and_control('occurences/auc/')
 
   hocomoco_models = Models.all_models.select{|model|
     model.collection_short_name == 'HL'
@@ -83,9 +81,7 @@ task :hocomoco_auc_distribution do
     model.species == 'HUMAN'
   }.select{|model|
     auc_infos_for_uniprot[model.uniprot]
-  }.reject{|model|
-    auc_infos_for_uniprot[model.uniprot].empty? # There are TF datasets but model not necessarily weighted
-  }
+  }.sort
 
   $stderr.puts "Total #{hocomoco_models.size} hocomoco models with chipseqs"
 
@@ -93,21 +89,23 @@ task :hocomoco_auc_distribution do
 
   result_total = []
   ['A', 'B', 'C', 'D'].each do |quality|
-    auc_infos = aucs_for_hocomoco(hocomoco_models, auc_infos_for_uniprot, auc_infos_for_uniprot_not_filtered, quality)
-    max_vals = auc_infos.map{|model_auc_infos|
-      model_auc_infos.map{|h| h[:auc] }.max
+    model_infos = hocomoco_models.select{|model|
+      Models.hocomoco_qualities[model.model_name] == quality
+    }.map{|model|
+      auc_infos = auc_infos_for_uniprot[model.uniprot]
+      aucs = auc_infos.aucs_for_model(model).values
+      {
+        max_auc: aucs.max,
+        min_auc: aucs.min,
+        median_auc: aucs.empty? ? nil : median(aucs),
+        mean_auc: auc_infos.weighted_auc(model),
+      }
     }
-    min_vals = auc_infos.map{|model_auc_infos|
-      model_auc_infos.map{|h| h[:auc] }.min
-    }
-    median_vals = auc_infos.map{|model_auc_infos|
-      median(model_auc_infos.map{|h| h[:auc] })
-    }
-    mean_vals = auc_infos.map{|model_auc_infos|
-      weighted_sum = model_auc_infos.map{|h| h[:auc] * h[:dataset_quality] }.inject(0.0, &:+)
-      total_weight_sum = model_auc_infos.map{|h| h[:dataset_quality] }.inject(0.0, &:+)
-      weighted_sum / total_weight_sum
-    }
+    # auc_infos = aucs_for_hocomoco(hocomoco_models, auc_infos_for_uniprot, quality)
+    max_vals = model_infos.map{|infos| infos[:max_auc] }
+    min_vals =  model_infos.map{|infos| infos[:min_auc] }
+    median_vals =  model_infos.map{|infos| infos[:median_auc] }
+    mean_vals =  model_infos.map{|infos| infos[:mean_auc] }
 
     result = []
     result << ["Quality: #{quality}", '', '', '', '']
@@ -128,7 +126,6 @@ end
 
 desc 'Output information about AUCs'
 task :hocomoco_model_AUCs do
-  auc_infos_for_uniprot_not_filtered = AUCs.load_auc_infos_for_uniprot
   auc_infos_for_uniprot = AUCs.load_auc_infos_for_uniprot(min_weight_for_dataset: 0.65, min_auc_for_model: 0.65)
 
   hocomoco_models = Models.all_models.select{|model|
@@ -137,8 +134,8 @@ task :hocomoco_model_AUCs do
     model.species == 'HUMAN'
   }.select{|model|
     auc_infos_for_uniprot[model.uniprot]
-  }.reject{|model|
-    auc_infos_for_uniprot[model.uniprot].empty? # There are TF datasets but model not necessarily weighted
+  }.select{|model|
+    auc_infos_for_uniprot[model.uniprot].has_validation?
   }.sort
 
   $stderr.puts "Total #{hocomoco_models.size} hocomoco models with chipseqs"
@@ -146,24 +143,17 @@ task :hocomoco_model_AUCs do
   puts ['Model', 'Quality', 'Max AUC', 'Min AUC', 'Weighted AUC', 'Weighted AUC (original)'].join("\t")
   hocomoco_models.each do |model|
     uniprot = model.uniprot
-    good_datasets = auc_infos_for_uniprot[uniprot].datasets
-    auc_infos = good_datasets.map{|dataset|
-      {
-        dataset: dataset,
-        model: model,
-        auc: auc_infos_for_uniprot_not_filtered[uniprot].auc_by_model_and_dataset[model][dataset],
-        dataset_quality: auc_infos_for_uniprot[uniprot].dataset_qualities[dataset],
-      }
+    auc_infos = auc_infos_for_uniprot[uniprot]
+    good_datasets = auc_infos.datasets
+    aucs = good_datasets.map{|dataset|
+      auc_infos_for_uniprot[uniprot].auc(model, dataset)
     }
 
-    weighted_sum = auc_infos.map{|h| h[:auc] * h[:dataset_quality] }.inject(0.0, &:+)
-    total_weight_sum = auc_infos.map{|h| h[:dataset_quality] }.inject(0.0, &:+)
-    mean_auc = weighted_sum / total_weight_sum
-    max_auc = auc_infos.map{|h| h[:auc] }.max
-    min_auc = auc_infos.map{|h| h[:auc] }.min
-    auc = auc_infos_for_uniprot[uniprot].weighted_model_aucs[model]
+    max_auc = aucs.max
+    min_auc = aucs.min
+    auc = auc_infos_for_uniprot[uniprot].weighted_auc(model)
 
-    puts [model.model_name, Models.hocomoco_qualities[model.model_name], max_auc, min_auc, mean_auc, auc].join("\t")
+    puts [model.model_name, Models.hocomoco_qualities[model.model_name], max_auc, min_auc, auc, (auc_infos.models.include?(model) ? auc : nil)].join("\t")
   end
 end
 

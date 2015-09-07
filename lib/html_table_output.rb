@@ -21,7 +21,7 @@ end
 def print_logos_for_models(auc_infos, models, uniprot, quality_assessor, stream: $stdout)
   num_models = models.size
   models.each_with_index do |model, index|
-    auc = auc_infos && auc_infos.weighted_model_aucs[model] && auc_infos.weighted_model_aucs[model].round(3)
+    auc = auc_infos && auc_infos.weighted_auc(model) && auc_infos.weighted_auc(model).round(3)
     quality = quality_assessor.calculate_quality(model)
 
     if index == 0

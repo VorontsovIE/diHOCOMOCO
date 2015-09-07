@@ -1,98 +1,119 @@
 require 'median'
 require 'models'
 
-# AUCs represents AUC values for a single TF (several models, several datasets; AUC for each model over each dataset)
+# An instance of class AUCs represents AUC values for a single TF
+#
+# `auc_by_model_and_dataset` is a 2D-hash for AUC for each model-dataset pair
+# `models` and `datasets` represent subsets of "good" models and "good" datasets
+#   which are treated as reliable enough to be used in mean AUC assessment.
 class AUCs
+  attr_reader :models, :datasets
+
   attr_reader :auc_by_model_and_dataset
+  protected :auc_by_model_and_dataset
 
   # {model => {dataset => auc}}
   # model should be an instance of class Model (see #best_model_among_collections)
-  def initialize(auc_by_model_and_dataset)
-    @auc_by_model_and_dataset = auc_by_model_and_dataset.map{|model, dataset_aucs|
-      [model, dataset_aucs.sort_by{|dataset, auc| -auc }.to_h]
-    }.reject{|model, dataset_aucs|
-      dataset_aucs.empty?
-    }.to_h
-  end
+  #
+  # Models and datasets can be specified explicitly to specify good datasets and models
+  #   not to use other datasets/models in dataset's weight and model's weighted-AUC assesment
+  def initialize(auc_by_model_and_dataset, models: nil, datasets: nil)
+    @auc_by_model_and_dataset = auc_by_model_and_dataset
 
-  def auc_by_dataset_and_model
-    @auc_by_dataset_and_model ||= begin
-      result = {}
-      auc_by_model_and_dataset.each{|model, auc_by_dataset|
-        auc_by_dataset.each{|dataset, auc|
-          result[dataset] ||= {}
-          result[dataset][model] = auc
-        }
-      }
-      result
-    end
+    @models = models || @auc_by_model_and_dataset.keys.sort
+    @datasets = datasets || @auc_by_model_and_dataset.values.flat_map(&:keys).uniq.sort
   end
 
   def to_s
-    "<#{auc_by_model_and_dataset}>"
+    ["models: #{@models}", "datasets: #{@datasets}", "AUCs: #{@auc_by_model_and_dataset}"].join("\n")
   end
+  def inspect; to_s; end
 
   def ==(other)
-    other.is_a?(self.class) && auc_by_model_and_dataset == other.auc_by_model_and_dataset
+    other.is_a?(self.class) && \
+    auc_by_model_and_dataset == other.auc_by_model_and_dataset && \
+    models == other.models && \
+    datasets == other.datasets
   end
 
-  def empty?
-    models.empty? || datasets.empty?
+  def has_validation?
+    !datasets.empty?
   end
 
-  def models
-    auc_by_model_and_dataset.keys.sort
+  # {dataset => auc}
+  def aucs_for_model(model)
+    auc_by_model_and_dataset[model].select{|dataset, auc|
+      datasets.include?(dataset)
+    }
   end
 
-  def datasets
-    @datasets ||= auc_by_model_and_dataset.values.flat_map(&:keys).uniq.sort
-  end
-
-  def dataset_qualities
-    @dataset_qualities ||= datasets.map{|dataset|
-      [dataset, mean(auc_by_dataset_and_model[dataset].values)]
+  # {model => auc}
+  def aucs_for_dataset(dataset)
+    models.map{|model|
+      [model, auc_by_model_and_dataset[model][dataset]]
     }.to_h
   end
 
-  def weighted_model_aucs
-    @weighted_model_aucs ||= begin
-      quality_norm_factor = dataset_qualities.values.inject(0.0, &:+)
-      models.map{|model|
-        weighted_auc = dataset_qualities.map{|dataset, dataset_weight|
-          auc_by_model_and_dataset[model][dataset] * dataset_weight
-        }.inject(0.0, &:+) / quality_norm_factor
-        [model, weighted_auc]
-      }.sort_by{|model, auc| -auc }.to_h
+  def auc(model, dataset)
+    auc_by_model_and_dataset[model][dataset]
+  end
+
+  def dataset_quality(dataset)
+    return nil  if models.empty? # it's impossible to calculate dataset weight without good models
+
+    unless @dataset_qualities_cache && @dataset_qualities_cache[dataset] # caching
+      @dataset_qualities_cache ||= {}
+      @dataset_qualities_cache[dataset] = mean(aucs_for_dataset(dataset).values)
     end
+    @dataset_qualities_cache[dataset]
+  end
+
+  # It's possible to calculate weighted AUC even for models which were excluded from @models
+  # Weights of datasets though won't be recalculated and
+  #   will consider only "good" models included in @models
+  def weighted_auc(model)
+    return nil  if datasets.empty?
+    return nil  if models.empty? # In this case we can't estimate dataset weights
+
+    quality_norm_factor = datasets.map{|dataset|
+      dataset_quality(dataset)
+    }.inject(0.0, &:+)
+
+    weighted_auc_total = datasets.map{|dataset|
+      auc(model, dataset) * dataset_quality(dataset)
+    }.inject(0.0, &:+)
+
+    weighted_auc_total / quality_norm_factor
   end
 
   def best_model_among_collections(collections, banned: [])
-     best_model, best_auc = weighted_model_aucs.select{|model, auc|
+    models.select{|model|
       collections.include?(model.collection_short_name)
-    }.reject{|model, auc|
+    }.reject{|model|
       banned.include?(model)
-    }.max_by{|model, auc| auc }
-    best_model
+    }.max_by{|model|
+      weighted_auc(model)
+    }
   end
 
   def without_bad_datasets(min_auc)
+    return self.class.new(auc_by_model_and_dataset, models: [], datasets: [])  if models.empty?
+
     datasets_to_retain = datasets.select{|dataset|
-      dataset_qualities[dataset] >= min_auc
+      dataset_quality(dataset) >= min_auc
     }
-    auc_by_model_and_dataset_retain = auc_by_model_and_dataset.map{|model, auc_by_dataset|
-      auc_by_dataset_retain = datasets_to_retain.map{|dataset|
-        [dataset, auc_by_dataset[dataset]]
-      }.to_h
-      [model, auc_by_dataset_retain]
-    }.to_h
-    self.class.new(auc_by_model_and_dataset_retain)
+    self.class.new(auc_by_model_and_dataset, models: models, datasets: datasets_to_retain)
   end
 
   def without_bad_models(min_auc)
-    auc_by_model_and_dataset_retain = auc_by_model_and_dataset.select{|model, auc_by_dataset|
-      weighted_model_aucs[model] >= min_auc
-    }.to_h
-    self.class.new(auc_by_model_and_dataset_retain)
+    if datasets.empty?
+      models_to_retain = []
+    else
+      models_to_retain = models.select{|model|
+        weighted_auc(model) >= min_auc
+      }
+    end
+    self.class.new(auc_by_model_and_dataset, models: models_to_retain, datasets: datasets)
   end
 
   # Loads data for a single TF
@@ -121,8 +142,6 @@ class AUCs
         auc_infos = auc_infos.without_bad_datasets(min_weight_for_dataset).without_bad_models(min_auc_for_model)
       end
       [uniprot, auc_infos]
-    }.reject{|uniprot,auc_infos|
-      auc_infos.empty?
     }.to_h
   end
 end

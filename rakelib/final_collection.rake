@@ -42,7 +42,7 @@ task :make_final_collection do
     # If we have validated model, use it.
     # If we don't have, we take model based on our believes in collection qualities
 
-    if auc_infos && !auc_infos.empty?
+    if auc_infos && auc_infos.has_validation?
       # Model have been validated (but not necessary that both mono- and di- were)
 
       ### Mononucleotide models
@@ -76,7 +76,7 @@ task :make_final_collection do
       if best_model_di # Dinucleotide model was validated
         # Only take di-model when it beats mono model or if mono model doesn't exist
         if best_model_mono
-          if auc_infos.weighted_model_aucs[best_model_di] > auc_infos.weighted_model_aucs[best_model_mono]
+          if auc_infos.weighted_auc(best_model_di) > auc_infos.weighted_auc(best_model_mono)
             best_models_di << best_model_di
           end
         else

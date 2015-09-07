@@ -26,7 +26,7 @@ task :validated_models_html do
     print "<td rowspan=2>#{uniprot}</td>"
     if best_model_mono
       num_mono_models += 1
-      best_auc_mono = auc_infos.weighted_model_aucs[best_model_mono]
+      best_auc_mono = auc_infos.weighted_auc(best_model_mono)
       print "<td>#{best_auc_mono.round(3)}</td>"
       print "<td>#{best_model_mono.full_name}</td>"
       print "<td><img src='#{best_model_mono.path_to_logo}'/></td>"
@@ -35,7 +35,7 @@ task :validated_models_html do
     print '<tr class="di">'
     if best_model_di
       num_di_models += 1
-      best_auc_di = auc_infos.weighted_model_aucs[best_model_di]
+      best_auc_di = auc_infos.weighted_auc(best_model_di)
       print "<td>#{best_auc_di.round(3)}</td>"
       print "<td>#{best_model_di.full_name}</td>"
       print "<td><img src='#{best_model_di.path_to_logo}'/></td>"
