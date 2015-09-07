@@ -1,63 +1,73 @@
 class QualityAssessor
-  def initialize(filtering)
-    @filtering = filtering
-    @survived_models_by_uniprot = filtering.model_names.group_by{|model_name|
-      Model.get_uniprot(model_name)
-    }
+  attr_reader :auc_infos_for_uniprot, :secondary_models
+  def initialize(auc_infos_for_uniprot, secondary_models)
+    @auc_infos_for_uniprot = auc_infos_for_uniprot
+    @secondary_models = secondary_models
   end
 
-  def num_datasets(model_name)
-    @filtering.dataset_names_for_model(model_name).size
+  def hocomoco_quality(model)
+    Models.hocomoco_qualities[model.model_name]
   end
 
-  def num_survived_models(model_name)
-    @survived_models_by_uniprot[Model.get_uniprot(model_name)].size
+  def aucs_by_dataset(model)
+    auc_infos = auc_infos_for_uniprot[model.uniprot]
+    auc_infos && auc_infos.auc_by_model_and_dataset[model]
   end
 
-  def hocomoco_quality(model_name)
-    Models.hocomoco_qualities[Model.get_original_model_name(model_name)]
+  def num_datasets_passing_auc(model, threshold_auc)
+    aucs_by_dataset(model).count{|dataset, auc| auc >= threshold_auc }
   end
 
-  def num_datasets_passing_auc(model_name, auc_threshold)
-    @filtering.aucs_for_model(model_name).count{|auc| auc >= auc_threshold }
+  # has no validation at all
+  #  (there were no control datasets or all datasets failed quality check)
+  # or model was rejected because failed 0.65 threshold for weighted AUC
+  def not_validated?(model)
+    auc_infos = auc_infos_for_uniprot[model.uniprot]
+    !auc_infos || !auc_infos.weighted_model_aucs[model]
   end
 
-  def calculate_quality(model_name)
-    collection_name = Model.get_collection_short_name(model_name)
+  def calculate_quality(model)
+    return 'S'  if secondary_models.include?(model)
+
+    collection_name = model.collection_short_name
     is_hocomoco_model = (collection_name == 'HL')
+    hocomoco_quality = is_hocomoco_model ? hocomoco_quality(model) : nil
     is_chipseq_model = Models::ChipseqCollections.include?(collection_name)
-    is_selex_rebuilt_model = Models::SelexRebuiltCollections.include?(collection_name)
 
-    # num_datasets_pass_highquality_auc = num_datasets_passing_auc(model_name, 0.9)
-    num_datasets_pass_optimal_auc = num_datasets_passing_auc(model_name, 0.7)
-    num_datasets_pass_minimal_auc = num_datasets_passing_auc(model_name, 0.65)
-    
-    # raise 'Impossible: best model doesn\'t pass filters'  if num_datasets(model_name) < 1
-    # return hocomoco_quality(model_name)  if is_hocomoco_model
+    if not_validated?(model)
+      if is_hocomoco_model
+        return hocomoco_quality
+      else
+        return 'D'
+      end
+    end
+
+    num_datasets_pass_optimal_auc = num_datasets_passing_auc(model, 0.7)
+    num_datasets_pass_minimal_auc = num_datasets_passing_auc(model, 0.65)
 
     if num_datasets_pass_optimal_auc >= 2
-      # return (num_datasets_pass_highquality_auc >= 1) ? 'A+' : 'A'
+      $stderr.puts "#{model} has quality `A` but in hocomoco it had quality `#{hocomoco_quality}`" if is_hocomoco_model && hocomoco_quality != 'A'
       'A'
     elsif num_datasets_pass_optimal_auc == 1
-      if !is_chipseq_model
+      if is_chipseq_model && num_datasets_pass_minimal_auc >= 2
+        $stderr.puts "#{model} has quality `B` but in hocomoco it had quality `#{hocomoco_quality}`" if is_hocomoco_model && hocomoco_quality != 'B'
         'B'
-      elsif is_chipseq_model && num_datasets_pass_minimal_auc >= 2
+      elsif !is_chipseq_model
+        $stderr.puts "#{model} has quality `B` but in hocomoco it had quality `#{hocomoco_quality}`" if is_hocomoco_model && hocomoco_quality != 'B'
         'B'
-      else # is_chipseq_model && num_datasets_pass_minimal_auc == 1 
+      else # is_chipseq_model && num_datasets_pass_minimal_auc == 1
+        $stderr.puts "#{model} has quality `C` but in hocomoco it had quality `#{hocomoco_quality}`" if is_hocomoco_model && hocomoco_quality != 'C'
         'C'
       end
     else # num_datasets_pass_optimal_auc == 0
-      if num_datasets_pass_minimal_auc >= 2 
+      if num_datasets_pass_minimal_auc >= 2
+        $stderr.puts "#{model} has quality `C` but in hocomoco it had quality `#{hocomoco_quality}`" if is_hocomoco_model && hocomoco_quality != 'C'
         'C'
-      elsif num_datasets_pass_minimal_auc == 1
-        'D'
-      else # num_datasets_pass_minimal_auc == 0
+      else # num_datasets_pass_minimal_auc < 2
         if is_hocomoco_model
-          hocomoco_quality(model_name)
-        elsif is_selex_rebuilt_model
-          'E'
+          hocomoco_quality(model)
         else
-          'N/A'
+          'D'
         end
       end
     end
