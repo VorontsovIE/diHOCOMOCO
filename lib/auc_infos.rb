@@ -58,8 +58,8 @@ class AUCs
     @weighted_model_aucs ||= begin
       quality_norm_factor = dataset_qualities.values.inject(0.0, &:+)
       models.map{|model|
-        weighted_auc = datasets.map{|dataset|
-          auc_by_model_and_dataset[model][dataset] * dataset_qualities[dataset]
+        weighted_auc = dataset_qualities.map{|dataset, dataset_weight|
+          auc_by_model_and_dataset[model][dataset] * dataset_weight
         }.inject(0.0, &:+) / quality_norm_factor
         [model, weighted_auc]
       }.sort_by{|model, auc| -auc }.to_h
@@ -109,7 +109,7 @@ class AUCs
   end
 
   # Load hash {uniprot => AUCs} with iteratively filtered datasets and models
-  def self.load_auc_infos_for_uniprot(min_weight_for_dataset:, min_auc_for_model:)
+  def self.load_auc_infos_for_uniprot(min_weight_for_dataset: 0, min_auc_for_model: 0)
     uniprots = FileList['occurences/auc/*'].pathmap('%n')
 
     uniprots.map{|uniprot|

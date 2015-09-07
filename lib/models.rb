@@ -231,7 +231,7 @@ module Models
     'SDF' => 'DI-HTSELEX-R',
     'SDI' => 'DI-HTSELEX-I',
 
-    'PAPAM' => 'PAPATSENKO',
-    'PAPAD' => 'DI-PAPATSENKO',
+    'PAPAM' => 'PLURIP',
+    'PAPAD' => 'DI-PLURIP',
   }
 end
