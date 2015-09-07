@@ -104,8 +104,8 @@ task :make_final_collection do
   end
 
   # Also we take all secondary models
-  best_models_mono += secondary_models.select{|model| model.mono_or_di_mode == :mono }
-  best_models_di += secondary_models.select{|model| model.mono_or_di_mode == :di }
+  best_models_mono += secondary_models.select{|model| model.mono_or_di_mode.arity_type == 'mono' }
+  best_models_di += secondary_models.select{|model| model.mono_or_di_mode.arity_type == 'di' }
 
   best_models_mono = best_models_mono.compact.uniq
   best_models_di = best_models_di.compact.uniq
