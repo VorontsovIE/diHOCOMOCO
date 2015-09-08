@@ -27,11 +27,12 @@ task :make_final_collection do
     )
   end
 
+  rm_rf 'final_bundle'
   ['HUMAN', 'MOUSE'].each{|species|
     ['mono', 'di'].each{|arity|
-      mkdir_p "final_bundle/#{species}/#{arity}/pcm/" unless Dir.exist?("final_bundle/#{species}/#{arity}/pcm/")
-      mkdir_p "final_bundle/#{species}/#{arity}/pwm/" unless Dir.exist?("final_bundle/#{species}/#{arity}/pwm/")
-      mkdir_p "final_bundle/#{species}/#{arity}/logo/" unless Dir.exist?("final_bundle/#{species}/#{arity}/logo/")
+      mkdir_p "final_bundle/#{species}/#{arity}/pcm/"
+      mkdir_p "final_bundle/#{species}/#{arity}/pwm/"
+      mkdir_p "final_bundle/#{species}/#{arity}/logo/"
     }
   }
 
