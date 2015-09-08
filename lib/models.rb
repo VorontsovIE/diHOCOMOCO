@@ -1,4 +1,5 @@
 require 'bioinform'
+require_relative 'dipm'
 
 module ModelKind
   def self.get(mode)
@@ -201,7 +202,7 @@ module Models
       model.collection_short_name == 'HL' && hocomoco_qualities[model.model_name] == 'D'
     },
     'SMI', 'SMF']
-  DiCollectionsReliability = ['PAPAD', 'CD']
+  DiCollectionsReliability = ['PAPAD']
 
   # We take only denovo collections and hocomoco legacy for a final bundle
   CollectionsForFinalBundle = ChipseqCollections + SelexRebuiltCollections + ['HL', 'PAPAM', 'PAPAD']
