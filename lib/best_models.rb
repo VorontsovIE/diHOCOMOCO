@@ -128,3 +128,57 @@ def collect_best_models(auc_infos_for_uniprot, secondary_models:, banned_models:
 
   best_models_mono + best_models_di
 end
+
+
+def same_by?(models, &block)
+  characteristics = models.map(&block)
+  characteristics.all?{|ch| ch == characteristics.first }
+end
+
+# Calculate a characteristic for model. Make sure that all models have the same value or raise.
+def take_and_check_consistency(models, &block)
+  raise 'Can\'t take characteristic for empty model list'  if models.empty?
+  if same_by?(models, &block)
+    block.call(models.first)
+  else
+    raise 'Inconsistent characteristics for joint models #{models.inspect}'
+  end
+end
+
+# Models should be equal. Normally models have one model, but sometimes
+#   equal models can be related to different TFs
+def model_info_for_joint_model(models, auc_infos_for_uniprot, quality_assessor, bundle_name)
+  # We expect that all models are the same
+  unless same_by?(models){|m| m.pcm.matrix }
+    raise 'We expect all models with the same name to be the same'
+  end
+  models = models.sort
+  main_model = models.first
+
+  quality = take_and_check_consistency(models){|model|
+    quality_assessor.calculate_quality(model)
+  }
+
+  aucs = models.map{|model|
+    auc_infos_for_uniprot[model.uniprot].weighted_auc(model)
+  }.compact
+  auc = aucs.empty? ? nil : median(aucs)
+
+  model_name = "#{main_model.uniprot}~#{bundle_name}~#{quality}"
+
+  if models.size == 1
+    comment = ''
+  else
+    comment = "Model is related to several TFs: #{models.map(&:uniprot).join(', ')}"
+  end
+
+  {
+    uniprot: main_model.uniprot,
+    model: main_model,
+    model_name: model_name,
+    quality: quality,
+    auc: auc,
+    comment: comment,
+    origin_models: models,
+  }
+end

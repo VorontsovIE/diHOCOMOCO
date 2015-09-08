@@ -1,6 +1,6 @@
 class QualityAssessor
   attr_reader :auc_infos_for_uniprot, :secondary_models
-  def initialize(auc_infos_for_uniprot, secondary_models)
+  def initialize(auc_infos_for_uniprot, secondary_models: [])
     @auc_infos_for_uniprot = auc_infos_for_uniprot
     @secondary_models = secondary_models
   end
@@ -62,11 +62,6 @@ class QualityAssessor
           'D'
         end
       end
-    end.tap{|result|
-      hocomoco_quality = hocomoco_quality(model)
-      if is_hocomoco_model && hocomoco_quality != result
-        puts "#{model} has quality `#{result}` but in hocomoco it had quality `#{hocomoco_quality}`"
-      end
-    }
+    end
   end
 end
