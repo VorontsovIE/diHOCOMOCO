@@ -1,7 +1,8 @@
 class QualityAssessor
-  attr_reader :auc_infos_for_uniprot, :secondary_models
-  def initialize(auc_infos_for_uniprot, secondary_models: [])
+  attr_reader :auc_infos_for_uniprot, :secondary_models, :best_models
+  def initialize(auc_infos_for_uniprot, best_models:, secondary_models: [])
     @auc_infos_for_uniprot = auc_infos_for_uniprot
+    @best_models = best_models
     @secondary_models = secondary_models
   end
 
@@ -25,7 +26,16 @@ class QualityAssessor
   end
 
   def calculate_quality(model)
-    return 'S'  if secondary_models.include?(model)
+    if secondary_models.include?(model)
+      # sibling models including model itself
+      sibling_models = best_models.select{|m|
+        m.uniprot == model.uniprot
+      }.select{|m|
+        m.arity_type == model.arity_type
+      }
+
+      return 'S'  if sibling_models.size > 1
+    end
 
     collection_name = model.collection_short_name
     is_hocomoco_model = (collection_name == 'HL')

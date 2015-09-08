@@ -24,7 +24,13 @@ task :final_collection_summary do
   auc_infos_for_uniprot = AUCs.load_auc_infos_for_uniprot(min_weight_for_dataset: 0.65,
                                                           min_auc_for_model: 0.65)
 
-  quality_assessor = QualityAssessor.new(auc_infos_for_uniprot)
+  secondary_models = File.readlines('secondary_models.txt').map(&:chomp).map{|name| Model.new_by_name(name) }
+  banned_models = File.readlines('banned_models.txt').map(&:chomp).map{|name| Model.new_by_name(name) }
+  best_models = collect_best_models(auc_infos_for_uniprot,
+                                    secondary_models: secondary_models,
+                                    banned_models: banned_models)
+
+  quality_assessor = QualityAssessor.new(auc_infos_for_uniprot, best_models: best_models)
 
   collections = (Models::MonoCollections + Models::DiCollections).sort
 

@@ -12,11 +12,12 @@ task :make_final_collection do
   secondary_models = File.readlines('secondary_models.txt').map(&:chomp).map{|name| Model.new_by_name(name) }
   banned_models = File.readlines('banned_models.txt').map(&:chomp).map{|name| Model.new_by_name(name) }
 
-  quality_assessor = QualityAssessor.new(auc_infos_for_uniprot, secondary_models: secondary_models)
 
   best_models = collect_best_models(auc_infos_for_uniprot,
                                     secondary_models: secondary_models,
                                     banned_models: banned_models)
+
+  quality_assessor = QualityAssessor.new(auc_infos_for_uniprot, best_models: best_models, secondary_models: secondary_models)
 
   File.open('final_collection.html', 'w') do |fw|
     print_html_table_for_grouped_models(
