@@ -6,9 +6,7 @@ require 'html_table_output'
 desc 'Collect final collection'
 task :make_final_collection do
   # We add all secondary models explicitly at the last step
-  human_secondary = File.readlines('human_secondary.txt').map(&:chomp).map{|name| Model.new_by_name(name) }
-  mouse_secondary = File.readlines('mouse_secondary.txt').map(&:chomp).map{|name| Model.new_by_name(name) }
-  secondary_models = human_secondary + mouse_secondary
+  secondary_models = File.readlines('secondary_models.txt').map(&:chomp).map{|name| Model.new_by_name(name) }
 
   # For banned
   #   model without validation - we take next model by reliability
@@ -16,7 +14,7 @@ task :make_final_collection do
   #   validated non-hocomoco model - we take corresponding hocomoco models instead
   #     (sometimes they are as good as chipseq models but are much shorter
   #     while have AUC less by 0.001 or so)
-  banned = File.readlines('banned.txt').map(&:chomp).map{|name| Model.new_by_name(name) }
+  banned = File.readlines('banned_models.txt').map(&:chomp).map{|name| Model.new_by_name(name) }
   banned_hocomoco = banned.select{|model| model.collection_short_name == 'HL' }
   banned_not_hocomoco = banned.select{|model| model.collection_short_name != 'HL' }
 
