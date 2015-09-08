@@ -1,3 +1,5 @@
+require 'quality_assessor'
+
 def print_html_table_for_grouped_models(auc_infos_for_uniprot, grouped_models, quality_assessor, stream: $stdout)
   stream.puts '<html><head><style>'
   stream.puts 'table, tr, td{ border: 1px solid black; border-collapse: collapse; padding: 2px 4px; }'

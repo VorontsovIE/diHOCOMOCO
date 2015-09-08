@@ -125,5 +125,6 @@ def collect_best_models(auc_infos_for_uniprot, secondary_models:, banned_models:
   # So it's more safe to remove them manually
   best_models_mono.reject!{|model| banned_models.include?(model) }
   best_models_di.reject!{|model| banned_models.include?(model) }
-  [best_models_mono, best_models_di]
+
+  best_models_mono + best_models_di
 end
