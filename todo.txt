@@ -82,6 +82,7 @@ ALX1_HUMAN_DBD_2 имеет внутри имя CART1^470
 	pluripotency_factors.zip
 	secondary_models.txt
 	banned_models.txt
+	revcomp_models.txt
 
 	ape-2.0.1.jar
 	sarus.jar
