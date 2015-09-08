@@ -86,11 +86,11 @@ class AUCs
     weighted_auc_total / quality_norm_factor
   end
 
-  def best_model_among_collections(collections, banned: [])
+  def best_model_among_collections(collections, banned_models: [])
     models.select{|model|
       collections.include?(model.collection_short_name)
     }.reject{|model|
-      banned.include?(model)
+      banned_models.include?(model)
     }.max_by{|model|
       weighted_auc(model)
     }
