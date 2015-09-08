@@ -39,7 +39,7 @@ class QualityAssessor
       end
     end
 
-    num_datasets_pass_optimal_auc = num_datasets_passing_auc(model, 0.7)
+    num_datasets_pass_optimal_auc = num_datasets_passing_auc(model, 0.8)
     num_datasets_pass_minimal_auc = num_datasets_passing_auc(model, 0.65)
 
     if num_datasets_pass_optimal_auc >= 2
