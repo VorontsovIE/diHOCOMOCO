@@ -29,12 +29,11 @@ class QualityAssessor
 
     collection_name = model.collection_short_name
     is_hocomoco_model = (collection_name == 'HL')
-    hocomoco_quality = is_hocomoco_model ? hocomoco_quality(model) : nil
     is_chipseq_model = Models::ChipseqCollections.include?(collection_name)
 
     if not_validated?(model)
       if is_hocomoco_model
-        return hocomoco_quality
+        return hocomoco_quality(model)
       else
         return 'D'
       end
@@ -44,22 +43,17 @@ class QualityAssessor
     num_datasets_pass_minimal_auc = num_datasets_passing_auc(model, 0.65)
 
     if num_datasets_pass_optimal_auc >= 2
-      $stderr.puts "#{model} has quality `A` but in hocomoco it had quality `#{hocomoco_quality}`" if is_hocomoco_model && hocomoco_quality != 'A'
       'A'
     elsif num_datasets_pass_optimal_auc == 1
       if is_chipseq_model && num_datasets_pass_minimal_auc >= 2
-        $stderr.puts "#{model} has quality `B` but in hocomoco it had quality `#{hocomoco_quality}`" if is_hocomoco_model && hocomoco_quality != 'B'
         'B'
       elsif !is_chipseq_model
-        $stderr.puts "#{model} has quality `B` but in hocomoco it had quality `#{hocomoco_quality}`" if is_hocomoco_model && hocomoco_quality != 'B'
         'B'
       else # is_chipseq_model && num_datasets_pass_minimal_auc == 1
-        $stderr.puts "#{model} has quality `C` but in hocomoco it had quality `#{hocomoco_quality}`" if is_hocomoco_model && hocomoco_quality != 'C'
         'C'
       end
     else # num_datasets_pass_optimal_auc == 0
       if num_datasets_pass_minimal_auc >= 2
-        $stderr.puts "#{model} has quality `C` but in hocomoco it had quality `#{hocomoco_quality}`" if is_hocomoco_model && hocomoco_quality != 'C'
         'C'
       else # num_datasets_pass_minimal_auc < 2
         if is_hocomoco_model
@@ -68,6 +62,11 @@ class QualityAssessor
           'D'
         end
       end
-    end
+    end.tap{|result|
+      hocomoco_quality = hocomoco_quality(model)
+      if is_hocomoco_model && hocomoco_quality != result
+        puts "#{model} has quality `#{result}` but in hocomoco it had quality `#{hocomoco_quality}`"
+      end
+    }
   end
 end
