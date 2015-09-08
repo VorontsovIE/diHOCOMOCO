@@ -5,6 +5,15 @@ require 'fileutils'
 module Bioinform
   module MotifModel
     class DiPM # Doesn't work with alphabet
+
+      nucleotides = ['A', 'C', 'G', 'T']
+      dinucleotides = nucleotides.product(nucleotides).map(&:join)
+
+      RevcompIndexMapping = dinucleotides.each_with_index.map{|dinucleotide, dinucleotide_index|
+        reverse_dinucleotide = dinucleotide.reverse.tr('ACGT','TGCA')
+        [dinucleotide_index, dinucleotides.index(reverse_dinucleotide)]
+      }.to_h
+
       attr_reader :matrix
       def initialize(matrix)
         @matrix = matrix
@@ -54,6 +63,12 @@ module Bioinform
         end
       end
 
+      def revcomp
+        revcomp_matrix = matrix.map{|pos|
+          pos.each_index.map{|index| pos[RevcompIndexMapping[index]] }
+        }.reverse
+        self.class.new(revcomp_matrix)
+      end
     end
 
     class DiPCM < DiPM
