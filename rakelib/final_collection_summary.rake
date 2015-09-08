@@ -30,11 +30,12 @@ task :final_collection_summary do
 
   headers = [
     'Uniprot', 'Species',
-    'Max AUC of best model', 'Best collection', 'Best model', 'Best model quality',
+    'wAUC of best model', 'Best collection', 'Best model', 'Best model quality',
+    'Number of datasets for TF',
     'Number of hocomoco models for TF',
     'Mono or dinucleotide win',
-    'Max AUC of best mononucleotide model', 'Best mononucleotide collection', 'Best mononucleotide model', 'Best mononucleotide model quality',
-    'Max AUC of best dinucleotide model', 'Best dinucleotide collection', 'Best dinucleotide model', 'Best dinucleotide model quality',
+    'wAUC of best mononucleotide model', 'Best mononucleotide collection', 'Best mononucleotide model', 'Best mononucleotide model quality',
+    'wAUC of best dinucleotide model', 'Best dinucleotide collection', 'Best dinucleotide model', 'Best dinucleotide model quality',
     *collections
   ]
 
@@ -56,6 +57,7 @@ task :final_collection_summary do
 
     [ uniprot, uniprot[/_(?<species>HUMAN|MOUSE)$/, :species],
       *best_infos_total.values_at(:auc, :collection_fullname, :model_name, :quality),
+      auc_infos.datasets.size,
       num_hocomoco_models,
       Models::MonoCollections.include?(best_infos_total[:collection]) ? 'Mono' : 'Di',
       *best_infos_mono.values_at(:auc, :collection_fullname, :model_name, :quality),

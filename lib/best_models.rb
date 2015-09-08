@@ -166,11 +166,13 @@ def model_info_for_joint_model(models, auc_infos_for_uniprot, quality_assessor, 
 
   model_name = "#{main_model.uniprot}~#{bundle_name}~#{quality}"
 
-  if models.size == 1
-    comment = ''
-  else
-    comment = "Model is related to several TFs: #{models.map(&:uniprot).join(', ')}"
+  comments = []
+  if models.size > 1
+    comments << "Model is applicable to several TFs or complex subunits: #{models.map(&:uniprot).join(', ')}."
   end
+
+  comments << 'Secondary motif.' if quality == 'S'
+  comments << 'Methylated DNA binding.'  if main_model.model_name.match /!METH/
 
   {
     uniprot: main_model.uniprot,
@@ -178,7 +180,7 @@ def model_info_for_joint_model(models, auc_infos_for_uniprot, quality_assessor, 
     model_name: model_name,
     quality: quality,
     auc: auc,
-    comment: comment,
+    comment: comments.join("\n"),
     origin_models: models,
   }
 end
