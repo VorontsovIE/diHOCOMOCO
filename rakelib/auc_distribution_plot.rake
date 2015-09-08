@@ -13,23 +13,6 @@ def histogram(thresholds, data)
   }
 end
 
-def aucs_for_hocomoco(hocomoco_models, auc_infos_for_uniprot, quality)
-  hocomoco_models.select{|model|
-    Models.hocomoco_qualities[model.model_name] == quality
-  }.map{|model|
-    uniprot = model.uniprot
-    good_datasets = auc_infos_for_uniprot[uniprot].datasets
-    good_datasets.map{|dataset| # take only good datasets
-      {
-        dataset: dataset,
-        model: model,
-        auc: auc_infos_for_uniprot[uniprot].auc(model, dataset),
-        dataset_quality: auc_infos_for_uniprot[uniprot].dataset_quality(dataset),
-      }
-    }
-  }
-end
-
 task :auc_distribution_plot do
   auc_by_control_and_model = auc_by_control_and_model('occurences/auc/')
   max_aucs_for_uniprots = SequenceDataset.each_uniprot.map{|uniprot|
@@ -99,7 +82,6 @@ task :hocomoco_auc_distribution do
         mean_auc: auc_infos.weighted_auc(model),
       }
     }
-    # auc_infos = aucs_for_hocomoco(hocomoco_models, auc_infos_for_uniprot, quality)
     max_vals = model_infos.map{|infos| infos[:max_auc] }
     min_vals =  model_infos.map{|infos| infos[:min_auc] }
     median_vals =  model_infos.map{|infos| infos[:median_auc] }
