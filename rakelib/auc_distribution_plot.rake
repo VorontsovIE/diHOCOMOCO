@@ -1,4 +1,3 @@
-require 'auc_by_model_and_control'
 require 'median'
 
 def cumulative_distribution(thresholds, data)
@@ -14,30 +13,43 @@ def histogram(thresholds, data)
 end
 
 task :auc_distribution_plot do
-  auc_by_control_and_model = auc_by_control_and_model('occurences/auc/')
+  auc_infos_for_uniprot = AUCs.load_auc_infos_for_uniprot
+
   max_aucs_for_uniprots = SequenceDataset.each_uniprot.map{|uniprot|
-    SequenceDataset.each_for_uniprot(uniprot).map{|control|
-      auc_by_control_and_model[control.name].map{|model, auc| auc }.max
+    auc_infos = auc_infos_for_uniprot[uniprot]
+    auc_infos.datasets.map{|dataset|
+      auc_infos.models.map{|model|
+        auc_infos.auc(model, dataset)
+      }.max
     }.max
-  }
+  }.compact
 
   minimax_aucs_for_uniprots = SequenceDataset.each_uniprot.map{|uniprot|
-    SequenceDataset.each_for_uniprot(uniprot).map{|control|
-      auc_by_control_and_model[control.name].map{|model, auc| auc }.max
+    auc_infos = auc_infos_for_uniprot[uniprot]
+    auc_infos.datasets.map{|dataset|
+      auc_infos.models.map{|model|
+        auc_infos.auc(model, dataset)
+      }.max
     }.min
-  }
+  }.compact
 
   minimin_aucs_for_uniprots = SequenceDataset.each_uniprot.map{|uniprot|
-    SequenceDataset.each_for_uniprot(uniprot).map{|control|
-      auc_by_control_and_model[control.name].map{|model, auc| auc }.min
+    auc_infos = auc_infos_for_uniprot[uniprot]
+    auc_infos.datasets.map{|dataset|
+      auc_infos.models.map{|model|
+        auc_infos.auc(model, dataset)
+      }.min
     }.min
-  }
+  }.compact
 
   maximin_aucs_for_uniprots = SequenceDataset.each_uniprot.map{|uniprot|
-    SequenceDataset.each_for_uniprot(uniprot).map{|control|
-      auc_by_control_and_model[control.name].map{|model, auc| auc }.min
+    auc_infos = auc_infos_for_uniprot[uniprot]
+    auc_infos.datasets.map{|dataset|
+      auc_infos.models.map{|model|
+        auc_infos.auc(model, dataset)
+      }.min
     }.max
-  }
+  }.compact
 
 
   thresholds = (0.0..1.0).step(0.01)
@@ -136,10 +148,11 @@ task :hocomoco_model_AUCs do
 end
 
 task :num_removed_datasets_by_threshold do
-  auc_by_control_and_model = auc_by_control_and_model('occurences/auc/')
+  # auc_by_control_and_model = auc_by_control_and_model('occurences/auc/')
+  auc_infos_for_uniprot = AUCs.load_auc_infos_for_uniprot
   max_aucs_for_datasets = SequenceDataset.each_dataset.map{|dataset|
-    auc_by_control_and_model[dataset.name].values
-  }.map(&:max)
+    auc_infos_for_uniprot[dataset.uniprot].aucs_for_dataset(dataset.name).values
+  }.map(&:max).compact
   thresholds = (0.0..1.0).step(0.01)
   max_aucs_distribution = cumulative_distribution(thresholds, max_aucs_for_datasets)
   File.write 'max_aucs.tsv', thresholds.zip(max_aucs_distribution).map{|row| row.join("\t") }.join("\n")
