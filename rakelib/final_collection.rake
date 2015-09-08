@@ -42,7 +42,7 @@ task :make_final_collection do
     # If we have validated model, use it.
     # If we don't have, we take model based on our believes in collection qualities
 
-    if auc_infos && auc_infos.has_validation?
+    if auc_infos.has_validation?
       # Model have been validated (but not necessary that both mono- and di- were)
 
       ### Mononucleotide models

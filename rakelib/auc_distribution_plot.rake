@@ -79,8 +79,6 @@ task :hocomoco_auc_distribution do
     model.collection_short_name == 'HL'
   }.select{|model|
     model.species == 'HUMAN'
-  }.select{|model|
-    auc_infos_for_uniprot[model.uniprot]
   }.sort
 
   $stderr.puts "Total #{hocomoco_models.size} hocomoco models with chipseqs"
@@ -132,8 +130,6 @@ task :hocomoco_model_AUCs do
     model.collection_short_name == 'HL'
   }.select{|model|
     model.species == 'HUMAN'
-  }.select{|model|
-    auc_infos_for_uniprot[model.uniprot]
   }.select{|model|
     auc_infos_for_uniprot[model.uniprot].has_validation?
   }.sort

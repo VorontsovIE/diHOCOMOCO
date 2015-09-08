@@ -133,7 +133,7 @@ class AUCs
   def self.load_auc_infos_for_uniprot(min_weight_for_dataset: 0, min_auc_for_model: 0)
     uniprots = FileList['occurences/auc/*'].pathmap('%n')
 
-    uniprots.map{|uniprot|
+    result = uniprots.map{|uniprot|
       [uniprot, self.from_folder("occurences/auc/#{uniprot}/*.txt")]
     }.map{|uniprot, auc_infos|
       auc_infos_prev = nil
@@ -143,5 +143,10 @@ class AUCs
       end
       [uniprot, auc_infos]
     }.to_h
+
+    result.default_proc = ->(hsh,k) {
+      self.new(Hash.new{|hsh2, k2| {}}, models: [], datasets: [])
+    }
+    result
   end
 end
