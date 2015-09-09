@@ -1,4 +1,5 @@
 require 'quality_assessor'
+require 'joint_model'
 
 def print_html_table_for_grouped_models(auc_infos_for_uniprot, grouped_models, quality_assessor, stream: $stdout)
   stream.puts '<html><head><style>'
@@ -61,10 +62,8 @@ def print_html_table_by_model_infos(model_infos, stream: $stdout)
   stream.puts '</style></head><body>'
   stream.puts '<table>'
 
-  model_infos.group_by{|info|
-    info[:uniprot]
-  }.each do |uniprot, models|
-    print_html_row_for_model_group(models, stream: stream)
+  model_infos.group_by(&:uniprot).each do |uniprot, model_infos_group|
+    print_html_row_for_model_group(model_infos_group, stream: stream)
   end
 
   stream.puts '</table>'
@@ -74,31 +73,23 @@ end
 def print_html_row_for_model_group(model_infos, stream: $stdout)
   num_models = model_infos.size
   model_infos.each_with_index do |model_info, index|
-    model_name = model_info[:model_name]
-    uniprot = model_info[:uniprot]
-    quality = model_info[:quality]
-    auc = model_info[:auc] && model_info[:auc].round(3)
-    comment = model_info[:comments].join("<br/>")
+    model_name = model_info.full_name
+    auc = model_info.auc && model_info.auc.round(3)
+    comment = model_info.comments.join("<br/>")
 
-    if index == 0
-      if num_models == 1
-        stream.print '<tr class="start finish">'
-      else
-        stream.print '<tr class="start">'
-      end
-      stream.print "<td rowspan=#{num_models}>#{uniprot}</td>"
-    elsif index + 1 == num_models
-      stream.print '<tr class="finish">'
-    else
-      stream.print '<tr class="intermediate">'
-    end
+    classes = []
+    classes << 'start' if index == 0
+    classes << 'finish' if index + 1 == num_models
+    classes << 'intermediate' if classes.empty?
 
-    stream.print "<td>#{quality}</td>"
+    stream.print "<tr class=\"#{classes.join(' ')}\">"
+    stream.print "<td rowspan=#{num_models}>#{model_info.uniprot}</td>" if index == 0
+    stream.print "<td>#{model_info.quality}</td>"
     stream.print "<td>#{auc}</td>"
     stream.print "<td>#{model_name}</td>"
     stream.print "<td><img src=\"logo/#{model_name}_direct.png\"/></td>"
     stream.print "<td><img src=\"logo/#{model_name}_revcomp.png\"/></td>"
-    stream.print "<td>#{model_info[:origin_models].map(&:full_name).join(' ')}</td>"
+    stream.print "<td>#{model_info.origin_models.map(&:full_name).join(' ')}</td>"
     stream.print "<td>#{comment}</td>"
     stream.puts '</tr>'
   end

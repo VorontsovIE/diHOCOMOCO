@@ -1,5 +1,6 @@
 require 'models'
 require 'best_models'
+require 'joint_model'
 require 'auc_infos'
 require 'quality_assessor'
 require 'html_table_output'
@@ -48,17 +49,12 @@ task :make_final_collection do
         model.arity_type == arity
       }
 
-      model_infos = models.group_by{|model|
-        # All models from the same collection with the same original name refer to the same model
-        # We will join these models into one
-        [model.collection_short_name, model.model_name].join('~')
-      }.map{|original_model_name, joint_models|
-        model_info_for_joint_model(joint_models, auc_infos_for_uniprot, quality_assessor)
-      }
+      # combine same models for several Tfs into joint models
+      model_infos = JointModel.grouped_models_from_scratch(models, auc_infos_for_uniprot, quality_assessor)
 
       model_infos.each do |model_info|
-        model_name = model_info[:model_name]
-        model = model_info[:model]
+        model_name = model_info.full_name
+        model = model_info.representative_model
         pcm = model.pcm.named(model_name)
         pwm = model.pwm.named(model_name)
 
