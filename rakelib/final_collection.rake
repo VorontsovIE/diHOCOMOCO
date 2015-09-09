@@ -33,7 +33,7 @@ task :make_final_collection do
 
   rm_rf 'final_bundle'
   ['HUMAN', 'MOUSE'].each do |species|
-    {'mono' => 'H10MO', 'di' => 'H10DI'}.each do |arity, bundle_name|
+    ['mono', 'di'].each do |arity|
 
       model_kind = ModelKind.get(arity)
 
@@ -53,7 +53,7 @@ task :make_final_collection do
         # We will join these models into one
         [model.collection_short_name, model.model_name].join('~')
       }.map{|original_model_name, joint_models|
-        model_info_for_joint_model(joint_models, auc_infos_for_uniprot, quality_assessor, bundle_name)
+        model_info_for_joint_model(joint_models, auc_infos_for_uniprot, quality_assessor)
       }
 
       model_infos.each do |model_info|

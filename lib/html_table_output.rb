@@ -78,7 +78,7 @@ def print_html_row_for_model_group(model_infos, stream: $stdout)
     uniprot = model_info[:uniprot]
     quality = model_info[:quality]
     auc = model_info[:auc] && model_info[:auc].round(3)
-    comment = model_info[:comment]
+    comment = model_info[:comments].join("<br/>")
 
     if index == 0
       if num_models == 1

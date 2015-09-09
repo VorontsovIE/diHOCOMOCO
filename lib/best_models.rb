@@ -147,7 +147,7 @@ end
 
 # Models should be equal. Normally models have one model, but sometimes
 #   equal models can be related to different TFs
-def model_info_for_joint_model(models, auc_infos_for_uniprot, quality_assessor, bundle_name)
+def model_info_for_joint_model(models, auc_infos_for_uniprot, quality_assessor)
   # We expect that all models are the same
   unless same_by?(models){|m| m.pcm.matrix }
     raise 'We expect all models with the same name to be the same'
@@ -158,6 +158,8 @@ def model_info_for_joint_model(models, auc_infos_for_uniprot, quality_assessor, 
   quality = take_and_check_consistency(models){|model|
     quality_assessor.calculate_quality(model)
   }
+
+  bundle_name = {'mono' => 'H10MO', 'di' => 'H10DI'}[take_and_check_consistency(models, &:arity_type)]
 
   aucs = models.map{|model|
     auc_infos_for_uniprot[model.uniprot].weighted_auc(model)
@@ -180,7 +182,7 @@ def model_info_for_joint_model(models, auc_infos_for_uniprot, quality_assessor, 
     model_name: model_name,
     quality: quality,
     auc: auc,
-    comment: comments.join("\n"),
+    comments: comments,
     origin_models: models,
   }
 end
