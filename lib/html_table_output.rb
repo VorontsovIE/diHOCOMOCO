@@ -38,6 +38,8 @@ def print_html_table(stream:, &block)
   stream.puts '</body></html>'
 end
 
+###############
+
 def print_html_table_for_grouped_models(auc_infos_for_uniprot, grouped_models, quality_assessor, stream: $stdout)
   print_html_table(stream: stream) do
     grouped_models.each do |uniprot, models|
@@ -65,6 +67,7 @@ def print_logos_for_models(auc_infos, models, uniprot, quality_assessor, stream:
   end
 end
 
+################
 
 def print_html_table_by_model_infos(model_infos, stream: $stdout)
   print_html_table(stream: stream) do
@@ -89,7 +92,7 @@ def print_html_row_for_model_group(model_infos, stream: $stdout)
     stream.print cell_html(model_name)
     stream.print cell_html(img_html("logo/#{model_name}_direct.png"))
     stream.print cell_html(img_html("logo/#{model_name}_revcomp.png"))
-    stream.print cell_html(model_info.origin_models.map(&:full_name).join(' '))
+    stream.print cell_html(model_info.origin_models.map(&:full_name).join(', '))
     stream.print cell_html(model_info.comments.join("<br/>"))
     stream.puts '</tr>'
   end

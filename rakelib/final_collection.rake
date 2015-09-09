@@ -35,14 +35,6 @@ task :make_final_collection do
   rm_rf 'final_bundle'
   ['HUMAN', 'MOUSE'].each do |species|
     ['mono', 'di'].each do |arity|
-
-      model_kind = ModelKind.get(arity)
-
-      folder = "final_bundle/#{species}/#{arity}"
-      mkdir_p File.join(folder, 'pcm')
-      mkdir_p File.join(folder, 'pwm')
-      mkdir_p File.join(folder, 'logo')
-
       models = best_models.select{|model|
         model.species == species
       }.select{|model|
@@ -50,36 +42,19 @@ task :make_final_collection do
       }
 
       # combine same models for several Tfs into joint models
-      model_infos = JointModel.grouped_models_from_scratch(models, auc_infos_for_uniprot, quality_assessor)
+      model_infos = JointModel.grouped_models_from_scratch(models, auc_infos_for_uniprot, quality_assessor, to_be_reversed)
 
-      model_infos.each do |model_info|
-        model_name = model_info.full_name
-        model = model_info.representative_model
-        pcm = model.pcm.named(model_name)
-        pwm = model.pwm.named(model_name)
-
-
-        good_strand = !to_be_reversed.include?(model)
-
-        if good_strand
-          cp model.path_to_logo_direct, File.join(folder, 'logo', "#{model_name}_direct.png")
-          cp model.path_to_logo_revcomp, File.join(folder, 'logo', "#{model_name}_revcomp.png")
-        else
-          pcm = pcm.revcomp
-          pwm = pwm.revcomp
-          cp model.path_to_logo_direct, File.join(folder, 'logo', "#{model_name}_revcomp.png")
-          cp model.path_to_logo_revcomp, File.join(folder, 'logo', "#{model_name}_direct.png")
-        end
-
-        File.write File.join(folder, 'pcm', "#{model_name}.#{model_kind.pcm_extension}"), pcm.to_s
-        File.write File.join(folder, 'pwm', "#{model_name}.#{model_kind.pwm_extension}"), pwm.to_s
-      end
+      folder = "final_bundle/#{species}/#{arity}"
+      mkdir_p File.join(folder, 'pcm')
+      mkdir_p File.join(folder, 'pwm')
+      mkdir_p File.join(folder, 'logo')
 
       File.open(File.join(folder, "final_collection.html"), 'w') do |fw|
-        print_html_table_by_model_infos(
-          model_infos,
-          stream: fw
-        )
+        print_html_table_by_model_infos(model_infos, stream: fw)
+      end
+
+      model_infos.each do |model_info|
+        model_info.save_model_pack_into_folder!(folder)
       end
     end
   end

@@ -128,19 +128,3 @@ def collect_best_models(auc_infos_for_uniprot, secondary_models:, banned_models:
 
   best_models_mono + best_models_di
 end
-
-
-def same_by?(models, &block)
-  characteristics = models.map(&block)
-  characteristics.all?{|ch| ch == characteristics.first }
-end
-
-# Calculate a characteristic for model. Make sure that all models have the same value or raise.
-def take_and_check_consistency(models, &block)
-  raise 'Can\'t take characteristic for empty model list'  if models.empty?
-  if same_by?(models, &block)
-    block.call(models.first)
-  else
-    raise 'Inconsistent characteristics for joint models #{models.inspect}'
-  end
-end
