@@ -69,6 +69,22 @@ module Bioinform
         }.reverse
         self.class.new(revcomp_matrix)
       end
+
+      def self.sum_by_second_letter(pos)
+        4.times.map{|first_letter|
+          4.times.map{|second_letter|
+            pos[4*first_letter + second_letter]
+          }.inject(0.0, &:+)
+        }
+      end
+
+      def self.sum_by_first_letter(pos)
+        4.times.map{|second_letter|
+          4.times.map{|first_letter|
+            pos[4*first_letter + second_letter]
+          }.inject(0.0, &:+)
+        }
+      end
     end
 
     class DiPCM < DiPM
@@ -86,6 +102,12 @@ module Bioinform
         }
 
         DiPWM.new(converted_matrix)
+      end
+
+      def to_mono
+        matrix_prefix = matrix.map{|pos| DiPM.sum_by_second_letter(pos) }
+        matrix_last_pos = DiPM.sum_by_first_letter(matrix.last)
+        PCM.new(matrix_prefix + [matrix_last_pos])
       end
     end
 
