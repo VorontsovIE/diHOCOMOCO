@@ -30,7 +30,7 @@ task :final_collection_summary do
                                     secondary_models: secondary_models,
                                     banned_models: banned_models)
 
-  quality_assessor = QualityAssessor.new(auc_infos_for_uniprot, best_models: best_models)
+  quality_assessor = QualityAssessor.new(auc_infos_for_uniprot, best_models: best_models, secondary_models: secondary_models)
 
   collections = (Models::MonoCollections + Models::DiCollections).sort
 
@@ -42,7 +42,9 @@ task :final_collection_summary do
     'Mono or dinucleotide win',
     'wAUC of best mononucleotide model', 'Best mononucleotide collection', 'Best mononucleotide model', 'Best mononucleotide model quality',
     'wAUC of best dinucleotide model', 'Best dinucleotide collection', 'Best dinucleotide model', 'Best dinucleotide model quality',
-    *collections
+    *collections,
+    'H10MO model', 'H10MO collection', 'H10MO wAUC', 'H10MO quality',
+    'H10DI model', 'H10DI collection', 'H10DI wAUC', 'H10DI quality'
   ]
 
   results = auc_infos_for_uniprot.select{|uniprot, auc_infos|
@@ -61,6 +63,46 @@ task :final_collection_summary do
       best_model_infos(auc_infos, quality_assessor, [collection])[:auc]
     }
 
+    ############
+    final_mono_models = best_models.select{|model|
+      model.uniprot == uniprot
+    }.select{|model|
+      model.arity_type == 'mono'
+    }.reject{|model|
+      quality_assessor.calculate_quality(model) == 'S'
+    }
+
+    raise "WTF: #{final_mono_models.join(', ')}" if final_mono_models.size > 1
+    final_mono_model = final_mono_models.first
+
+    if final_mono_model
+      final_mono_model_name = final_mono_model.full_name
+      final_mono_model_collection = Models::CollectionNames[final_mono_model.collection_short_name]
+      final_mono_model_auc = auc_infos.weighted_auc(final_mono_model)
+      final_mono_model_quality = quality_assessor.calculate_quality(final_mono_model)
+    end
+
+    ############
+    final_di_models = best_models.select{|model|
+      model.uniprot == uniprot
+    }.select{|model|
+      model.arity_type == 'di'
+    }.reject{|model|
+      quality_assessor.calculate_quality(model) == 'S'
+    }
+
+    raise 'WTF: #{final_di_models.join(', ')}' if final_di_models.size > 1
+    final_di_model = final_di_models.first
+
+    if final_di_model
+      final_di_model_name = final_di_model.full_name
+      final_di_model_collection = Models::CollectionNames[final_di_model.collection_short_name]
+      final_di_model_auc = auc_infos.weighted_auc(final_di_model)
+      final_di_model_quality = quality_assessor.calculate_quality(final_di_model)
+    end
+
+    ############
+
     [ uniprot, uniprot[/_(?<species>HUMAN|MOUSE)$/, :species],
       *best_infos_total.values_at(:auc, :collection_fullname, :model_name, :quality),
       auc_infos.datasets.size,
@@ -68,7 +110,10 @@ task :final_collection_summary do
       Models::MonoCollections.include?(best_infos_total[:collection]) ? 'Mono' : 'Di',
       *best_infos_mono.values_at(:auc, :collection_fullname, :model_name, :quality),
       *best_infos_di.values_at(:auc, :collection_fullname, :model_name, :quality),
-      *aucs ]
+      *aucs,
+      final_mono_model_name, final_mono_model_collection, final_mono_model_auc, final_mono_model_quality,
+      final_di_model_name, final_di_model_collection, final_di_model_auc, final_di_model_quality,
+    ]
   }
 
   File.open('collection_perfomances.tsv', 'w') do |fw|
