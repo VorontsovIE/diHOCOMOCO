@@ -1,28 +1,42 @@
 require 'models'
 
+module SequenceLogoGenerator
+  def self.run(pcm_files:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60, additional_options: [])
+    return  if pcm_files.empty?
+
+    output_subfolder = File.join(output_folder, uniprot)
+    FileUtils.mkdir_p(output_subfolder)  unless Dir.exist?(output_subfolder)
+
+    opts = []
+    opts += ['--logo-folder', output_subfolder]
+    opts += ['--orientation', orientation]
+    opts += ['--x-unit', x_unit.to_s]
+    opts += ['--y-unit', y_unit.to_s]
+    opts += additional_options.flatten.map(&:to_s)
+
+    Open3.popen2('sequence_logo', *opts){|fread, fwrite|
+      fread.puts Shellwords.join(pcm_files)
+      fread.close
+    }
+  end
+
+end
+
 desc 'Draw sequence logos for all motifs'
 task :sequence_logos => ['sequence_logos:mono', 'sequence_logos:di']
 
 Models.mono_uniprots.each do |uniprot|
   task "sequence_logos:mono:#{uniprot}" do
-    pcm_files = FileList[File.join('models/pcm/mono/all/', uniprot, '*.pcm')]
-    next  if pcm_files.empty?
+    SequenceLogoGenerator.run(
+      pcm_files: FileList[File.join('models/pcm/mono/all/', uniprot, '*.pcm')],
+      output_folder: 'models/logo/',
+    )
 
-    logo_folder = File.join((ENV['logo_folder'] || 'models/logo/'), uniprot)
-    mkdir_p logo_folder  unless Dir.exist?(logo_folder)
-
-    opts = []
-    opts += ['--logo-folder', logo_folder]
-    opts += ['--orientation', 'both']
-
-    x_unit = (ENV['x_unit'] || 30).to_i
-    y_unit = (ENV['y_unit'] || 60).to_i
-    opts += ['--x-unit', x_unit.to_s]
-    opts += ['--y-unit', y_unit.to_s]
-    Open3.popen2('sequence_logo', *opts){|fread, fwrite|
-      fread.puts Shellwords.join(pcm_files)
-      fread.close
-    }
+    SequenceLogoGenerator.run(
+      pcm_files: FileList[File.join('models/pcm/mono/all/', uniprot, '*.pcm')],
+      output_folder: 'models/logo_small/',
+      x_unit: 15, y_unit: 30,
+    )
   end
   task 'sequence_logos:mono' => "sequence_logos:mono:#{uniprot}"
 end
@@ -30,25 +44,18 @@ end
 
 Models.di_uniprots.each do |uniprot|
   task "sequence_logos:di:#{uniprot}" do
-    pcm_files = FileList[File.join('models/pcm/di/all/', uniprot, '*.dpcm')]
-    next  if pcm_files.empty?
-
-    logo_folder = File.join((ENV['logo_folder'] || 'models/logo/'), uniprot)
-    mkdir_p logo_folder  unless Dir.exist?(logo_folder)
-
-    opts = []
-    opts += ['--logo-folder', logo_folder]
-    opts += ['--dinucleotide']
-    opts += ['--orientation', 'both']
-
-    x_unit = (ENV['x_unit'] || 30).to_i
-    y_unit = (ENV['y_unit'] || 60).to_i
-    opts += ['--x-unit', x_unit.to_s]
-    opts += ['--y-unit', y_unit.to_s]
-    Open3.popen2('sequence_logo', *opts){|fread, fwrite|
-      fread.puts Shellwords.join(pcm_files)
-      fread.close
-    }
+    SequenceLogoGenerator.run(
+      pcm_files: FileList[File.join('models/pcm/di/all/', uniprot, '*.dpcm')],
+      output_folder: 'models/logo/',
+      x_unit: 30, y_unit: 60,
+      additional_options: ['--dinucleotide']
+    )
+    SequenceLogoGenerator.run(
+      pcm_files: FileList[File.join('models/pcm/di/all/', uniprot, '*.dpcm')],
+      output_folder: 'models/logo_small/',
+      x_unit: 15, y_unit: 30,
+      additional_options: ['--dinucleotide']
+    )
   end
   task 'sequence_logos:di' => "sequence_logos:di:#{uniprot}"
 end

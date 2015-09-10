@@ -104,9 +104,7 @@ class Model
     File.join('models/pwm', @mono_or_di_mode.to_s, 'all', uniprot, "#{full_name}.#{pwm_extension}")
   end
 
-  def path_to_logo
-    File.join('models/logo', uniprot, "#{full_name}_direct.png")
-  end
+  def path_to_logo; path_to_logo_direct; end
 
   def path_to_logo_direct
     File.join('models/logo', uniprot, "#{full_name}_direct.png")
@@ -114,6 +112,14 @@ class Model
 
   def path_to_logo_revcomp
     File.join('models/logo', uniprot, "#{full_name}_revcomp.png")
+  end
+
+  def path_to_small_logo_direct
+    File.join('models/logo_small', uniprot, "#{full_name}_direct.png")
+  end
+
+  def path_to_small_logo_revcomp
+    File.join('models/logo_small', uniprot, "#{full_name}_revcomp.png")
   end
 
   def to_s; "<#{@mono_or_di_mode}: #{full_name}>"; end

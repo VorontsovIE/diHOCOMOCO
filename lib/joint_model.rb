@@ -109,9 +109,13 @@ JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :
     if good_strand
       FileUtils.cp representative_model.path_to_logo_direct, File.join(folder, 'logo', "#{full_name}_direct.png")
       FileUtils.cp representative_model.path_to_logo_revcomp, File.join(folder, 'logo', "#{full_name}_revcomp.png")
+      FileUtils.cp representative_model.path_to_small_logo_direct, File.join(folder, 'logo_small', "#{full_name}_direct.png")
+      FileUtils.cp representative_model.path_to_small_logo_revcomp, File.join(folder, 'logo_small', "#{full_name}_revcomp.png")
     else
       FileUtils.cp representative_model.path_to_logo_direct, File.join(folder, 'logo', "#{full_name}_revcomp.png")
       FileUtils.cp representative_model.path_to_logo_revcomp, File.join(folder, 'logo', "#{full_name}_direct.png")
+      FileUtils.cp representative_model.path_to_small_logo_direct, File.join(folder, 'logo_small', "#{full_name}_revcomp.png")
+      FileUtils.cp representative_model.path_to_small_logo_revcomp, File.join(folder, 'logo_small', "#{full_name}_direct.png")
     end
 
     File.write File.join(folder, 'pcm', "#{full_name}.#{pcm_extension}"), pcm.to_s
