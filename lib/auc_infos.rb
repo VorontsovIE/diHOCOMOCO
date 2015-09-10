@@ -24,6 +24,18 @@ class AUCs
     @datasets = datasets || @auc_by_model_and_dataset.values.flat_map(&:keys).uniq.sort
   end
 
+  # All models which were benchmarked, including models which were rejected
+  # Use with attention
+  def all_models
+    @all_models ||= @auc_by_model_and_dataset.keys
+  end
+
+  # All models which were benchmarked, including models which were rejected
+  # Use with attention
+  def all_datasets
+    @all_datasets ||= @auc_by_model_and_dataset.values.flat_map(&:keys).uniq
+  end
+
   def to_s
     ["models: #{@models}", "datasets: #{@datasets}", "AUCs: #{@auc_by_model_and_dataset}"].join("\n")
   end
