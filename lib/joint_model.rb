@@ -18,7 +18,7 @@ end
 
 # Models should be equal. Normally models have one model, but sometimes
 #   equal models can be related to different TFs
-JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :comments, :good_strand, :max_auc, :datasets) do
+JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :comments, :good_strand, :max_auc, :datasets, :motif_families, :motif_subfamilies) do
   def initialize(*args, &block)
     super(*args, &block)
     raise "Not consistent models: #{origin_models.join(', ')}"  unless consistent?
@@ -52,7 +52,11 @@ JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :
     good_strand = !to_be_reversed.include?(representative_model)
     datasets = auc_infos_for_uniprot[representative_model.uniprot].datasets
 
-    self.new(origin_models, representative_model, quality, auc, comments, good_strand, max_auc, datasets)
+    recognizers_by_level = PROTEIN_FAMILY_RECOGNIZERS[representative_model.species]
+    motif_families = recognizers_by_level[3].subfamilies_by_uniprot_id(representative_model.uniprot)
+    motif_subfamilies = recognizers_by_level[4].subfamilies_by_uniprot_id(representative_model.uniprot)
+
+    self.new(origin_models, representative_model, quality, auc, comments, good_strand, max_auc, datasets, motif_families, motif_subfamilies)
   end
 
   def consistent?

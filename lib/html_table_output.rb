@@ -101,17 +101,26 @@ end
 ################
 
 def print_csv_table(model_infos, stream: $stdout)
+  headers = [
+    'Model name', 'Consensus', 'UniprotID', 'Model type', 'Model quality',
+    'Weighted AUC', 'Maximal AUC', 'Datasets', 'Origin models',
+    'Motif family', 'Motif subfamily',
+    'Comment'
+  ]
+  stream.puts headers.join("\t")
   model_infos.sort_by(&:full_name).each_with_index do |model_info|
     infos = [
       model_info.full_name,
       model_info.consensus_string,
       model_info.uniprot,
+      model_info.arity_type,
       model_info.quality,
       model_info.auc,
       model_info.max_auc,
-      model_info.num_datasets.zero? ? nil : model_info.num_datasets,
       model_info.datasets.join(', '),
       model_info.origin_models.map(&:full_name).join(', '),
+      model_info.motif_families.join('; '),
+      model_info.motif_subfamilies.join('; '),
       model_info.comments.join(" "),
     ]
     stream.puts infos.join("\t")

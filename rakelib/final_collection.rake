@@ -4,6 +4,7 @@ require 'joint_model'
 require 'auc_infos'
 require 'quality_assessor'
 require 'html_table_output'
+require 'motif_family_recognizer'
 
 desc 'Collect final collection'
 task :make_final_collection do
