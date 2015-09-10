@@ -1,3 +1,6 @@
+require_relative 'models'
+require_relative 'information_content'
+
 def same_by?(models, &block)
   characteristics = models.map(&block)
   characteristics.all?{|ch| ch == characteristics.first }
@@ -15,7 +18,7 @@ end
 
 # Models should be equal. Normally models have one model, but sometimes
 #   equal models can be related to different TFs
-JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :comments, :good_strand) do
+JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :comments, :good_strand, :max_auc, :datasets) do
   def initialize(*args, &block)
     super(*args, &block)
     raise "Not consistent models: #{origin_models.join(', ')}"  unless consistent?
@@ -34,6 +37,10 @@ JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :
     }.compact
     auc = aucs.empty? ? nil : median(aucs)
 
+    max_auc = origin_models.map{|model|
+      auc_infos_for_uniprot[model.uniprot].aucs_for_model(model).values.max
+    }.compact.max
+
     comments = []
     if origin_models.size > 1
       comments << "Model is applicable to several TFs or complex subunits: #{origin_models.map(&:uniprot).join(', ')}."
@@ -43,8 +50,9 @@ JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :
     comments << 'Methylated DNA binding.'  if representative_model.model_name.match /!METH/
 
     good_strand = !to_be_reversed.include?(representative_model)
+    datasets = auc_infos_for_uniprot[representative_model.uniprot].datasets
 
-    self.new(origin_models, representative_model, quality, auc, comments, good_strand)
+    self.new(origin_models, representative_model, quality, auc, comments, good_strand, max_auc, datasets)
   end
 
   def consistent?
@@ -76,7 +84,7 @@ JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :
   # We will join these models into one
   def self.grouped_models_from_scratch(models, auc_infos_for_uniprot, quality_assessor, to_be_reversed)
     models.group_by{|model|
-      [model.collection_short_name, model.model_name].join('~')
+      [model.arity_type, model.collection_short_name, model.model_name].join('~')
     }.map{|_original_model_name, model_group|
       JointModel.create_from_scratch(model_group, auc_infos_for_uniprot, quality_assessor, to_be_reversed)
     }.sort_by(&:full_name)
@@ -89,6 +97,9 @@ JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :
   def pwm
     (good_strand ? representative_model.pwm : representative_model.pwm.revcomp).named(full_name)
   end
+
+  def consensus_string; pcm.consensus_string; end
+  def num_datasets; datasets.size; end
 
   def save_model_pack_into_folder!(folder)
     if good_strand

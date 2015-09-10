@@ -103,10 +103,14 @@ end
 def print_csv_table(model_infos, stream: $stdout)
   model_infos.sort_by(&:full_name).each_with_index do |model_info|
     infos = [
+      model_info.full_name,
+      model_info.consensus_string,
       model_info.uniprot,
       model_info.quality,
       model_info.auc,
-      model_info.full_name,
+      model_info.max_auc,
+      model_info.num_datasets.zero? ? nil : model_info.num_datasets,
+      model_info.datasets.join(', '),
       model_info.origin_models.map(&:full_name).join(', '),
       model_info.comments.join(" "),
     ]
