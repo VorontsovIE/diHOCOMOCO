@@ -53,6 +53,10 @@ task :make_final_collection do
         print_html_table_by_model_infos(model_infos, stream: fw)
       end
 
+      File.open(File.join(folder, "final_collection.tsv"), 'w') do |fw|
+        print_csv_table(model_infos, stream: fw)
+      end
+
       model_infos.each do |model_info|
         model_info.save_model_pack_into_folder!(folder)
       end

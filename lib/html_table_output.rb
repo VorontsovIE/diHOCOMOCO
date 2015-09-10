@@ -97,3 +97,19 @@ def print_html_row_for_model_group(model_infos, stream: $stdout)
     stream.puts '</tr>'
   end
 end
+
+################
+
+def print_csv_table(model_infos, stream: $stdout)
+  model_infos.sort_by(&:full_name).each_with_index do |model_info|
+    infos = [
+      model_info.uniprot,
+      model_info.quality,
+      model_info.auc,
+      model_info.full_name,
+      model_info.origin_models.map(&:full_name).join(', '),
+      model_info.comments.join(" "),
+    ]
+    stream.puts infos.join("\t")
+  end
+end
