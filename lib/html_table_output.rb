@@ -119,8 +119,8 @@ def print_csv_table(model_infos, stream: $stdout)
       model_info.max_auc,
       model_info.datasets.join(', '),
       model_info.origin_models.map(&:full_name).join(', '),
-      model_info.motif_families.join('; '),
-      model_info.motif_subfamilies.join('; '),
+      model_info.motif_families.join(':separator:'),
+      model_info.motif_subfamilies.join(':separator:'),
       model_info.comments.join(" "),
     ]
     stream.puts infos.join("\t")
