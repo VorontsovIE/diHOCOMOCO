@@ -83,6 +83,8 @@ ALX1_HUMAN_DBD_2 имеет внутри имя CART1^470
 	secondary_models.txt
 	banned_models.txt
 	revcomp_models.txt
+	TFOntologies/TFClass_human.obo
+	TFOntologies/TFClass_mouse.obo
 
 	ape-2.0.1.jar
 	sarus.jar

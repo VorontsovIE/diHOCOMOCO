@@ -81,7 +81,7 @@ JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :
   end
 
   def full_name
-    "#{uniprot}~#{bundle_name}~#{quality}"
+    "#{uniprot}.#{bundle_name}.#{quality}"
   end
 
   # All models from the same collection with the same original name refer to the same model
