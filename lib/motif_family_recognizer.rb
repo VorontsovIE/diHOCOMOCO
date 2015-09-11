@@ -26,7 +26,7 @@ PROTEIN_FAMILY_RECOGNIZERS = ['HUMAN', 'MOUSE'].map{|species|
     hsh[deepness] = motif_family_recognizer_by_uniprot_id(
       deepness: deepness,
       tf_classification_filename: "TFOntologies/TFClass_#{species.downcase}.obo",
-      uniprot_acs_by_id_filename: 'uniprot_HomoSapiens_and_MusMusculus.txt',
+      uniprot_acs_by_id_filename: 'uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv',
     )
   }
   [species, recognizers_hash]

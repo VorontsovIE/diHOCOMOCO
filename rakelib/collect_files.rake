@@ -37,7 +37,7 @@ namespace :collect_and_normalize_data do
 
   task :collect_pcm_jaspar do
     mkdir_p 'models/pcm/mono/jaspar/'
-    uniprot_infos = UniprotInfo.each_in_file('uniprot_HomoSapiens_and_MusMusculus.txt').to_a
+    uniprot_infos = UniprotInfo.each_in_file('uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv').to_a
     jaspar_infos = Jaspar::Infos.new(
       position_counts_filename: 'standard_motif_collections_update/jaspar_2014/MATRIX_DATA.txt',
       taxonomy_filename: 'standard_motif_collections_update/jaspar_2014/TAX.txt',

@@ -101,10 +101,15 @@ end
 ################
 
 def print_csv_table(model_infos, stream: $stdout)
+  infos_by_uniprot_id = UniprotInfo
+                          .each_in_file('uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv')
+                          .group_by(&:uniprot_id)
+
   headers = [
     'Model name', 'Consensus', 'UniprotID', 'Model type', 'Model quality',
     'Weighted AUC', 'Maximal AUC', 'Datasets', 'Origin models',
     'Motif family', 'Motif subfamily',
+    'HGNC', 'MGI', 'EntrezGene',
     'Comment'
   ]
   stream.puts headers.join("\t")
@@ -121,6 +126,9 @@ def print_csv_table(model_infos, stream: $stdout)
       model_info.origin_models.map(&:full_name).join(', '),
       model_info.motif_families.join(':separator:'),
       model_info.motif_subfamilies.join(':separator:'),
+      infos_by_uniprot_id[model_info.uniprot].flat_map(&:hgnc_ids).join('; '),
+      infos_by_uniprot_id[model_info.uniprot].flat_map(&:mgi_ids).join('; '),
+      infos_by_uniprot_id[model_info.uniprot].flat_map(&:entrezgene_ids).join('; '),
       model_info.comments.join(" "),
     ]
     stream.puts infos.join("\t")
