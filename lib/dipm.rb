@@ -6,12 +6,12 @@ module Bioinform
   module MotifModel
     class DiPM # Doesn't work with alphabet
 
-      nucleotides = ['A', 'C', 'G', 'T']
-      dinucleotides = nucleotides.product(nucleotides).map(&:join)
+      Nucleotides = ['A', 'C', 'G', 'T']
+      Dinucleotides = Nucleotides.product(Nucleotides).map(&:join)
 
-      RevcompIndexMapping = dinucleotides.each_with_index.map{|dinucleotide, dinucleotide_index|
+      RevcompIndexMapping = Dinucleotides.each_with_index.map{|dinucleotide, dinucleotide_index|
         reverse_dinucleotide = dinucleotide.reverse.tr('ACGT','TGCA')
-        [dinucleotide_index, dinucleotides.index(reverse_dinucleotide)]
+        [dinucleotide_index, Dinucleotides.index(reverse_dinucleotide)]
       }.to_h
 
       attr_reader :matrix
@@ -68,6 +68,10 @@ module Bioinform
           pos.each_index.map{|index| pos[RevcompIndexMapping[index]] }
         }.reverse
         self.class.new(revcomp_matrix)
+      end
+
+      def to_hash
+        Dinucleotides.zip(matrix.transpose).to_h
       end
 
       def self.sum_by_second_letter(pos)
