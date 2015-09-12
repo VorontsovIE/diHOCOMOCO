@@ -106,8 +106,9 @@ def print_csv_table(model_infos, stream: $stdout)
                           .group_by(&:uniprot_id)
 
   headers = [
-    'Model name', 'Consensus', 'UniprotID', 'Model type', 'Model quality',
-    'Weighted AUC', 'Maximal AUC', 'Datasets', 'Origin models',
+    'Model name', 'Model length', 'Consensus', 'UniprotID', 'UniprotAC', 'Gene name',
+    'Model type', 'Model quality',
+    'Weighted AUC', 'Best AUC', 'Datasets', 'Origin models',
     'Motif family', 'Motif subfamily',
     'HGNC', 'MGI', 'EntrezGene',
     'Comment'
