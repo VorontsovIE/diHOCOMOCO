@@ -61,19 +61,22 @@ Models.mono_uniprots.each do |uniprot|
     SequenceLogoGenerator.run(
       pcm_files: models,
       output_folder: File.join('models/logo/', uniprot),
-      **SequenceLogoGenerator::DefaultSizes[:big]
+      **SequenceLogoGenerator::DefaultSizes[:big],
+      additional_options: ['--no-threshold-lines']
     )
 
     SequenceLogoGenerator.run(
       pcm_files: normal_models,
       output_folder: File.join('models/logo_small/', uniprot),
-      **SequenceLogoGenerator::DefaultSizes[:small]
+      **SequenceLogoGenerator::DefaultSizes[:small],
+      additional_options: ['--no-threshold-lines']
     )
 
     SequenceLogoGenerator.run(
       pcm_files: long_models,
       output_folder: File.join('models/logo_small/', uniprot),
-      **SequenceLogoGenerator::DefaultSizes[:small_for_long_models]
+      **SequenceLogoGenerator::DefaultSizes[:small_for_long_models],
+      additional_options: ['--no-threshold-lines']
     )
   end
   task 'sequence_logos:mono' => "sequence_logos:mono:#{uniprot}"
