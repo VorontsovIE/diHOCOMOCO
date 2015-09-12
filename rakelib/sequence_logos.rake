@@ -4,11 +4,10 @@ module SequenceLogoGenerator
   def self.run(pcm_files:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60, additional_options: [])
     return  if pcm_files.empty?
 
-    output_subfolder = File.join(output_folder, uniprot)
-    FileUtils.mkdir_p(output_subfolder)  unless Dir.exist?(output_subfolder)
+    FileUtils.mkdir_p(output_folder)  unless Dir.exist?(output_folder)
 
     opts = []
-    opts += ['--logo-folder', output_subfolder]
+    opts += ['--logo-folder', output_folder]
     opts += ['--orientation', orientation]
     opts += ['--x-unit', x_unit.to_s]
     opts += ['--y-unit', y_unit.to_s]
@@ -19,6 +18,24 @@ module SequenceLogoGenerator
       fread.close
     }
   end
+
+  def self.run_dinucleotide(pcm_files:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60)
+    return  if pcm_files.empty?
+
+    FileUtils.mkdir_p(output_folder)  unless Dir.exist?(output_folder)
+
+    ['direct', 'revcomp'].each do |orient|
+      next  unless orientation == 'both' || orientation == orient
+      pcm_files.each do |pcm_file|
+        basename = File.basename(pcm_file, File.extname(pcm_file))
+        output_file = File.join(output_folder, "#{basename}_#{orient}.png")
+        opts = [x_unit.to_s, y_unit.to_s]
+        opts << '--revcomp'  if orient == 'revcomp'
+        system 'ruby', './pmflogo/dpmflogo3.rb', pcm_file, output_file, *opts
+      end
+    end
+  end
+
 
   DefaultSizes = {
     big: {x_unit: 30, y_unit: 60},
@@ -43,19 +60,19 @@ Models.mono_uniprots.each do |uniprot|
 
     SequenceLogoGenerator.run(
       pcm_files: models,
-      output_folder: 'models/logo/',
+      output_folder: File.join('models/logo/', uniprot),
       **SequenceLogoGenerator::DefaultSizes[:big]
     )
 
     SequenceLogoGenerator.run(
       pcm_files: normal_models,
-      output_folder: 'models/logo_small/',
+      output_folder: File.join('models/logo_small/', uniprot),
       **SequenceLogoGenerator::DefaultSizes[:small]
     )
 
     SequenceLogoGenerator.run(
       pcm_files: long_models,
-      output_folder: 'models/logo_small/',
+      output_folder: File.join('models/logo_small/', uniprot),
       **SequenceLogoGenerator::DefaultSizes[:small_for_long_models]
     )
   end
@@ -73,25 +90,22 @@ Models.di_uniprots.each do |uniprot|
       ModelKind.get('di').read_pcm(fn).length > SequenceLogoGenerator::LongModelThreshold
     }
 
-    SequenceLogoGenerator.run(
+    SequenceLogoGenerator.run_dinucleotide(
       pcm_files: models,
-      output_folder: 'models/logo/',
+      output_folder: File.join('models/logo/', uniprot),
       **SequenceLogoGenerator::DefaultSizes[:big]
-      additional_options: ['--dinucleotide']
     )
 
-    SequenceLogoGenerator.run(
+    SequenceLogoGenerator.run_dinucleotide(
       pcm_files: normal_models,
-      output_folder: 'models/logo_small/',
+      output_folder: File.join('models/logo_small/', uniprot),
       **SequenceLogoGenerator::DefaultSizes[:small]
-      additional_options: ['--dinucleotide']
     )
 
-    SequenceLogoGenerator.run(
+    SequenceLogoGenerator.run_dinucleotide(
       pcm_files: long_models,
-      output_folder: 'models/logo_small/',
+      output_folder: File.join('models/logo_small/', uniprot),
       **SequenceLogoGenerator::DefaultSizes[:small_for_long_models]
-      additional_options: ['--dinucleotide']
     )
   end
   task 'sequence_logos:di' => "sequence_logos:di:#{uniprot}"
