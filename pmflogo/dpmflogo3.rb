@@ -57,7 +57,7 @@ def make_pma(dipm)
   pm
 end
 
-report "pmflogo3.rb started, usage: <in_file_name.dpcm/fa/mfa> <out_file_name> [<x_unit>=100] [<y_unit>=200] [<mono_scheme>=nucl_simpa] [<di_scheme>=di_simpa]"
+report "pmflogo3.rb started, usage: <in_file_name.dpcm/fa/mfa> <out_file_name> [<x_unit>=100] [<y_unit>=200] [<mono_scheme>=nucl_simpa] [<di_scheme>=di_simpa] [--revcomp]"
 start __FILE__
 exit(2) if ARGV.size < 2 
 
@@ -183,7 +183,7 @@ i_ns = Magick::ImageList.new
 ns.collect { |let| "#{basef}/#{mono_scheme}/#{let.downcase}.png" }.each { |f| i_ns.read(f) }
 
 i_logo = Magick::ImageList.new
-i_logo.new_image(x_size, y_size, Magick::HatchFill.new('white', 'white'))
+i_logo.new_image(x_size, y_size, Magick::HatchFill.new('transparent', 'transparent'))
 
 letter_indexes = {}
 dins.each_with_index { |d,i| letter_indexes[d] = i }
