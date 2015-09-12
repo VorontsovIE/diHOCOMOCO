@@ -99,16 +99,18 @@ Models.di_uniprots.each do |uniprot|
       **SequenceLogoGenerator::DefaultSizes[:big]
     )
 
-    SequenceLogoGenerator.run_dinucleotide(
+    SequenceLogoGenerator.run(
       pcm_files: normal_models,
       output_folder: File.join('models/logo_small/', uniprot),
-      **SequenceLogoGenerator::DefaultSizes[:small]
+      **SequenceLogoGenerator::DefaultSizes[:small],
+      additional_options: ['--no-threshold-lines', '--dinucleotide']
     )
 
-    SequenceLogoGenerator.run_dinucleotide(
+    SequenceLogoGenerator.run(
       pcm_files: long_models,
       output_folder: File.join('models/logo_small/', uniprot),
-      **SequenceLogoGenerator::DefaultSizes[:small_for_long_models]
+      **SequenceLogoGenerator::DefaultSizes[:small_for_long_models],
+      additional_options: ['--no-threshold-lines', '--dinucleotide']
     )
   end
   task 'sequence_logos:di' => "sequence_logos:di:#{uniprot}"
