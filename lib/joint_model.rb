@@ -104,6 +104,7 @@ JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :
 
   def consensus_string; pcm.consensus_string; end
   def num_datasets; datasets.size; end
+  def model_length; pcm.length; end
 
   def save_model_pack_into_folder!(folder)
     if good_strand

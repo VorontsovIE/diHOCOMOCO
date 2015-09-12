@@ -116,8 +116,11 @@ def print_csv_table(model_infos, stream: $stdout)
   model_infos.sort_by(&:full_name).each_with_index do |model_info|
     infos = [
       model_info.full_name,
+      model_info.model_length,
       model_info.consensus_string,
       model_info.uniprot,
+      infos_by_uniprot_id[model_info.uniprot].flat_map(&:uniprot_ac).join('; '),
+      infos_by_uniprot_id[model_info.uniprot].flat_map(&:primary_gene_name).join('; '),
       model_info.arity_type,
       model_info.quality,
       model_info.auc,
