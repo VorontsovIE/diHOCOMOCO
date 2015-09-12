@@ -20,6 +20,12 @@ module SequenceLogoGenerator
     }
   end
 
+  DefaultSizes = {
+    big: {x_unit: 30, y_unit: 60},
+    small: {x_unit: 15, y_unit: 30},
+    small_for_long_models: {x_unit: 10, y_unit: 20},
+  }
+  LongModelThreshold = 20
 end
 
 desc 'Draw sequence logos for all motifs'
@@ -27,15 +33,30 @@ task :sequence_logos => ['sequence_logos:mono', 'sequence_logos:di']
 
 Models.mono_uniprots.each do |uniprot|
   task "sequence_logos:mono:#{uniprot}" do
+    models = FileList[File.join('models/pcm/mono/all/', uniprot, '*.pcm')]
+    normal_models = models.select{|fn|
+      ModelKind.get('mono').read_pcm(fn).length <= SequenceLogoGenerator::LongModelThreshold
+    }
+    long_models = models.select{|fn|
+      ModelKind.get('mono').read_pcm(fn).length > SequenceLogoGenerator::LongModelThreshold
+    }
+
     SequenceLogoGenerator.run(
-      pcm_files: FileList[File.join('models/pcm/mono/all/', uniprot, '*.pcm')],
+      pcm_files: models,
       output_folder: 'models/logo/',
+      **SequenceLogoGenerator::DefaultSizes[:big]
     )
 
     SequenceLogoGenerator.run(
-      pcm_files: FileList[File.join('models/pcm/mono/all/', uniprot, '*.pcm')],
+      pcm_files: normal_models,
       output_folder: 'models/logo_small/',
-      x_unit: 15, y_unit: 30,
+      **SequenceLogoGenerator::DefaultSizes[:small]
+    )
+
+    SequenceLogoGenerator.run(
+      pcm_files: long_models,
+      output_folder: 'models/logo_small/',
+      **SequenceLogoGenerator::DefaultSizes[:small_for_long_models]
     )
   end
   task 'sequence_logos:mono' => "sequence_logos:mono:#{uniprot}"
@@ -44,16 +65,32 @@ end
 
 Models.di_uniprots.each do |uniprot|
   task "sequence_logos:di:#{uniprot}" do
+    models = FileList[File.join('models/pcm/di/all/', uniprot, '*.dpcm')]
+    normal_models = models.select{|fn|
+      ModelKind.get('di').read_pcm(fn).length <= SequenceLogoGenerator::LongModelThreshold
+    }
+    long_models = models.select{|fn|
+      ModelKind.get('di').read_pcm(fn).length > SequenceLogoGenerator::LongModelThreshold
+    }
+
     SequenceLogoGenerator.run(
-      pcm_files: FileList[File.join('models/pcm/di/all/', uniprot, '*.dpcm')],
+      pcm_files: models,
       output_folder: 'models/logo/',
-      x_unit: 30, y_unit: 60,
+      **SequenceLogoGenerator::DefaultSizes[:big]
       additional_options: ['--dinucleotide']
     )
+
     SequenceLogoGenerator.run(
-      pcm_files: FileList[File.join('models/pcm/di/all/', uniprot, '*.dpcm')],
+      pcm_files: normal_models,
       output_folder: 'models/logo_small/',
-      x_unit: 15, y_unit: 30,
+      **SequenceLogoGenerator::DefaultSizes[:small]
+      additional_options: ['--dinucleotide']
+    )
+
+    SequenceLogoGenerator.run(
+      pcm_files: long_models,
+      output_folder: 'models/logo_small/',
+      **SequenceLogoGenerator::DefaultSizes[:small_for_long_models]
       additional_options: ['--dinucleotide']
     )
   end
