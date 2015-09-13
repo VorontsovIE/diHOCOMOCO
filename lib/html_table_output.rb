@@ -107,7 +107,7 @@ def print_csv_table(model_infos, stream: $stdout)
 
   headers = [
     'Model name', 'Model length', 'Consensus', 'UniprotID', 'UniprotAC', 'Gene name',
-    'Model type', 'Model quality',
+    'Model type', 'Model quality', 'Number of words in alignment',
     'Weighted AUC', 'Best AUC', 'Datasets', 'Origin models',
     'Motif family', 'Motif subfamily',
     'HGNC', 'MGI', 'EntrezGene',
@@ -124,6 +124,7 @@ def print_csv_table(model_infos, stream: $stdout)
       infos_by_uniprot_id[model_info.uniprot].flat_map(&:primary_gene_name).join('; '),
       model_info.arity_type,
       model_info.quality,
+      model_info.num_words_in_alignment,
       model_info.auc,
       model_info.max_auc,
       model_info.datasets.join(', '),

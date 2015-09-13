@@ -104,6 +104,14 @@ class Model
     File.join('models/pwm', @mono_or_di_mode.to_s, 'all', uniprot, "#{full_name}.#{pwm_extension}")
   end
 
+  def path_to_words
+    File.join('models/words', @mono_or_di_mode.to_s, 'all', uniprot, "#{full_name}.words")
+  end
+
+  def num_words_in_alignment
+    File.readlines(path_to_words).map(&:chomp).reject(&:empty?).size
+  end
+
   def path_to_logo; path_to_logo_direct; end
 
   def path_to_logo_direct

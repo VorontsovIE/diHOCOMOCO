@@ -102,6 +102,8 @@ JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :
     (good_strand ? representative_model.pwm : representative_model.pwm.revcomp).named(full_name)
   end
 
+  def num_words_in_alignment; representative_model.num_words_in_alignment; end
+
   def consensus_string; pcm.consensus_string; end
   def num_datasets; datasets.size; end
   def model_length; pcm.length; end
@@ -121,5 +123,6 @@ JointModel = Struct.new(:origin_models, :representative_model, :quality, :auc, :
 
     File.write File.join(folder, 'pcm', "#{full_name}.#{pcm_extension}"), pcm.to_s
     File.write File.join(folder, 'pwm', "#{full_name}.#{pwm_extension}"), pwm.to_s
+    FileUtils.cp representative_model.path_to_words, File.join(folder, 'words', "#{full_name}.words")
   end
 end

@@ -48,12 +48,36 @@ def rename_motifs(src_glob, dest_folder,
     motif_text = motif_text.first.match(/^>?\s*[a-zA-Z]/) ? motif_text.drop(1).join : motif_text.join
     uniprot_ids = conv_to_uniprot_ids.call(motif_name)
     uniprot_ids.each{|uniprot_id|
-      mkdir_p File.join(dest_folder, uniprot_id)  unless Dir.exist?(File.join(dest_folder, uniprot_id))
+      subfolder = File.join(dest_folder, uniprot_id)
+      mkdir_p(subfolder)  unless Dir.exist?(subfolder)
       motif_full_name = "#{uniprot_id}~#{short_collection_id}~#{motif_name}"
-      dest = File.join(dest_folder, uniprot_id, "#{motif_full_name}#{extname}")
+      dest = File.join(subfolder, "#{motif_full_name}#{extname}")
       next  if File.exist?(dest)
       $stderr.puts "Rename #{src} --> #{dest}"
       File.write(dest, "> #{motif_full_name}\n#{motif_text}")
+    }
+  end
+end
+
+
+def rename_words(src_glob, dest_folder,
+                short_collection_id:,
+                conv_to_uniprot_ids: ->(motif_name){
+                  [ motif_name[/^.+_(HUMAN|MOUSE)/] ]
+                })
+  mkdir_p dest_folder  unless Dir.exist?(dest_folder)
+  FileList[src_glob].each do |src|
+    motif_name = File.basename(src, '.words')
+
+    uniprot_ids = conv_to_uniprot_ids.call(motif_name)
+    uniprot_ids.each{|uniprot_id|
+      subfolder = File.join(dest_folder, uniprot_id)
+      mkdir_p(subfolder)  unless Dir.exist?(subfolder)
+      motif_full_name = "#{uniprot_id}~#{short_collection_id}~#{motif_name}"
+      dest = File.join(subfolder, "#{motif_full_name}.words")
+      next  if File.exist?(dest)
+      $stderr.puts "Rename #{src} --> #{dest}"
+      FileUtils.cp(src, dest)
     }
   end
 end
@@ -96,6 +120,65 @@ namespace :collect_and_normalize_data do
       model_name = fn.pathmap('%n')
       uniprot = model_name.split('~').first
       cp fn, "models/pcm/di/all/#{uniprot}/#{model_name}.dpcm"
+    end
+  end
+end
+
+namespace :collect_and_normalize_data do
+  desc 'Rename motif collection alignment words into standardized ones; For motifs with several uniprots make single-uniprot copies'
+  task :rename_words do
+    motif_to_uniprot_mapping = MotifToUniprotMapping.load_motif_to_uniprot_by_collection('FANTOM5_phase2_KNOWN_motifs_IDmapping.txt')
+
+    hocomoco_motif_to_uniprot = File.readlines('HOCOMOCOv9_motifs2uniprot.txt').drop(1).map(&:strip).reject(&:empty?).map{|line|
+      motif, human_uniprots, mouse_uniprots = line.split("\t")
+      [motif, (human_uniprots||'').split(',') + (mouse_uniprots||'').split(',')]
+    }.to_h
+
+    FileList['models/words/mono/hocomoco_legacy/*.words'].each do |fn|
+      dest_folder = 'models/words/mono/all/'
+      mkdir_p dest_folder  unless Dir.exist?(dest_folder)
+
+      motif_name = File.basename(fn, '.words').sub(/_alignment$/, '')
+      next  unless hocomoco_motif_to_uniprot.has_key?(motif_name)
+
+      uniprot_ids = hocomoco_motif_to_uniprot[motif_name]
+      uniprot_ids.each{|uniprot_id|
+        subfolder = File.join(dest_folder, uniprot_id)
+        mkdir_p(subfolder)  unless Dir.exist?(subfolder)
+        motif_full_name = "#{uniprot_id}~HL~#{motif_name}"
+        dest = File.join(subfolder, "#{motif_full_name}.words")
+        next  if File.exist?(dest)
+        $stderr.puts "Rename #{fn} --> #{dest}"
+        # FileUtils.cp(fn, dest)
+        words = File.readlines(fn).reject{|line|
+          line.start_with?('#')
+        }.map{|line|
+          line.chomp.split("\t").first
+        }
+        File.write(dest, words.join("\n"))
+      }
+    end
+
+    rename_words 'models/words/mono/selex_rebuilt_ftr/*.words', 'models/words/mono/all/', short_collection_id: 'SMF'
+    # rename_words 'models/words/mono/selex_rebuilt_sub/*.words', 'models/words/mono/all/', short_collection_id: 'SMS'
+    rename_words 'models/words/mono/selex_integrated/*.words', 'models/words/mono/all/', short_collection_id: 'SMI'
+    rename_words 'models/words/mono/chipseq/*.words', 'models/words/mono/all/', short_collection_id: 'CM'
+
+    rename_words 'models/words/di/selex_rebuilt_ftr/*.words', 'models/words/di/all/', short_collection_id: 'SDF'
+    # rename_words 'models/words/di/selex_rebuilt_sub/*.words', 'models/words/di/all/', short_collection_id: 'SDS'
+    rename_words 'models/words/di/selex_integrated/*.words', 'models/words/di/all/', short_collection_id: 'SDI'
+    rename_words 'models/words/di/chipseq/*.words', 'models/words/di/all/', short_collection_id: 'CD'
+
+    FileList['models/words/mono/papatsenko/*.words'].each do |fn|
+      model_name = fn.pathmap('%n')
+      uniprot = model_name.split('~').first
+      cp fn, "models/words/mono/all/#{uniprot}/#{model_name}.words"
+    end
+
+    FileList['models/words/di/papatsenko/*.words'].each do |fn|
+      model_name = fn.pathmap('%n')
+      uniprot = model_name.split('~').first
+      cp fn, "models/words/di/all/#{uniprot}/#{model_name}.words"
     end
   end
 end

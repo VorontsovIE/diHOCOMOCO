@@ -85,6 +85,7 @@ ALX1_HUMAN_DBD_2 имеет внутри имя CART1^470
 	revcomp_models.txt
 	TFOntologies/TFClass_human.obo
 	TFOntologies/TFClass_mouse.obo
+	HOCOMOCOv9_full_alignments_noTRANSFAC.zip
 
 	ape-2.0.1.jar
 	sarus.jar

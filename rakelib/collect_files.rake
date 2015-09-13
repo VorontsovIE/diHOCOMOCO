@@ -35,6 +35,26 @@ namespace :collect_and_normalize_data do
     copy_files 'selex_integrated/di_fp/*.dpcm', 'models/pcm/di/selex_integrated/%n_HUMAN.dpcm'
   end
 
+
+  desc 'Put words from different collections into standardified paths'
+  task :collect_words do
+    copy_files 'HOCOMOCOv9_full_alignments_noTRANSFAC/*_alignment.txt', 'models/words/mono/hocomoco_legacy/%n.words'
+
+    copy_files 'pluripotency_factors/mono/*.words', 'models/words/mono/papatsenko/%n.words'
+    copy_files 'pluripotency_factors/di/*.words', 'models/words/di/papatsenko/%n.words'
+
+    copy_files 'htselex_mono_di/mono_ftr/*.words', 'models/words/mono/selex_rebuilt_ftr/%n.words'
+    copy_files 'htselex_mono_di/mono_sub/*.words', 'models/words/mono/selex_rebuilt_sub/%n.words'
+    copy_files 'htselex_mono_di/di_ftr/*.words', 'models/words/di/selex_rebuilt_ftr/%n.words'
+    copy_files 'htselex_mono_di/di_sub/*.words', 'models/words/di/selex_rebuilt_sub/%n.words'
+
+    copy_files 'selex_integrated/mono_fp/*.words', 'models/words/mono/selex_integrated/%n_HUMAN.words'
+    copy_files 'selex_integrated/di_fp/*.words', 'models/words/di/selex_integrated/%n_HUMAN.words'
+
+    copy_files 'chipseq_models/mono/*.words', 'models/words/mono/chipseq/%n.words'
+    copy_files 'chipseq_models/di/*.words', 'models/words/di/chipseq/%n.words'
+  end
+
   task :collect_pcm_jaspar do
     mkdir_p 'models/pcm/mono/jaspar/'
     uniprot_infos = UniprotInfo.each_in_file('uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv').to_a

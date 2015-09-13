@@ -49,6 +49,7 @@ task :make_final_collection do
       mkdir_p File.join(folder, 'pcm')
       mkdir_p File.join(folder, 'pwm')
       mkdir_p File.join(folder, 'logo')
+      mkdir_p File.join(folder, 'words')
       mkdir_p File.join(folder, 'logo_small')
 
       File.open(File.join(folder, "final_collection.html"), 'w') do |fw|

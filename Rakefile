@@ -6,6 +6,8 @@ task 'collect_and_normalize_data' do
   Rake::Task['collect_and_normalize_data:collect_pcm'].invoke
   Rake::Task['collect_and_normalize_data:rename_motifs'].invoke
   Rake::Task['collect_and_normalize_data:convert_pcm_to_pwm'].invoke
+  Rake::Task['collect_and_normalize_data:collect_words'].invoke
+  Rake::Task['collect_and_normalize_data:rename_words'].invoke
 end
 
 task :default do
