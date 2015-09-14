@@ -101,7 +101,15 @@ class TFClassification
     end
 
     def <=>(other)
-      id <=> other.id
+      if self.id.split('.').first == '0' && other.id.split('.').first == '0' # unclassified vs unclassified
+        id <=> other.id
+      elsif !self.id.split('.').first == '0' && !other.id.split('.').first == '0' # classified vs classified
+        id <=> other.id
+      elsif self.id.split('.').first == '0' # classified vs unclassified
+        1
+      else
+        -1
+      end
     end
 
     def children
@@ -137,6 +145,25 @@ class TFClassification
         result.unshift(term)
       end
       result
+    end
+
+    def level_name
+      case deepness
+      when 0
+        'all TFs'
+      when 1
+        'superclass'
+      when 2
+        'class'
+      when 3
+        'family'
+      when 4
+        'subfamily'
+      when 5
+        'genus'
+      when 6
+        'species'
+      end
     end
 
     def to_s
