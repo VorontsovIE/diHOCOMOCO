@@ -1,17 +1,21 @@
 class TFClassification
+  attr_reader :terms
   # terms by ids
   def initialize()
+    @terms = []
     @terms_by_id = {}
     @children_by_id = Hash.new{|h,k| h[k] = [] }
     @terms_by_name = Hash.new{|h,k| h[k] = [] }
     # @terms_by_id.each{|term_id, term|
     #   @children_by_id[term.parent_id] << term  if term.parent_id
     # }
+    self << ClassificationTerm.new(self, '', '', 'Root', '', nil, [], [])
   end
 
   def <<(term)
     raise "Duplicate id #{term.id}"  if @terms_by_id[term.id]
     @terms_by_id[term.id] = term
+    @terms << term
     @terms_by_name[term.name] << term
     @children_by_id[term.parent_id] << term  if term.parent_id
   end
@@ -41,6 +45,10 @@ class TFClassification
 
   def children(term_id)
     @children_by_id[term_id]
+  end
+
+  def root
+    term('')
   end
 
   def leaf?(term_id)
@@ -85,11 +93,15 @@ class TFClassification
         end
       }
 
-      self.new(ontology_tree, id, name, subset, definition, parent_id, uniprot_ACs, other)
+      self.new(ontology_tree, id, name, subset, definition, parent_id || '', uniprot_ACs, other)
     end
 
     def parent
       ontology_tree.term(parent_id)
+    end
+
+    def <=>(other)
+      id <=> other.id
     end
 
     def children
