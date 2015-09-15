@@ -99,9 +99,17 @@ task :make_final_collection do
         # File.write File.join(folder, "HOCOMOCOv10_#{species}_mono_homer_format.motif"), in_homer_format(model_infos.map(&:pcm), thresholds_by_model, pvalue: 0.0005)
       end
 
+      sh 'java', '-cp', 'ape.jar',
+          (arity == 'mono') ? 'ru.autosome.ape.PrecalculateThresholds' : 'ru.autosome.ape.di.PrecalculateThresholds',
+          File.join(folder, "pwm"), File.join(folder, "thresholds"),
+          '--pvalues', *['1e-15', '1.0', '1.01', 'mul'].join(','),
+          '--discretization', 1000.to_s,
+          '--silent'
+
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pcm_#{species}_#{arity}.tar.gz"), 'pcm'
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pwm_#{species}_#{arity}.tar.gz"), 'pwm'
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "words_#{species}_#{arity}.tar.gz"), 'words'
+      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "thresholds_#{species}_#{arity}.tar.gz"), 'thresholds'
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_#{species}_#{arity}.tar.gz"), 'logo'
     end
   end
