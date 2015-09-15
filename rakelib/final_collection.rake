@@ -81,21 +81,23 @@ task :make_final_collection do
       matrix = thresholds_by_model.map{|name, thresholds|
         [name, *thresholds.values_at(*requested_pvalues)]
       }
-      File.write(File.join(folder, "thresholds.txt"), [header, *matrix].map{|row| row.join("\t") }.join("\n"))
+      File.write(File.join(folder, "standard_thresholds_#{species}_#{arity}.txt"), [header, *matrix].map{|row| row.join("\t") }.join("\n"))
 
 
-      File.write File.join(folder, "HOCOMOCOv10_#{species}_plain.txt"), in_plain_format(model_infos.map(&:pcm))
+      File.write File.join(folder, "pcms_#{species}_#{arity}.txt"), model_infos.map(&:pcm).map(&:to_s).join("\n")
+      File.write File.join(folder, "pwms_#{species}_#{arity}.txt"), model_infos.map(&:pwm).map(&:to_s).join("\n")
+
       if arity == 'mono'
-        File.write File.join(folder, "HOCOMOCOv10_#{species}_meme_format.meme"), in_meme_format(model_infos.map(&:pcm))
-        File.write File.join(folder, "HOCOMOCOv10_#{species}_transfac_format.txt"), in_transfac_format(model_infos.map(&:pcm))
-        File.write File.join(folder, "HOCOMOCOv10_#{species}_jaspar_format.txt"), in_jaspar_format(model_infos.map(&:pcm))
-        # File.write File.join(folder, "HOCOMOCOv10_#{species}_homer_format.motif"), in_homer_format(model_infos.map(&:pcm), thresholds_by_model, pvalue: 0.0005)
+        File.write File.join(folder, "HOCOMOCOv10_#{species}_mono_meme_format.meme"), in_meme_format(model_infos.map(&:pcm))
+        File.write File.join(folder, "HOCOMOCOv10_#{species}_mono_transfac_format.txt"), in_transfac_format(model_infos.map(&:pcm))
+        File.write File.join(folder, "HOCOMOCOv10_#{species}_mono_jaspar_format.txt"), in_jaspar_format(model_infos.map(&:pcm))
+        # File.write File.join(folder, "HOCOMOCOv10_#{species}_mono_homer_format.motif"), in_homer_format(model_infos.map(&:pcm), thresholds_by_model, pvalue: 0.0005)
       end
 
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, 'pcm.tar.gz'), 'pcm'
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, 'pwm.tar.gz'), 'pwm'
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, 'words.tar.gz'), 'words'
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, 'logo.tar.gz'), 'logo'
+      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pcm_#{species}_#{arity}.tar.gz"), 'pcm'
+      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pwm_#{species}_#{arity}.tar.gz"), 'pwm'
+      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "words_#{species}_#{arity}.tar.gz"), 'words'
+      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_#{species}_#{arity}.tar.gz"), 'logo'
     end
   end
 end

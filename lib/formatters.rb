@@ -2,10 +2,6 @@ require 'bioinform'
 require 'information_content'
 require 'bioinform_support'
 
-def in_plain_format(motif_pcms)
-  motif_pcms.map(&:to_s).join("\n")
-end
-
 def in_meme_format(motif_pcms)
   result = ""
   result << "MEME version 4\n\n"
