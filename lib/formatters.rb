@@ -34,8 +34,8 @@ def in_transfac_format(motif_pcms)
     uniprot = pcm.name.split('.').first
     species = uniprot.split('_').last.downcase
 
-    # result << "AC\tM" << ('%05d' % index) << "\n"
-    # result << "XX\n"
+    result << "AC\tM" << ('%05d' % (index + 1001)) << "\n" # offset 1000 is taken to distinguish HOCOMOCO v9 from v10
+    result << "XX\n"
     result << "ID\t#{pcm.name}\n"
     result << "XX\n"
     result << "NA\t#{uniprot}\n"
