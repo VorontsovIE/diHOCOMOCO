@@ -44,41 +44,43 @@ task :family_tree_svg do
   uniprot_ids_by_ac = uniprot_infos.group_by(&:uniprot_ac).map{|uniprot_ac, infos| [uniprot_ac, infos.map(&:uniprot_id)] }.to_h;
 
 
-  ['HUMAN', 'MOUSE'].each do |species|
-    ['mono', 'di'].each do |arity|
+  # ['HUMAN', 'MOUSE'].each do |species|
+  #   ['mono', 'di'].each do |arity|
+  species = 'HUMAN'
+  arity = 'mono'
+  
+  best_models_subset = best_models.select{|model|
+    model.species == species
+  }.select{|model|
+    model.arity_type == arity
+  }
+  uniprots_covered = best_models_subset.map(&:uniprot).uniq
 
-      best_models_subset = best_models.select{|model|
-        model.species == species
-      }.select{|model|
-        model.arity_type == arity
+  tf_ontology = TFClassification.from_file('TFOntologies/TFClass_human.obo')
+  json_str = tf_ontology.root.to_json(
+    while_condition: ->(node){
+      uniprots_in_subtree = uniprots_in_subtree(node, uniprot_ids_by_ac, species)
+      !uniprots_in_subtree.empty? && node.deepness <= 2
+    },
+    infos_proc:->(node){
+      uniprots_in_subtree = uniprots_in_subtree(node, uniprot_ids_by_ac, species)
+
+      uniprots_in_subtree_covered = uniprots_in_subtree.select{|uniprot_id|
+        uniprots_covered.include?(uniprot_id)
       }
-      uniprots_covered = best_models_subset.map(&:uniprot).uniq
 
-      tf_ontology = TFClassification.from_file('TFOntologies/TFClass_human.obo')
-      puts tf_ontology.root.to_json(
-        while_condition: ->(node){
-          uniprots_in_subtree = uniprots_in_subtree(node, uniprot_ids_by_ac, species)
-          !uniprots_in_subtree.empty? && node.deepness <= 2
-        },
-        infos_proc:->(node){
-          uniprots_in_subtree = uniprots_in_subtree(node, uniprot_ids_by_ac, species)
-
-          uniprots_in_subtree_covered = uniprots_in_subtree.select{|uniprot_id|
-            uniprots_covered.include?(uniprot_id)
-          }
-
-          {
-            total_tfs: uniprots_in_subtree.size,
-            size: uniprots_in_subtree.size,
-            covered_tfs: uniprots_in_subtree_covered.size,
-            name: node.name,
-            family_id: node.id,
-            url: "/search?species=#{species}&arity=#{arity}&family_id=#{node.id}"
-          }
-        }
-      )
-      exit
-    end
-  end
+      {
+        total_tfs: uniprots_in_subtree.size,
+        size: uniprots_in_subtree.size,
+        covered_tfs: uniprots_in_subtree_covered.size,
+        name: node.name,
+        family_id: node.id,
+        url: "/search?species=#{species}&arity=#{arity}&family_id=#{node.id}"
+      }
+    }
+  )
+  puts json_str
+  #   end
+  # end
 end
 

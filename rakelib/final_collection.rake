@@ -5,6 +5,8 @@ require 'auc_infos'
 require 'quality_assessor'
 require 'html_table_output'
 require 'motif_family_recognizer'
+require 'ape_find_threshold'
+require 'formatters'
 
 desc 'Collect final collection'
 task :make_final_collection do
@@ -63,6 +65,37 @@ task :make_final_collection do
       model_infos.each do |model_info|
         model_info.save_model_pack_into_folder!(folder)
       end
+
+      requested_pvalues = [0.001, 0.0005, 0.0001]
+      thresholds_by_model = model_infos.map{|model_info|
+        threshold_by_pvalue = Ape.run_find_threshold(
+          File.join(folder, 'pwm', "#{model_info.full_name}.#{model_info.pwm_extension}"),
+          requested_pvalues,
+          discretization: 1000,
+          mode: model_info.arity_type
+        )
+        [model_info.full_name, threshold_by_pvalue]
+      }.to_h
+
+      header = ['# Thresholds', *requested_pvalues]
+      matrix = thresholds_by_model.map{|name, thresholds|
+        [name, *thresholds.values_at(*requested_pvalues)]
+      }
+      File.write(File.join(folder, "thresholds.txt"), [header, *matrix].map{|row| row.join("\t") }.join("\n"))
+
+
+      File.write File.join(folder, "HOCOMOCOv10_#{species}_plain.txt"), in_plain_format(model_infos.map(&:pcm))
+      if arity == 'mono'
+        File.write File.join(folder, "HOCOMOCOv10_#{species}_meme_format.meme"), in_meme_format(model_infos.map(&:pcm))
+        File.write File.join(folder, "HOCOMOCOv10_#{species}_transfac_format.txt"), in_transfac_format(model_infos.map(&:pcm))
+        File.write File.join(folder, "HOCOMOCOv10_#{species}_jaspar_format.txt"), in_jaspar_format(model_infos.map(&:pcm))
+        # File.write File.join(folder, "HOCOMOCOv10_#{species}_homer_format.motif"), in_homer_format(model_infos.map(&:pcm), thresholds_by_model, pvalue: 0.0005)
+      end
+
+      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, 'pcm.tar.gz'), 'pcm'
+      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, 'pwm.tar.gz'), 'pwm'
+      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, 'words.tar.gz'), 'words'
+      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, 'logo.tar.gz'), 'logo'
     end
   end
 end

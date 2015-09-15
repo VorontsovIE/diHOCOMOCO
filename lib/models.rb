@@ -1,6 +1,6 @@
 require 'bioinform'
 require_relative 'dipm'
-require 'information_content'
+require_relative 'information_content'
 
 module ModelKind
   def self.get(mode)
