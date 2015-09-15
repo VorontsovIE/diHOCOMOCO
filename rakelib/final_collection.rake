@@ -75,9 +75,14 @@ task :make_final_collection do
           mode: model_info.arity_type
         )
         [model_info.full_name, threshold_by_pvalue]
+      }.map{|model, threshold_by_pvalue|
+        rounded_thresholds = threshold_by_pvalue.map{|pvalue, threshold|
+          [pvalue, threshold.round(6)]
+        }.to_h
+        [model, rounded_thresholds]
       }.to_h
 
-      header = ['# Thresholds', *requested_pvalues]
+      header = ['# P-values', *requested_pvalues]
       matrix = thresholds_by_model.map{|name, thresholds|
         [name, *thresholds.values_at(*requested_pvalues)]
       }
