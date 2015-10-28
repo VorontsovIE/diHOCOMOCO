@@ -69,9 +69,24 @@ end
 def in_homer_format(motif_pcms, thresholds_by_model, pvalue:)
   motif_pcms.map{|pcm|
 
-    #  псевдокаунты!!!
+    #  HOMER always works with uniform background substitution
+    #(see "Motif Scanning" section at http://homer.salk.edu/homer/motif/creatingCustomMotifs.html)
     header = [">#{pcm.consensus_string}", pcm.name, thresholds_by_model[pcm.name][pvalue]].join("\t")
-    matrix_str = pcm.each_position.map{|pos| pos.join("\t") }
+
+    pseudocount_calc = ->(pos){
+      max_count = pos.inject(0.0, &:+)
+      Math.log([max_count, 2].max)
+    }
+    # necessary only for standard pseudocount calculation
+    logodds_converter = Bioinform::ConversionAlgorithms::PCM2PWMConverterDifferentCount.new(pseudocount: pseudocount_calc)
+
+    ppm_matrix_corrected = pcm.each_position.map{|pos|
+      count = pos.inject(0.0, &:+)
+      pseudocount = logodds_converter.calculate_pseudocount(pos)
+      pos.map{|el| (el + pseudocount * 0.25) / (count + pseudocount) }
+    }
+
+    matrix_str = ppm_matrix_corrected.map{|pos| pos.join("\t") }
     [header, *matrix_str].join("\n")
   }.join("\n")
 end

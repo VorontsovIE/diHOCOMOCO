@@ -96,7 +96,9 @@ task :make_final_collection do
         File.write File.join(folder, "HOCOMOCOv10_#{species}_mono_meme_format.meme"), in_meme_format(model_infos.map(&:pcm))
         File.write File.join(folder, "HOCOMOCOv10_#{species}_mono_transfac_format.txt"), in_transfac_format(model_infos.map(&:pcm))
         File.write File.join(folder, "HOCOMOCOv10_#{species}_mono_jaspar_format.txt"), in_jaspar_format(model_infos.map(&:pcm))
-        # File.write File.join(folder, "HOCOMOCOv10_#{species}_mono_homer_format.motif"), in_homer_format(model_infos.map(&:pcm), thresholds_by_model, pvalue: 0.0005)
+        requested_pvalues.each do |requested_pvalue|
+          File.write File.join(folder, "HOCOMOCOv10_#{species}_mono_homer_format_#{requested_pvalue}.motif"), in_homer_format(model_infos.map(&:pcm), thresholds_by_model, pvalue: requested_pvalue)
+        end
       end
 
       sh 'java', '-cp', 'ape.jar',
