@@ -38,6 +38,7 @@ module SequenceLogoGenerator
 
 
   DefaultSizes = {
+    large: {x_unit: 100, y_unit: 200},
     big: {x_unit: 30, y_unit: 60},
     small: {x_unit: 15, y_unit: 30},
     small_for_long_models: {x_unit: 10, y_unit: 20},
@@ -62,6 +63,13 @@ Models.mono_uniprots.each do |uniprot|
       pcm_files: models,
       output_folder: File.join('models/logo/', uniprot),
       **SequenceLogoGenerator::DefaultSizes[:big],
+      additional_options: ['--no-threshold-lines']
+    )
+
+    SequenceLogoGenerator.run(
+      pcm_files: models,
+      output_folder: File.join('models/logo_large/', uniprot),
+      **SequenceLogoGenerator::DefaultSizes[:large],
       additional_options: ['--no-threshold-lines']
     )
 
@@ -97,6 +105,12 @@ Models.di_uniprots.each do |uniprot|
       pcm_files: models,
       output_folder: File.join('models/logo/', uniprot),
       **SequenceLogoGenerator::DefaultSizes[:big]
+    )
+
+    SequenceLogoGenerator.run_dinucleotide(
+      pcm_files: models,
+      output_folder: File.join('models/logo_large/', uniprot),
+      **SequenceLogoGenerator::DefaultSizes[:large]
     )
 
     SequenceLogoGenerator.run(
