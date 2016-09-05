@@ -53,6 +53,7 @@ task :make_final_collection do
       mkdir_p File.join(folder, 'logo')
       mkdir_p File.join(folder, 'words')
       mkdir_p File.join(folder, 'logo_small')
+      mkdir_p File.join(folder, 'logo_large')
 
       File.open(File.join(folder, "final_collection.html"), 'w') do |fw|
         print_html_table_by_model_infos(model_infos, stream: fw)

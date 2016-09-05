@@ -130,6 +130,14 @@ class Model
     File.join('models/logo_small', uniprot, "#{full_name}_revcomp.png")
   end
 
+  def path_to_large_logo_direct
+    File.join('models/logo_large', uniprot, "#{full_name}_direct.png")
+  end
+
+  def path_to_large_logo_revcomp
+    File.join('models/logo_large', uniprot, "#{full_name}_revcomp.png")
+  end
+
   def to_s; "<#{@mono_or_di_mode}: #{full_name}>"; end
   def inspect; to_s; end
 
