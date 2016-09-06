@@ -55,6 +55,32 @@ namespace :collect_and_normalize_data do
     copy_files 'chipseq_models/di/*.words', 'models/words/di/chipseq/%n.words'
   end
 
+  task :print_jaspar_uniprot_mapping do
+    uniprot_infos = UniprotInfo.each_in_file('uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv').to_a
+    jaspar_infos = Jaspar::Infos.new(
+      position_counts_filename: 'standard_motif_collections_update/jaspar_2014/MATRIX_DATA.txt',
+      taxonomy_filename: 'standard_motif_collections_update/jaspar_2014/TAX.txt',
+      matrix_species_filename: 'standard_motif_collections_update/jaspar_2014/MATRIX_SPECIES.txt',
+      matrix_proteins_filename: 'standard_motif_collections_update/jaspar_2014/MATRIX_PROTEIN.txt',
+      matrix_name_infos_filename: 'standard_motif_collections_update/jaspar_2014/MATRIX.txt',
+      uniprot_infos: uniprot_infos
+    )
+    jaspar_matrices = jaspar_infos.each_matrix.select{|info|
+      # There is the only motif for Vertebrata taxon: HNF1A_HUMAN and is not linked to HNF1A_MOUSE
+      # But there are no more HNF1A_MOUSE motifs so we don't care
+      # ...and nevertheless it has no uniprot_id (because it can't be linked via provided identifiers)
+      info.fit_species?('Homo sapiens') || info.fit_species?('Mus musculus') || info.fit_species?('Vertebrata')
+    }.select{|info|
+      info.collection == 'CORE'
+    }.reject{|info|
+      info.uniprot_ids.empty?
+    }.group_by(&:name).each_value.map{|infos|
+      infos.max_by(&:version)
+    }.each{|info|
+      puts [info.full_name, info.uniprot_ids.join(',')].join("\t")
+    }
+  end
+
   task :collect_pcm_jaspar do
     mkdir_p 'models/pcm/mono/jaspar/'
     uniprot_infos = UniprotInfo.each_in_file('uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv').to_a
