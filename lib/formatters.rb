@@ -24,7 +24,7 @@ end
 
 def in_transfac_format(motif_pcms)
   result = ""
-  result << "VV\tHOCOMOCOv10, SEP 2015\n"
+  result << "VV  HOCOMOCOv10, SEP 2015\n"
   result << "XX\n"
   result << "//\n"
   motif_pcms.sort_by(&:name).each_with_index do |pcm, index|
@@ -34,23 +34,23 @@ def in_transfac_format(motif_pcms)
     uniprot = pcm.name.split('.').first
     species = uniprot.split('_').last.downcase
 
-    result << "AC\tM" << ('%05d' % (index + 1001)) << "\n" # offset 1000 is taken to distinguish HOCOMOCO v9 from v10
+    result << "AC  M" << ('%05d' % (index + 1001)) << "\n" # offset 1000 is taken to distinguish HOCOMOCO v9 from v10
     result << "XX\n"
-    result << "ID\t#{pcm.name}\n"
+    result << "ID  #{pcm.name}\n"
     result << "XX\n"
-    result << "NA\t#{uniprot}\n"
+    result << "NA  #{uniprot}\n"
     result << "XX\n"
     if species == 'human'
-      result << "BF\t#{uniprot}; Species: human, Homo sapiens\n"
+      result << "BF  #{uniprot}; Species: human, Homo sapiens\n"
     elsif species == 'mouse'
-      result << "BF\t#{uniprot}; Species: mouse, Mus musculus\n"
+      result << "BF  #{uniprot}; Species: mouse, Mus musculus\n"
     else
-      result << "BF\t#{uniprot}; Species: #{species}\n"
+      result << "BF  #{uniprot}; Species: #{species}\n"
     end
     result << "XX\n"
-    result << ['P0', 'A', 'C', 'G', 'T'].join("\t") << "\n"
+    result << 'P0  ' + ['A', 'C', 'G', 'T'].join("\t") << "\n"
     rounded_pcm.matrix.each_with_index do |pos, pos_index|
-      result << ['%02d' % (pos_index + 1), *pos, consensus[pos_index]].join("\t") << "\n"
+      result << ('%02d  ' % (pos_index + 1)) + [*pos, consensus[pos_index]].join("\t") << "\n"
     end
     result << "XX\n"
     result << "//\n"
