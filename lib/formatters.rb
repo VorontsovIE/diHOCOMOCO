@@ -48,9 +48,9 @@ def in_transfac_format(motif_pcms)
       result << "BF  #{uniprot}; Species: #{species}\n"
     end
     result << "XX\n"
-    result << 'P0  ' + ['A', 'C', 'G', 'T'].join("\t") << "\n"
+    result << "P0      A      C      G      T\n"
     rounded_pcm.matrix.each_with_index do |pos, pos_index|
-      result << ('%02d  ' % (pos_index + 1)) + [*pos, consensus[pos_index]].join("\t") << "\n"
+      result << "%02d %6.20g %6.20g %6.20g %6.20g      %s\n" % [pos_index + 1, *pos, consensus[pos_index]]
     end
     result << "XX\n"
     result << "//\n"
