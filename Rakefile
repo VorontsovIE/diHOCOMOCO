@@ -18,10 +18,7 @@ task :default do
   Rake::Task['calculate_local_backgrounds'].invoke # 5m
   Rake::Task['precalculate_thresholds'].invoke # 8950m; parallelizable
 
-  Rake::Task['calculate_occurence_scores'].invoke # 770m; parallelizable
-  Rake::Task['scores_to_pvalues'].invoke # 3570m; parallelizable; Sometimes can hang, kill hanged process remove result and run again
-  Rake::Task['correct_pvalues'].invoke # 5m25s
-  Rake::Task['calculate_auc'].invoke # 2m
+  Rake::Task['calculate_occurence_scores'].invoke
 
   Rake::Task['sequence_logos'].invoke # 30m; parallelizable
   Rake::Task['make_final_collection'].invoke
