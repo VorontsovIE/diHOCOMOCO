@@ -1,7 +1,7 @@
 require 'rake/file_utils_ext'
 
 module Ape
-  def self.run_precalculate_thresholds(models_folder, 
+  def self.precalculate_thresholds_cmd(models_folder,
                                       output_folder:,
                                       background: nil,
                                       threshold_grid: nil,
@@ -28,6 +28,6 @@ module Ape
     opts += ['--background', background.to_s]  if background
     opts += additional_options
     
-    Rake::FileUtilsExt.sh *cmd, models_folder, output_folder, *opts
+    [*cmd, models_folder, output_folder, *opts].shelljoin
   end
 end
