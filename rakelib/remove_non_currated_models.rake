@@ -21,9 +21,9 @@ task :remove_non_currated_models do
 
     SequenceDataset.each_for_uniprot(model.uniprot) do |control|
       if model.arity_type == 'mono'
-        rm_f File.join('models/thresholds/mono/all/', control.name, "#{model.full_name}.thr")
+        rm_f File.join('models/thresholds/mono/', control.name, "#{model.full_name}.thr")
       elsif model.arity_type == 'di'
-        rm_f File.join('models/thresholds/di/all/', control.name, "#{model.full_name}.thr")
+        rm_f File.join('models/thresholds/di/', control.name, "#{model.full_name}.thr")
       else
         raise 'Unknown model arity'
       end

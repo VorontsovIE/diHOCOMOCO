@@ -15,7 +15,7 @@ class SequenceDataset
   end
 
   def uniprot
-    name.split('^').first
+    name.split('.').first
   end
 
   def mono_models; Models.mono_models_by_uniprot(uniprot); end
@@ -74,7 +74,7 @@ class SequenceDataset
   end
 
   def self.each_for_uniprot(uniprot, &block)
-    each_file_by_glob("control/control/#{uniprot}^*.mfa", &block)
+    each_file_by_glob("control/control/#{uniprot}.*.mfa", &block)
   end
 
   def self.each_uniprot(&block)

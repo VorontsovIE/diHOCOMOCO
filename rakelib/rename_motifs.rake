@@ -85,42 +85,11 @@ end
 namespace :collect_and_normalize_data do
   desc 'Rename motif collections into standardized ones; For motifs with several uniprots make single-uniprot copies'
   task :rename_motifs do
-    motif_to_uniprot_mapping = MotifToUniprotMapping.load_motif_to_uniprot_by_collection('FANTOM5_phase2_KNOWN_motifs_IDmapping.txt')
-
-    hocomoco_motif_to_uniprot = File.readlines('HOCOMOCOv9_motifs2uniprot.txt').drop(1).map(&:strip).reject(&:empty?).map{|line|
-      motif, human_uniprots, mouse_uniprots = line.split("\t")
-      [motif, (human_uniprots||'').split(',') + (mouse_uniprots||'').split(',')]
-    }.to_h
-    rename_motifs 'models/pcm/mono/hocomoco_legacy/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'HL', conv_to_uniprot_ids: ->(motif){ hocomoco_motif_to_uniprot[motif] }
-
-    rename_motifs 'models/pcm/mono/homer/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'HO', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['HOMER'][motif] }
-    rename_motifs 'models/pcm/mono/swissregulon/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SR', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['SWISSREGULON'][motif] }
-
-    # Jaspar has already been put into this folder at the previous step by collect_pcm_jaspar task
-    # rename_motifs 'models/pcm/mono/jaspar/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'JA', conv_to_uniprot_ids: ->(motif){ motif_to_uniprot_mapping['JASPAR'][motif.split.first] }
-
-    rename_motifs 'models/pcm/mono/selex_ftr/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SE'
-    rename_motifs 'models/pcm/mono/selex_rebuilt_ftr/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SMF'
-    # rename_motifs 'models/pcm/mono/selex_rebuilt_sub/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SMS'
-    rename_motifs 'models/pcm/mono/selex_integrated/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'SMI'
+    rename_motifs 'models/pcm/mono/hocomoco_legacy/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'HL'
     rename_motifs 'models/pcm/mono/chipseq/*.pcm', 'models/pcm/mono/all/', short_collection_id: 'CM'
 
-    rename_motifs 'models/pcm/di/selex_rebuilt_ftr/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'SDF'
-    # rename_motifs 'models/pcm/di/selex_rebuilt_sub/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'SDS'
-    rename_motifs 'models/pcm/di/selex_integrated/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'SDI'
+    rename_motifs 'models/pcm/di/hocomoco_legacy/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'DIHL'
     rename_motifs 'models/pcm/di/chipseq/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'CD'
-
-    FileList['models/pcm/mono/papatsenko/*.pcm'].each do |fn|
-      model_name = fn.pathmap('%n')
-      uniprot = model_name.split('~').first
-      cp fn, "models/pcm/mono/all/#{uniprot}/#{model_name}.pcm"
-    end
-
-    FileList['models/pcm/di/papatsenko/*.dpcm'].each do |fn|
-      model_name = fn.pathmap('%n')
-      uniprot = model_name.split('~').first
-      cp fn, "models/pcm/di/all/#{uniprot}/#{model_name}.dpcm"
-    end
   end
 end
 
@@ -159,26 +128,7 @@ namespace :collect_and_normalize_data do
       }
     end
 
-    rename_words 'models/words/mono/selex_rebuilt_ftr/*.words', 'models/words/mono/all/', short_collection_id: 'SMF'
-    # rename_words 'models/words/mono/selex_rebuilt_sub/*.words', 'models/words/mono/all/', short_collection_id: 'SMS'
-    rename_words 'models/words/mono/selex_integrated/*.words', 'models/words/mono/all/', short_collection_id: 'SMI'
     rename_words 'models/words/mono/chipseq/*.words', 'models/words/mono/all/', short_collection_id: 'CM'
-
-    rename_words 'models/words/di/selex_rebuilt_ftr/*.words', 'models/words/di/all/', short_collection_id: 'SDF'
-    # rename_words 'models/words/di/selex_rebuilt_sub/*.words', 'models/words/di/all/', short_collection_id: 'SDS'
-    rename_words 'models/words/di/selex_integrated/*.words', 'models/words/di/all/', short_collection_id: 'SDI'
     rename_words 'models/words/di/chipseq/*.words', 'models/words/di/all/', short_collection_id: 'CD'
-
-    FileList['models/words/mono/papatsenko/*.words'].each do |fn|
-      model_name = fn.pathmap('%n')
-      uniprot = model_name.split('~').first
-      cp fn, "models/words/mono/all/#{uniprot}/#{model_name}.words"
-    end
-
-    FileList['models/words/di/papatsenko/*.words'].each do |fn|
-      model_name = fn.pathmap('%n')
-      uniprot = model_name.split('~').first
-      cp fn, "models/words/di/all/#{uniprot}/#{model_name}.words"
-    end
   end
 end

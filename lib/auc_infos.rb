@@ -1,6 +1,54 @@
 require 'median'
 require 'models'
 
+def motifs_for_slice(slice_fn)
+  motif_final = File.basename(slice_fn, '.txt')
+  slice_type = motif_final.split('.').last
+  semiuniprot = motif_final.split('.').first  # without species part
+  all_motifs = File.readlines(slice_fn).map(&:chomp)
+  additional_motifs = all_motifs.select{|motif|
+    motif.match(/~AD~/)
+  }.map{|motif| motif.split('~').last }
+
+  motifs = all_motifs.reject{|motif|
+    motif.match(/~AD~/)
+  }
+  hocomoco_motifs = motifs.select{|motif|
+    motif.match(/\.H10MO\./)
+  }
+  chipseq_motifs = motifs.reject{|motif|
+    motif.match(/\.H10MO\./)
+  }
+  if hocomoco_motifs.empty? && slice_type == 'M'
+    hocomoco_motifs = Dir.glob("models/pcm/mono/hocomoco_legacy/#{semiuniprot}_*.H10MO.*.pcm").map{|fn| File.basename(fn, '.pcm') } 
+  end
+  {chipseq_motifs: chipseq_motifs, hocomoco_motifs: hocomoco_motifs, additional_motifs: additional_motifs}
+end
+
+def dimotifs_for_slice(slice_fn)
+  motif_final = File.basename(slice_fn, '.txt')
+  slice_type = motif_final.split('.').last
+  semiuniprot = motif_final.split('.').first  # without species part
+  all_motifs = File.readlines(slice_fn).map(&:chomp)
+  additional_motifs = all_motifs.select{|motif|
+    motif.match(/~DIAD~/)
+  }.map{|motif| motif.split('~').last }
+
+  motifs = all_motifs.reject{|motif|
+    motif.match(/~DIAD~/)
+  }
+  hocomoco_motifs = motifs.select{|motif|
+    motif.match(/\.H10DI\./)
+  }
+  chipseq_motifs = motifs.reject{|motif|
+    motif.match(/\.H10DI\./)
+  }
+  if hocomoco_motifs.empty? && slice_type == 'M'
+    hocomoco_motifs = Dir.glob("models/pcm/di/hocomoco_legacy/#{semiuniprot}_*.H10DI.*.dpcm").map{|fn| File.basename(fn, '.dpcm') } 
+  end
+  {chipseq_motifs: chipseq_motifs, hocomoco_motifs: hocomoco_motifs, additional_motifs: additional_motifs}
+end
+
 # An instance of class AUCs represents AUC values for a single TF
 #
 # `auc_by_model_and_dataset` is a 2D-hash for AUC for each model-dataset pair
@@ -50,6 +98,10 @@ class AUCs
 
   def has_validation?
     !datasets.empty?
+  end
+
+  def best_auc(model)
+    datasets.map{|ds| auc(model, ds) }.max
   end
 
   # {dataset => auc}
@@ -128,13 +180,17 @@ class AUCs
     self.class.new(auc_by_model_and_dataset, models: models_to_retain, datasets: datasets)
   end
 
+  def filter_datasets_by_species(species)
+    AUCs.new(auc_by_model_and_dataset, models: models, datasets: datasets.select{|ds| ds.match(/_#{species}\./) })
+  end
+
   # Loads data for a single TF
   def self.from_folder(glob)
     auc_by_model_and_dataset = FileList[glob].map{|fn|
       model = Model.new_by_name(fn.pathmap('%n'))
       auc_by_dataset = File.readlines(fn).map{|line|
-        dataset, auc = line.chomp.split("\t")
-        [dataset, auc.to_f]
+        dataset, auc, logauc = line.chomp.split("\t")
+        [dataset, logauc.to_f]
       }.to_h
       [model, auc_by_dataset]
     }.to_h
@@ -143,10 +199,10 @@ class AUCs
 
   # Load hash {uniprot => AUCs} with iteratively filtered datasets and models
   def self.load_auc_infos_for_uniprot(min_weight_for_dataset: 0, min_auc_for_model: 0)
-    uniprots = FileList['occurences/auc/*'].pathmap('%n')
+    semiuniprots = Dir.glob('auc/*').map{|fn| File.basename(fn).split('~')[0].split('_')[0] }.uniq
 
-    result = uniprots.map{|uniprot|
-      [uniprot, self.from_folder("occurences/auc/#{uniprot}/*.txt")]
+    result = semiuniprots.map{|uniprot|
+      [uniprot, self.from_folder("auc/#{uniprot}_*.txt")]
     }.map{|uniprot, auc_infos|
       auc_infos_prev = nil
       while auc_infos != auc_infos_prev
@@ -160,5 +216,48 @@ class AUCs
       self.new(Hash.new{|hsh2, k2| {}}, models: [], datasets: [])
     }
     result
+  end
+
+  def self.all_aucs_in_folder(glob)
+    FileList[glob].map{|fn|
+      model = Model.new_by_name(fn.pathmap('%n'))
+      auc_by_dataset = File.readlines(fn).map{|line|
+        dataset, auc, logauc = line.chomp.split("\t")
+        [dataset, logauc.to_f]
+      }.to_h
+      [model, auc_by_dataset]
+    }.to_h
+  end
+
+  def self.auc_infos_for_slice(all_aucs, slice_fn)
+    motif_sets = motifs_for_slice(slice_fn)
+    models = []
+    models += motif_sets[:chipseq_motifs].map{|motif_name|
+      uniprot = motif_name.split('.').first
+      Model.new("#{uniprot}~CM~#{motif_name}", :mono)
+    }
+    models += motif_sets[:hocomoco_motifs].map{|motif_name|
+      uniprot = motif_name.split('.').first
+      Model.new("#{uniprot}~HL~#{motif_name}", :mono)
+    }
+    models += motif_sets[:additional_motifs].map{|motif_name|
+      uniprot = motif_name.split('.').first
+      Model.new("#{uniprot}~AD~#{motif_name}", :mono)
+    }
+
+    result = models.select{|model| all_aucs.has_key?(model) }.map{|model|
+      [model, all_aucs[model]]
+    }.to_h
+    self.new(result)
+  end
+
+  def refined(min_weight_for_dataset: 0, min_auc_for_model: 0)
+    auc_infos = self
+    auc_infos_prev = nil
+    while auc_infos != auc_infos_prev
+      auc_infos_prev = auc_infos
+      auc_infos = auc_infos.without_bad_datasets(min_weight_for_dataset).without_bad_models(min_auc_for_model)
+    end
+    auc_infos
   end
 end

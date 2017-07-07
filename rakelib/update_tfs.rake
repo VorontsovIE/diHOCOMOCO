@@ -3,8 +3,8 @@ task :update_tfs, :tfs_to_update do |t, args|
   tfs_to_update = args[:tfs_to_update].split
 
   tfs_to_update.each do |tf|
-    FileList["models/thresholds/mono/all/#{tf}^*"].each{|folder| rm_rf folder }
-    FileList["models/thresholds/di/all/#{tf}^*"].each{|folder| rm_rf folder }
+    FileList["models/thresholds/mono/#{tf}^*"].each{|folder| rm_rf folder }
+    FileList["models/thresholds/di/#{tf}^*"].each{|folder| rm_rf folder }
     rm_rf "occurences/scores/mono/#{tf}"
     rm_rf "occurences/scores/di/#{tf}"
     rm_rf "occurences/pvalues/#{tf}"

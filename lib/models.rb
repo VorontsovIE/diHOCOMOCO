@@ -202,8 +202,8 @@ module Models
     all_models.map(&:uniprot).uniq
   end
 
-  MonoCollections = ['HL', 'HO', 'SR', 'JA', 'SE', 'SMF', 'SMI', 'CM', 'PAPAM']
-  DiCollections = ['SDF', 'SDI', 'CD', 'PAPAD']
+  MonoCollections = ['HL', 'HO', 'SR', 'JA', 'SE', 'SMF', 'SMI', 'CM', 'PAPAM', 'AD']
+  DiCollections = ['SDF', 'SDI', 'CD', 'PAPAD', 'DIAD', 'DIHL']
   ChipseqCollections = ['CM', 'CD']
   SelexRebuiltCollections = ['SMF', 'SMI', 'SDF', 'SDI']
 
@@ -241,11 +241,14 @@ module Models
   # CollectionsForFinalBundleWithoutValidation = ['HL', 'CM', 'CD', 'SMI']
 
   CollectionNames = {
-    'HL' => 'HOCOMOCO-v9',
+    'HL' => 'HOCOMOCO-v10',
+    'DIHL' => 'DI-HOCOMOCO-v10',
     'HO' => 'HOMER',
     'JA' => 'JASPAR',
     'SR' => 'SWISSREGULON',
     'SE' => 'HTSELEX',
+    'AD' => 'ADDITIONAL-EXTERNAL-MOTIFS',
+    'DIAD' => 'ADDITIONAL-EXTERNAL-DI-MOTIFS',
 
     'CM' => 'CHIPSEQ',
     'SMF' => 'HTSELEX-R',

@@ -11,11 +11,11 @@ task :move_selex_sub_collections do
 
   move_to_folder("models/pcm/mono/all/*/*~SMS~*.pcm", 'removed_selex_sub')
   move_to_folder("models/pwm/mono/all/*/*~SMS~*.pwm", 'removed_selex_sub')
-  move_to_folder("models/thresholds/mono/all/*/*~SMS~*.thr", 'removed_selex_sub')
+  move_to_folder("models/thresholds/mono/*/*~SMS~*.thr", 'removed_selex_sub')
 
   move_to_folder("models/pcm/di/all/*/*~SDS~*.dpcm", 'removed_selex_sub')
   move_to_folder("models/pwm/di/all/*/*~SDS~*.dpwm", 'removed_selex_sub')
-  move_to_folder("models/thresholds/di/all/*/*~SDS~*.thr", 'removed_selex_sub')
+  move_to_folder("models/thresholds/di/*/*~SDS~*.thr", 'removed_selex_sub')
 
   ['SMS','SDS'].each do |collection|
     move_to_folder("models/logo/*/*~#{collection}~*.png", 'removed_selex_sub')
