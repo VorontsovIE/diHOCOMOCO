@@ -2,10 +2,12 @@ require 'median'
 require 'models'
 
 def motifs_for_slice(slice_fn)
+  banlist = File.readlines('curation/banlist.txt').map(&:strip)
   motif_final = File.basename(slice_fn, '.txt')
   slice_type = motif_final.split('.').last
   semiuniprot = motif_final.split('.').first  # without species part
   all_motifs = File.readlines(slice_fn).map(&:chomp)
+
   additional_motifs = all_motifs.select{|motif|
     motif.match(/~AD~/)
   }.map{|motif| motif.split('~').last }
@@ -19,10 +21,15 @@ def motifs_for_slice(slice_fn)
   chipseq_motifs = motifs.reject{|motif|
     motif.match(/\.H10MO\./)
   }
+
   if hocomoco_motifs.empty? && slice_type == 'M'
     hocomoco_motifs = Dir.glob("models/pcm/mono/hocomoco_legacy/#{semiuniprot}_*.H10MO.*.pcm").map{|fn| File.basename(fn, '.pcm') } 
   end
-  {chipseq_motifs: chipseq_motifs, hocomoco_motifs: hocomoco_motifs, additional_motifs: additional_motifs}
+  {
+    chipseq_motifs: chipseq_motifs,
+    hocomoco_motifs: hocomoco_motifs.reject{|motif| banlist.include?(motif) },
+    additional_motifs: additional_motifs
+  }
 end
 
 def dimotifs_for_slice(slice_fn)
@@ -46,7 +53,11 @@ def dimotifs_for_slice(slice_fn)
   if hocomoco_motifs.empty? && slice_type == 'M'
     hocomoco_motifs = Dir.glob("models/pcm/di/hocomoco_legacy/#{semiuniprot}_*.H10DI.*.dpcm").map{|fn| File.basename(fn, '.dpcm') } 
   end
-  {chipseq_motifs: chipseq_motifs, hocomoco_motifs: hocomoco_motifs, additional_motifs: additional_motifs}
+  {
+    chipseq_motifs: chipseq_motifs,
+    hocomoco_motifs: hocomoco_motifs.reject{|motif| banlist.include?(motif) },
+    additional_motifs: additional_motifs
+  }
 end
 
 # An instance of class AUCs represents AUC values for a single TF
@@ -135,16 +146,17 @@ class AUCs
   # It's possible to calculate weighted AUC even for models which were excluded from @models
   # Weights of datasets though won't be recalculated and
   #   will consider only "good" models included in @models
-  def weighted_auc(model)
+  def weighted_auc(model, &dataset_quality_block)
     return nil  if datasets.empty?
     return nil  if models.empty? # In this case we can't estimate dataset weights
+    dataset_quality_block = ->(dataset){ dataset_quality(daaset) } unless block_given?
 
     quality_norm_factor = datasets.map{|dataset|
-      dataset_quality(dataset)
+      dataset_quality_block.call(dataset)
     }.inject(0.0, &:+)
 
     weighted_auc_total = datasets.map{|dataset|
-      auc(model, dataset) * dataset_quality(dataset)
+      auc(model, dataset) * dataset_quality_block.call(dataset)
     }.inject(0.0, &:+)
 
     weighted_auc_total / quality_norm_factor
@@ -219,6 +231,7 @@ class AUCs
   end
 
   def self.all_aucs_in_folder(glob)
+    initial_hsh = Hash.new{|h,k| h[k] = {} }
     FileList[glob].map{|fn|
       model = Model.new_by_name(fn.pathmap('%n'))
       auc_by_dataset = File.readlines(fn).map{|line|
@@ -226,9 +239,13 @@ class AUCs
         [dataset, logauc.to_f]
       }.to_h
       [model, auc_by_dataset]
-    }.to_h
+    } #.to_h
+    .each_with_object(initial_hsh){|(model, auc_by_dataset), hsh|
+      hsh[model].merge!(auc_by_dataset)
+    }
   end
 
+  # ToDo: make dinucleotide version
   def self.auc_infos_for_slice(all_aucs, slice_fn)
     motif_sets = motifs_for_slice(slice_fn)
     models = []

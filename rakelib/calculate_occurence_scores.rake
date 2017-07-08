@@ -14,7 +14,7 @@ task :calculate_occurence_scores_di
     sarus_class = (model_type == 'mono') ? 'ru.autosome.SARUS' : 'ru.autosome.di.SARUS'
     ['HUMAN', 'MOUSE'].each do |species| # dataset characteristic; models can be of any species
       FileUtils.mkdir_p "auc/#{model_type}/#{species}_datasets"
-      Dir.glob("models/pwm/#{model_type}/all/*/*.pwm").map{|fn|
+      Dir.glob("models/pwm/#{model_type}/all/*/*.{pwm,dpwm}").map{|fn|
         File.basename(fn, File.extname(fn))
       }.uniq.sort.map{|model_name|
         Model.new(model_name, model_type.to_sym)
