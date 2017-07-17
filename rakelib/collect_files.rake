@@ -1,4 +1,3 @@
-require 'jaspar'
 require 'uniprot_info'
 
 # mapping should map a file into a file name, not a folder name!
