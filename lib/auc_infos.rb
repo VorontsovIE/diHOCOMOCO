@@ -2,9 +2,9 @@ require 'median'
 require 'models'
 
 def motifs_for_slice(slice_fn)
-  banlist = File.readlines('curation/banlist.txt').map(&:strip)
+  banlist = File.readlines('curation/banlist_mono.txt').map(&:strip)
   motif_final = File.basename(slice_fn, '.txt')
-  slice_type = motif_final.split('.').last
+  slice_type = motif_final.split('.').last[0]
   semiuniprot = motif_final.split('.').first  # without species part
   all_motifs = File.readlines(slice_fn).map(&:chomp)
 
@@ -23,20 +23,20 @@ def motifs_for_slice(slice_fn)
   }
 
   if hocomoco_motifs.empty? && slice_type == 'M'
-    hocomoco_motifs = Dir.glob("models/pcm/mono/hocomoco_legacy/#{semiuniprot}_*.H10MO.*.pcm").map{|fn| File.basename(fn, '.pcm') } 
+    hocomoco_motifs = Dir.glob("models/pcm/mono/hocomoco_legacy/#{semiuniprot}_*.H10MO.*.pcm")
+                         .map{|fn| File.basename(fn, '.pcm') }
+                         .reject{|motif| banlist.include?(motif) }
   end
-  {
-    chipseq_motifs: chipseq_motifs,
-    hocomoco_motifs: hocomoco_motifs.reject{|motif| banlist.include?(motif) },
-    additional_motifs: additional_motifs
-  }
+  { chipseq_motifs: chipseq_motifs, hocomoco_motifs: hocomoco_motifs, additional_motifs: additional_motifs }
 end
 
-def dimotifs_for_slice(slice_fn)
+def motifs_for_di_slice(slice_fn)
+  banlist = File.readlines('curation/banlist_di.txt').map(&:strip)
   motif_final = File.basename(slice_fn, '.txt')
-  slice_type = motif_final.split('.').last
+  slice_type = motif_final.split('.').last[0]
   semiuniprot = motif_final.split('.').first  # without species part
   all_motifs = File.readlines(slice_fn).map(&:chomp)
+
   additional_motifs = all_motifs.select{|motif|
     motif.match(/~DIAD~/)
   }.map{|motif| motif.split('~').last }
@@ -49,15 +49,16 @@ def dimotifs_for_slice(slice_fn)
   }
   chipseq_motifs = motifs.reject{|motif|
     motif.match(/\.H10DI\./)
+  }.reject{|motif|
+    banlist.include?(motif)
   }
+
   if hocomoco_motifs.empty? && slice_type == 'M'
-    hocomoco_motifs = Dir.glob("models/pcm/di/hocomoco_legacy/#{semiuniprot}_*.H10DI.*.dpcm").map{|fn| File.basename(fn, '.dpcm') } 
+    hocomoco_motifs = Dir.glob("models/pcm/di/hocomoco_legacy/#{semiuniprot}_*.H10DI.*.dpcm")
+                         .map{|fn| File.basename(fn, '.dpcm') }
+                         .reject{|motif| banlist.include?(motif) }
   end
-  {
-    chipseq_motifs: chipseq_motifs,
-    hocomoco_motifs: hocomoco_motifs.reject{|motif| banlist.include?(motif) },
-    additional_motifs: additional_motifs
-  }
+  { chipseq_motifs: chipseq_motifs, hocomoco_motifs: hocomoco_motifs, additional_motifs: additional_motifs }
 end
 
 # An instance of class AUCs represents AUC values for a single TF
@@ -245,8 +246,18 @@ class AUCs
     }
   end
 
-  # ToDo: make dinucleotide version
-  def self.auc_infos_for_slice(all_aucs, slice_fn)
+  def self.auc_infos_for_slice(all_aucs, slice_fn, model_type)
+    case model_type.to_sym
+    when :mono
+      auc_infos_for_mono_slice(all_aucs, slice_fn)
+    when :di
+      auc_infos_for_di_slice(all_aucs, slice_fn)
+    else
+      raise "Undefined model type #{model_type}"
+    end
+  end
+
+  def self.auc_infos_for_mono_slice(all_aucs, slice_fn)
     motif_sets = motifs_for_slice(slice_fn)
     models = []
     models += motif_sets[:chipseq_motifs].map{|motif_name|
@@ -262,6 +273,27 @@ class AUCs
       Model.new("#{uniprot}~AD~#{motif_name}", :mono)
     }
 
+    result = models.select{|model| all_aucs.has_key?(model) }.map{|model|
+      [model, all_aucs[model]]
+    }.to_h
+    self.new(result)
+  end
+
+  def self.auc_infos_for_di_slice(all_aucs, slice_fn)
+    motif_sets = motifs_for_di_slice(slice_fn)
+    models = []
+    models += motif_sets[:chipseq_motifs].map{|motif_name|
+      uniprot = motif_name.split('.').first
+      Model.new("#{uniprot}~CD~#{motif_name}", :di)
+    }
+    models += motif_sets[:hocomoco_motifs].map{|motif_name|
+      uniprot = motif_name.split('.').first
+      Model.new("#{uniprot}~DIHL~#{motif_name}", :di)
+    }
+    models += motif_sets[:additional_motifs].map{|motif_name|
+      uniprot = motif_name.split('.').first
+      Model.new("#{uniprot}~DIAD~#{motif_name}", :di)
+    }
     result = models.select{|model| all_aucs.has_key?(model) }.map{|model|
       [model, all_aucs[model]]
     }.to_h
