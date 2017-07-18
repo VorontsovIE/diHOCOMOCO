@@ -51,71 +51,76 @@ def aucs_from_fn(filename)
   }  
 end
 
+def put_motifs_to_final(model, final_name, model_kind, should_reverse)
+  pcm_ext = {'mono' => 'pcm', 'di' => 'dpcm'}
+  pwm_ext = {'mono' => 'pwm', 'di' => 'dpwm'}
+  if !should_reverse
+    FileUtils.cp "models/pcm/#{model_kind}/all/#{model.split('~')[0]}/#{model}.#{pcm_ext[model_kind]}", "final_collection/#{model_kind}/pcm/#{final_name}.#{pcm_ext[model_kind]}"
+    FileUtils.cp "models/pwm/#{model_kind}/all/#{model.split('~')[0]}/#{model}.#{pwm_ext[model_kind]}", "final_collection/#{model_kind}/pwm/#{final_name}.#{pwm_ext[model_kind]}"
+  else
+    if model_kind == 'mono'
+      pcm = Bioinform::MotifModel::PCM.from_file("models/pcm/mono/all/#{model.split('~')[0]}/#{model}.pcm")
+      pwm = Bioinform::MotifModel::PWM.from_file("models/pwm/mono/all/#{model.split('~')[0]}/#{model}.pwm")
+    else
+      pcm = ModelKind::Di.new.read_pcm("models/pcm/di/all/#{model.split('~')[0]}/#{model}.dpcm")
+      pwm = ModelKind::Di.new.read_pwm("models/pwm/di/all/#{model.split('~')[0]}/#{model}.dpwm")
+    end
+    File.write("final_collection/#{model_kind}/pcm/#{final_name}.#{pcm_ext[model_kind]}", pcm.revcomp.to_s)
+    File.write("final_collection/#{model_kind}/pwm/#{final_name}.#{pwm_ext[model_kind]}", pwm.revcomp.to_s)
+  end
+
+end
+
 task 'print_motif_qualities' do
   to_reverse = File.readlines('curation/revme_fin.txt').map(&:chomp)
 
-  pcm_ext = {'mono' => 'pcm', 'di' => 'dpcm'}
-  pwm_ext = {'mono' => 'pwm', 'di' => 'dpwm'}
   collection_name = {'mono' => 'H11MO', 'di' => 'H11DI'}
 
   ['mono', 'di'].each do |model_kind|
     FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
     FileUtils.mkdir_p "final_collection/#{model_kind}/pwm/"
     FileUtils.mkdir_p "final_collection/#{model_kind}/logo/"
-    File.open("final_collection/#{model_kind}.html", 'w') do |fw|
-      fw.puts <<-EOS
-<html><head></head><body><table>
-      EOS
+    table = []
 
-      ['HUMAN', 'MOUSE'].each do |species|
-        Dir.glob("wauc/#{model_kind}/#{species}/*.txt").sort.map{|slice_fn|
-          model = File.readlines(slice_fn).map{|l|
-            model, logauc, maxlogauc = l.chomp.split("\t")
-            [model, Float(logauc)]
-          }.max_by{|model, logauc|
-            logauc
-          }.first
-          model_second_way = File.readlines(slice_fn).first.split("\t").first
+    ['HUMAN', 'MOUSE'].each do |species|
+      Dir.glob("wauc/#{model_kind}/#{species}/*.txt").sort.map{|slice_fn|
 
-          raise 'Inconsistent best model'  unless model == model_second_way # foolproof check
+        model = File.readlines(slice_fn).map{|l|
+          model, logauc, maxlogauc = l.chomp.split("\t")
+          [model, Float(logauc)]
+        }.max_by{|model, logauc|
+          logauc
+        }.first
+        model_second_way = File.readlines(slice_fn).first.split("\t").first
 
-          auc_by_ds = aucs_from_fn("auc/#{model_kind}/HUMAN_datasets/#{model}.txt") + aucs_from_fn("auc/#{model_kind}/MOUSE_datasets/#{model}.txt")
+        raise 'Inconsistent best model'  unless model == model_second_way # foolproof check
 
-          [File.basename(slice_fn, '.txt'), model, quality_mark(auc_by_ds, species)]
-        }.group_by{|slice, model, quality|
-          slice.split('.').first # semiuniprot
-        }.each{|semiuniprot, slices|
-          slices.sort_by{|slice, model, quality|
-            slice_type = slice.split('.').last[0]
-            ['M','S','T'].index(slice_type)
-          }.each_with_index{|(slice, model, quality), ind|
-            uniprot = "#{semiuniprot}_#{species}"
-            final_name = "#{uniprot}.#{collection_name[model_kind]}.#{quality}#{ind}"
-            should_reverse = to_reverse.include?(model.split('~').last)
-            if should_reverse
-              if model_kind == 'mono'
-                pcm = Bioinform::MotifModel::PCM.from_file("models/pcm/mono/all/#{model.split('~')[0]}/#{model}.pcm")
-                pwm = Bioinform::MotifModel::PWM.from_file("models/pwm/mono/all/#{model.split('~')[0]}/#{model}.pwm")
-              else
-                pcm = ModelKind::Di.new.read_pcm("models/pcm/di/all/#{model.split('~')[0]}/#{model}.dpcm")
-                pwm = ModelKind::Di.new.read_pwm("models/pwm/di/all/#{model.split('~')[0]}/#{model}.dpwm")
-              end
-              File.write("final_collection/#{model_kind}/pcm/#{final_name}.#{pcm_ext[model_kind]}", pcm.revcomp.to_s)
-              File.write("final_collection/#{model_kind}/pwm/#{final_name}.#{pwm_ext[model_kind]}", pwm.revcomp.to_s)
-            else
-              FileUtils.cp "models/pcm/#{model_kind}/all/#{model.split('~')[0]}/#{model}.#{pcm_ext[model_kind]}", "final_collection/#{model_kind}/pcm/#{final_name}.#{pcm_ext[model_kind]}"
-              FileUtils.cp "models/pwm/#{model_kind}/all/#{model.split('~')[0]}/#{model}.#{pwm_ext[model_kind]}", "final_collection/#{model_kind}/pwm/#{final_name}.#{pwm_ext[model_kind]}"
-            end
-            # puts [final_name, model].join("\t")
-            fw.puts "<tr><td>#{final_name}</td><td>#{model}</td><td><img height='50' src='#{model_kind}/logo/#{final_name}_direct.png'></td></tr>"
-          }
+        auc_by_ds = aucs_from_fn("auc/#{model_kind}/HUMAN_datasets/#{model}.txt") + aucs_from_fn("auc/#{model_kind}/MOUSE_datasets/#{model}.txt")
+
+        [File.basename(slice_fn, '.txt'), model, quality_mark(auc_by_ds, species)]
+      }.group_by{|slice, model, quality|
+        slice.split('.').first # semiuniprot
+      }.each{|semiuniprot, slices|
+        slices.sort_by{|slice, model, quality|
+          slice_type = slice.split('.').last[0]
+          ['M','S','T'].index(slice_type)
+        }.each_with_index{|(slice, model, quality), ind|
+          uniprot = "#{semiuniprot}_#{species}"
+          final_name = "#{uniprot}.#{collection_name[model_kind]}.#{quality}#{ind}"
+          should_reverse = to_reverse.include?(model.split('~').last)
+          put_motifs_to_final(model, final_name, model_kind, should_reverse)
+          table << [final_name, model, "<img src='#{model_kind}/logo/#{final_name}_direct.png'>",]
         }
-      end
-      fw.puts <<-EOS
-</table></body></html>
-      EOS
-
-
+      }
     end
+    File.open("final_collection/#{model_kind}.html", 'w'){|fw|
+      fw.puts "<html><head><style>img{ height:50px; }</style></head><body><table>"
+      table.sort_by{|final_name, model, img|
+        final_name
+      }.each do |row|
+        fw.puts("<tr>" + row.map{|cell| "<td>#{cell}</td>" }.join + "</tr>")
+      end
+      fw.puts "</table></body></html>"
+    }
   end
 end
