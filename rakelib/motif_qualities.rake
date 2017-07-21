@@ -116,6 +116,8 @@ def collect_novel_motifs(model_kind, species)
   }.flat_map{|semiuniprot, slices|
     slices.sort_by{|slice, model, logauc, quality|
       -logauc
+    }.reject{|slice, model, logauc, quality|
+      quality >= 'E'
     }.each_with_index.map{|(slice, original_motif, logauc, quality), motif_index|
       uniprot = "#{semiuniprot}_#{species}"
       {
@@ -187,7 +189,7 @@ def cross_species_infos(chipseq_infos, model_kind)
     # else
     #   puts [uniprot, "Cross-species", chipseq_motifs.join("; "), (hocomoco10_variants + chipseq_motifs_number_2).join("; ")].join("\t")
     # end
-    if hocomoco10_best_quality < chipseq_best_quality
+    if hocomoco10_best_quality < (chipseq_best_quality.ord + 1).chr
       inherited_motifs_infos_for_tf(uniprot, hocomoco10_variants, model_kind).map{|info|
         info.merge(novelty: 'inherited (better than cross-speices)')
       }
@@ -200,7 +202,7 @@ def cross_species_infos(chipseq_infos, model_kind)
           novelty: 'cross-species',
         })
       }.reject{|info|
-        info[:quality] > 'E'
+        info[:quality] >= 'E'
       }
     end
   }
