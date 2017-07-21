@@ -1,3 +1,5 @@
+require 'set'
+
 PCM_EXT = {'mono' => 'pcm', 'di' => 'dpcm'}
 PWM_EXT = {'mono' => 'pwm', 'di' => 'dpwm'}
 COLLECTION_NAME = {'mono' => 'H11MO', 'di' => 'H11DI'}
@@ -91,6 +93,16 @@ def best_model_in_slice(slice_fn)
   [model, logauc]
 end
 
+def final_name(infos)
+  "#{infos[:uniprot]}.#{COLLECTION_NAME[infos[:model_kind]]}.#{infos[:motif_index]}.#{infos[:quality]}"
+end
+
+def hocomoco10_motifs(model_kind)
+  Dir.glob("hocomoco10/*/#{model_kind}/pcm/*").map{|pcm_fn|
+    File.basename(pcm_fn, File.extname(pcm_fn))
+  }
+end
+
 def collect_novel_motifs(model_kind, species)
   to_reverse = File.readlines('curation/revme_fin.txt').map(&:chomp)
   Dir.glob("wauc/#{model_kind}/#{species}/*.txt").sort.map{|slice_fn|
@@ -122,36 +134,80 @@ def collect_novel_motifs(model_kind, species)
   }
 end
 
-def collect_inherited_motif_infos(inherited_motifs, model_kind)
-  inherited_motifs.group_by{|original_motif|
-    original_motif.split('.').first # group by uniprot
-  }.flat_map{|uniprot, original_motifs|
-    species = uniprot.split('_').last
-    main_model_quality = original_motifs.map{|original_motif| original_motif.split('.').last }.reject{|quality| quality == 'S' }.first
+def inherited_motifs_infos_for_tf(uniprot, hocomoco10_tf_motifs, model_kind)
+  species = uniprot.split('_').last
+  main_model_quality = hocomoco10_tf_motifs.map{|original_motif| original_motif.split('.').last }.reject{|quality| quality == 'S' }.first
 
-    original_motifs.sort_by{|original_motif|
-      original_motif.split('.').last # quality
-    }.each_with_index.map{|original_motif, motif_index|
-      # inherited S-models take quality one grade less than the main motif
-      original_quality = original_motif.split('.').last
-      novel_quality = (original_quality != 'S') ? original_quality : (main_model_quality.ord + 1).chr
-      novel_quality = 'D'  if uniprot.start_with?('GLI2_') # manual curation
+  hocomoco10_tf_motifs.sort_by{|original_motif|
+    original_motif.split('.').last # quality
+  }.each_with_index.map{|original_motif, motif_index|
+    # inherited S-models take quality one grade less than the main motif
+    original_quality = original_motif.split('.').last
+    novel_quality = (original_quality != 'S') ? original_quality : (main_model_quality.ord + 1).chr
+    novel_quality = 'D'  if uniprot.start_with?('GLI2_') # manual curation
 
-      {
-        original_motif: original_motif,
-        model_kind: model_kind, species: species,
-        uniprot: uniprot, quality: novel_quality, motif_index: motif_index,
-        novelty: 'inherited', logauc: 0,
-        should_reverse: false,
-        original_pcm_fn: "hocomoco10/#{species}/#{model_kind}/pcm/#{original_motif}.#{PCM_EXT[model_kind]}",
-        original_pwm_fn: "hocomoco10/#{species}/#{model_kind}/pwm/#{original_motif}.#{PWM_EXT[model_kind]}",
-      }
+    {
+      original_motif: original_motif,
+      model_kind: model_kind, species: species,
+      uniprot: uniprot, quality: novel_quality, motif_index: motif_index,
+      novelty: 'inherited', logauc: 0,
+      should_reverse: false,
+      original_pcm_fn: "hocomoco10/#{species}/#{model_kind}/pcm/#{original_motif}.#{PCM_EXT[model_kind]}",
+      original_pwm_fn: "hocomoco10/#{species}/#{model_kind}/pwm/#{original_motif}.#{PWM_EXT[model_kind]}",
     }
   }
 end
 
-def final_name(infos)
-  "#{infos[:uniprot]}.#{COLLECTION_NAME[infos[:model_kind]]}.#{infos[:motif_index]}.#{infos[:quality]}"
+def collect_inherited_motif_infos(inherited_motifs, model_kind)
+  inherited_motifs.group_by{|original_motif|
+    original_motif.split('.').first # group by uniprot
+  }.flat_map{|uniprot, original_tf_motifs|
+    inherited_motifs_infos_for_tf(uniprot, original_tf_motifs, model_kind)
+  }
+end
+
+
+def other_species(uniprot)
+  uniprot.match(/_HUMAN/) ? uniprot.sub(/_HUMAN/, '_MOUSE') : uniprot.sub(/_MOUSE/, '_HUMAN')
+end
+
+def cross_species_infos(chipseq_infos, model_kind)
+  chipseq_uniprots = chipseq_infos.map{|info| info[:uniprot] }.to_set
+  can_be_cross_assigned = chipseq_uniprots.map{|uniprot| other_species(uniprot) }.to_set - chipseq_uniprots
+  hocomoco10_motifs = hocomoco10_motifs(model_kind)
+  hocomoco10_uniprots = hocomoco10_motifs.map{|motif| motif.split('.').first }.to_set
+  should_be_cross_assigned = can_be_cross_assigned & hocomoco10_uniprots
+  # puts ['Uniprot', 'origin', 'chosen motifs', 'alternative was'].join("\t")
+  should_be_cross_assigned.flat_map{|uniprot|
+    hocomoco10_variants = hocomoco10_motifs.select{|motif| motif.split('.').first == uniprot }
+    chipseq_variants_infos = chipseq_infos.select{|info| other_species(info[:uniprot]) == uniprot }
+    chipseq_variants = chipseq_variants_infos.map{|info| info[:original_motif] }
+    hocomoco10_best_quality = hocomoco10_variants.map{|motif| motif.split('.').last }.min
+    chipseq_best_quality = chipseq_variants_infos.map{|info| info[:quality] }.min
+    chipseq_motifs = chipseq_variants_infos.select{|info| info[:motif_index] < 2 }.map{|info| info[:original_motif] }
+    # chipseq_motifs_number_2 = chipseq_variants_infos.select{|info| info[:motif_index] == 2 }.map{|info| info[:original_motif] }
+    # if hocomoco10_best_quality < chipseq_best_quality
+    #   puts [uniprot, 'Hocomoco10', hocomoco10_variants.join("; "), (chipseq_motifs + chipseq_motifs_number_2).join("; ")].join("\t")
+    # else
+    #   puts [uniprot, "Cross-species", chipseq_motifs.join("; "), (hocomoco10_variants + chipseq_motifs_number_2).join("; ")].join("\t")
+    # end
+    if hocomoco10_best_quality < chipseq_best_quality
+      inherited_motifs_infos_for_tf(uniprot, hocomoco10_variants, model_kind).map{|info|
+        info.merge(novelty: 'inherited (better than cross-speices)')
+      }
+    else
+      chipseq_variants_infos.map{|info|
+        info.merge({
+          uniprot: uniprot,
+          species: uniprot.split('_').last,
+          quality: (info[:quality].ord + 1).chr,
+          novelty: 'cross-species',
+        })
+      }.reject{|info|
+        info[:quality] > 'E'
+      }
+    end
+  }
 end
 
 task 'print_motif_qualities' do
@@ -159,25 +215,35 @@ task 'print_motif_qualities' do
     FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
     FileUtils.mkdir_p "final_collection/#{model_kind}/pwm/"
     FileUtils.mkdir_p "final_collection/#{model_kind}/logo/"
-    novel_motifs = ['HUMAN', 'MOUSE'].flat_map{|species|
+    novel_chipseq_infos = ['HUMAN', 'MOUSE'].flat_map{|species|
       collect_novel_motifs(model_kind, species)
     }
 
-    novel_uniprots = novel_motifs.map{|infos| final_name(infos) }.map{|final_name| final_name.split('.').first }.uniq
-    hocomoco10_motifs = Dir.glob("hocomoco10/*/#{model_kind}/pcm/*").map{|pcm_fn|
-      File.basename(pcm_fn, File.extname(pcm_fn))
-    }
+    novel_semiuniprots = novel_chipseq_infos.map{|infos|
+      final_name(infos)
+    }.map{|final_name|
+      final_name.split('.').first
+    }.map{|uniprot|
+      uniprot.split('_').first
+    }.uniq
 
-    inherited_motifs = hocomoco10_motifs.reject{|original_motif|
+    inherited_motifs = hocomoco10_motifs(model_kind).reject{|original_motif|
       uniprot = original_motif.split('.').first
-      novel_uniprots.include?(uniprot)
+      semiuniprot = uniprot.split('_').first
+      novel_semiuniprots.include?(semiuniprot)
     }
 
-    hocomoco_10_infos = collect_inherited_motif_infos(inherited_motifs, model_kind)
+    hocomoco10_infos = collect_inherited_motif_infos(inherited_motifs, model_kind)
 
-    cross_species_infos = []
+    cross_species_infos = cross_species_infos(novel_chipseq_infos, model_kind)
 
-    infos = novel_motifs + hocomoco_10_infos + cross_species_infos
+    infos = novel_chipseq_infos + hocomoco10_infos + cross_species_infos
+
+    novel_chipseq_uniprots = novel_chipseq_infos.map{|info| info[:uniprot] }.to_set 
+    hocomoco10_uniprots = hocomoco10_infos.map{|info| info[:uniprot] }.to_set 
+    cross_species_uniprots = cross_species_infos.map{|info| info[:uniprot] }.to_set 
+    raise 'Overlap'  if novel_chipseq_uniprots.intersect?(hocomoco10_uniprots) || novel_chipseq_uniprots.intersect?(cross_species_uniprots) || cross_species_uniprots.intersect?(hocomoco10_uniprots)
+    raise 'Hocomoco10 not covered' unless hocomoco10_motifs(model_kind).map{|motif| motif.split('.').first }.all?{|uniprot| infos.map{|info| info[:uniprot] }.include?(uniprot) }
 
     motifs_to_ban = ['ERF', 'ETV2_HUMAN', 'MNT_HUMAN\.H10MO\.D', 'MUSC_HUMAN\.H10MO\.D', 'SMRC1', 'ZNF639', 'CLOCK_.*\.H10MO', 'PKNX2', 'YBX1', 'KAISO_MOUSE\.H10MO\.B']
     infos.reject!{|info| # inherit, final_name, model, img
@@ -194,20 +260,29 @@ task 'print_motif_qualities' do
     table = infos.map{|infos|
       original_motif, novelty, model_kind, motif_index = infos.values_at(:original_motif, :novelty, :model_kind, :motif_index)
       final_name = final_name(infos)
-      [novelty, final_name, original_motif, "<img src='#{model_kind}/logo/#{final_name}_direct.png'>",]
+      [novelty, final_name, original_motif, "#{model_kind}/logo/#{final_name}_direct.png",]
     }
 
-    table.sort_by{|inherit, final_name, model, img|
+    table.sort_by{|inherit, final_name, model, img_src|
       final_name
-    }.chunk(&:itself).each_slice(300).map{|slice| slice.flat_map(&:last) }
+    }.chunk(&:itself).each_slice(500).map{|slice| slice.flat_map(&:last) }
     .each_with_index do |slice, slice_index|
       File.open("final_collection/#{model_kind}_slice_#{slice_index}.html", 'w'){|fw|
         fw.puts "<html><head><style>img{ height:50px; }\ntable,tr,td{ border:1px solid black; }\ntd:first-child{font-weight:bolder;}</style></head><body><table>"
-        slice.each do |row|
-          fw.puts("<tr>" + row.map{|cell| "<td>#{cell}</td>" }.join + "</tr>")
+        slice.each do |inherit, final_name, model, img_src|
+          fw.puts("<tr>" + [inherit, final_name, model, "<img src='#{img_src}'>"].map{|cell| "<td>#{cell}</td>" }.join + "</tr>")
         end
         fw.puts "</table></body></html>"
       }
     end
+
+    File.open("final_collection/#{model_kind}.tsv", 'w'){|fw|
+      fw.puts ['origin', 'final_name', 'original_motif', 'img'].join("\t")
+      table.sort_by{|inherit, final_name, model, img|
+        final_name
+      }.each{|row|
+        fw.puts(row.join("\t"))
+      }
+    }
   end
 end
