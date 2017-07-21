@@ -115,12 +115,9 @@ def collect_novel_motifs(model_kind, species)
     slice.split('.').first # semiuniprot
   }.flat_map{|semiuniprot, slices|
     slices.sort_by{|slice, model, logauc, quality|
-      # slice_type = slice.split('.').last[0]
-      # ['M','S','T'].index(slice_type) # ToDo: сделать порядок по logWAUC
       -logauc
     }.each_with_index.map{|(slice, original_motif, logauc, quality), motif_index|
       uniprot = "#{semiuniprot}_#{species}"
-      #
       {
         original_motif: original_motif,
         model_kind: model_kind, species: species,
@@ -141,9 +138,8 @@ def inherited_motifs_infos_for_tf(uniprot, hocomoco10_tf_motifs, model_kind)
   hocomoco10_tf_motifs.sort_by{|original_motif|
     original_motif.split('.').last # quality
   }.each_with_index.map{|original_motif, motif_index|
-    # inherited S-models take quality one grade less than the main motif
     original_quality = original_motif.split('.').last
-    novel_quality = (original_quality != 'S') ? original_quality : (main_model_quality.ord + 1).chr
+    novel_quality = original_quality
     novel_quality = 'D'  if uniprot.start_with?('GLI2_') # manual curation
 
     {
@@ -263,17 +259,14 @@ task 'print_motif_qualities' do
       [novelty, final_name, original_motif, "#{model_kind}/logo/#{final_name}_direct.png",]
     }
 
-    table.sort_by{|inherit, final_name, model, img_src|
-      final_name
-    }.chunk(&:itself).each_slice(500).map{|slice| slice.flat_map(&:last) }
-    .each_with_index do |slice, slice_index|
-      File.open("final_collection/#{model_kind}_slice_#{slice_index}.html", 'w'){|fw|
-        fw.puts "<html><head><style>img{ height:50px; }\ntable,tr,td{ border:1px solid black; }\ntd:first-child{font-weight:bolder;}</style></head><body><table>"
-        slice.each do |inherit, final_name, model, img_src|
-          fw.puts("<tr>" + [inherit, final_name, model, "<img src='#{img_src}'>"].map{|cell| "<td>#{cell}</td>" }.join + "</tr>")
-        end
-        fw.puts "</table></body></html>"
+    File.open("final_collection/#{model_kind}.html", 'w') do |fw|
+      fw.puts "<html><head><style>img{ height:50px; }\ntable,tr,td{ border:1px solid black; }\ntd:first-child{font-weight:bolder;}</style></head><body><table>"
+      table.sort_by{|inherit, final_name, model, img_src|
+        final_name
+      }.each{|inherit, final_name, model, img_src|
+        fw.puts("<tr>" + [inherit, final_name, model, "<img src='#{img_src}'>"].map{|cell| "<td>#{cell}</td>" }.join + "</tr>")
       }
+      fw.puts "</table></body></html>"
     end
 
     File.open("final_collection/#{model_kind}.tsv", 'w'){|fw|
