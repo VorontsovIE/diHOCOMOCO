@@ -104,7 +104,9 @@ def hocomoco10_motifs(model_kind)
 end
 
 def collect_novel_motifs(model_kind, species)
-  to_reverse = File.readlines('curation/revme_fin.txt').map(&:chomp)
+  to_reverse_mono = File.readlines('curation/to_reverse_mono.txt').map(&:chomp)
+  to_reverse_di = File.readlines('curation/to_reverse_di.txt').map(&:chomp)
+  uniprots_failed_curation = File.readlines('curation/uniprots_failed_curation.txt').map(&:strip)
   Dir.glob("wauc/#{model_kind}/#{species}/*.txt").sort.map{|slice_fn|
     model, logauc = best_model_in_slice(slice_fn)
     auc_by_ds = aucs_for_model(model, model_kind)
@@ -120,16 +122,24 @@ def collect_novel_motifs(model_kind, species)
       quality >= 'E'
     }.each_with_index.map{|(slice, original_motif, logauc, quality), motif_index|
       uniprot = "#{semiuniprot}_#{species}"
+      if model_kind == 'mono'
+        should_reverse = to_reverse_mono.include?(original_motif.split('~').last)
+      else
+        final_name = "#{uniprot}.#{COLLECTION_NAME[model_kind]}.#{motif_index}.#{quality}"
+        should_reverse = to_reverse_di.include?(final_name)
+      end
       {
         original_motif: original_motif,
         model_kind: model_kind, species: species,
         uniprot: uniprot, quality: quality, motif_index: motif_index,
         novelty: 'novel', logauc: logauc,
-        should_reverse: to_reverse.include?(original_motif.split('~').last),
+        should_reverse: should_reverse,
         original_pcm_fn: "models/pcm/#{model_kind}/all/#{original_motif.split('~')[0]}/#{original_motif}.#{PCM_EXT[model_kind]}",
         original_pwm_fn: "models/pwm/#{model_kind}/all/#{original_motif.split('~')[0]}/#{original_motif}.#{PWM_EXT[model_kind]}",
       }
     }
+  }.reject{|info|
+    uniprots_failed_curation.include?(info[:uniprot].split('_').first)
   }
 end
 
@@ -184,14 +194,14 @@ def cross_species_infos(chipseq_infos, model_kind)
     chipseq_best_quality = chipseq_variants_infos.map{|info| info[:quality] }.min
     chipseq_motifs = chipseq_variants_infos.select{|info| info[:motif_index] < 2 }.map{|info| info[:original_motif] }
     # chipseq_motifs_number_2 = chipseq_variants_infos.select{|info| info[:motif_index] == 2 }.map{|info| info[:original_motif] }
-    # if hocomoco10_best_quality < chipseq_best_quality
+    # if hocomoco10_best_quality < (chipseq_best_quality.ord + 1).chr
     #   puts [uniprot, 'Hocomoco10', hocomoco10_variants.join("; "), (chipseq_motifs + chipseq_motifs_number_2).join("; ")].join("\t")
     # else
     #   puts [uniprot, "Cross-species", chipseq_motifs.join("; "), (hocomoco10_variants + chipseq_motifs_number_2).join("; ")].join("\t")
     # end
     if hocomoco10_best_quality < (chipseq_best_quality.ord + 1).chr
       inherited_motifs_infos_for_tf(uniprot, hocomoco10_variants, model_kind).map{|info|
-        info.merge(novelty: 'inherited (better than cross-speices)')
+        info.merge(novelty: 'inherited (better than cross-species)')
       }
     else
       chipseq_variants_infos.map{|info|
@@ -217,6 +227,8 @@ task 'print_motif_qualities' do
       collect_novel_motifs(model_kind, species)
     }
 
+    cross_species_infos = cross_species_infos(novel_chipseq_infos, model_kind)
+
     novel_semiuniprots = novel_chipseq_infos.map{|infos|
       final_name(infos)
     }.map{|final_name|
@@ -232,8 +244,6 @@ task 'print_motif_qualities' do
     }
 
     hocomoco10_infos = collect_inherited_motif_infos(inherited_motifs, model_kind)
-
-    cross_species_infos = cross_species_infos(novel_chipseq_infos, model_kind)
 
     infos = novel_chipseq_infos + hocomoco10_infos + cross_species_infos
 
