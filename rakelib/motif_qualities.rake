@@ -104,8 +104,8 @@ def hocomoco10_motifs(model_kind)
 end
 
 def collect_novel_motifs(model_kind, species)
-  to_reverse_mono = File.readlines('curation/to_reverse_mono.txt').map(&:chomp)
-  to_reverse_di = File.readlines('curation/to_reverse_di.txt').map(&:chomp)
+  to_reverse_mono = File.readlines('curation/to_reverse_mono.txt').map(&:strip)
+  to_reverse_di = File.readlines('curation/to_reverse_di.txt').map(&:strip)
   uniprots_failed_curation = File.readlines('curation/uniprots_failed_curation.txt').map(&:strip)
   Dir.glob("wauc/#{model_kind}/#{species}/*.txt").sort.map{|slice_fn|
     model, logauc = best_model_in_slice(slice_fn)
@@ -144,6 +144,8 @@ def collect_novel_motifs(model_kind, species)
 end
 
 def inherited_motifs_infos_for_tf(uniprot, hocomoco10_tf_motifs, model_kind)
+  to_reverse_mono = File.readlines('curation/to_reverse_mono.txt').map(&:strip)
+  to_reverse_di = File.readlines('curation/to_reverse_di.txt').map(&:strip)
   species = uniprot.split('_').last
   main_model_quality = hocomoco10_tf_motifs.map{|original_motif| original_motif.split('.').last }.reject{|quality| quality == 'S' }.first
 
@@ -153,13 +155,18 @@ def inherited_motifs_infos_for_tf(uniprot, hocomoco10_tf_motifs, model_kind)
     original_quality = original_motif.split('.').last
     novel_quality = original_quality
     novel_quality = 'D'  if uniprot.start_with?('GLI2_') # manual curation
-
+    if model_kind == 'mono'
+      should_reverse = to_reverse_mono.include?(original_motif.split('~').last)
+    else
+      final_name = "#{uniprot}.#{COLLECTION_NAME[model_kind]}.#{motif_index}.#{novel_quality}"
+      should_reverse = to_reverse_di.include?(final_name)
+    end
     {
       original_motif: original_motif,
       model_kind: model_kind, species: species,
       uniprot: uniprot, quality: novel_quality, motif_index: motif_index,
       novelty: 'inherited', logauc: 0,
-      should_reverse: false,
+      should_reverse: should_reverse,
       original_pcm_fn: "hocomoco10/#{species}/#{model_kind}/pcm/#{original_motif}.#{PCM_EXT[model_kind]}",
       original_pwm_fn: "hocomoco10/#{species}/#{model_kind}/pwm/#{original_motif}.#{PWM_EXT[model_kind]}",
     }
