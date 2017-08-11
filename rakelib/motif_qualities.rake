@@ -76,6 +76,8 @@ def put_motifs_to_final(infos) #model, final_name, model_kind, should_reverse
     pwm = ModelKind::Di.new.read_pwm(infos[:original_pwm_fn])
   end
   final_name = final_name(infos)
+  pcm = pcm.model.named(final_name)
+  pwm = pwm.model.named(final_name)
   File.write("final_collection/#{infos[:model_kind]}/pcm/#{final_name}.#{PCM_EXT[infos[:model_kind]]}", (infos[:should_reverse] ? pcm.revcomp : pcm).to_s)
   File.write("final_collection/#{infos[:model_kind]}/pwm/#{final_name}.#{PWM_EXT[infos[:model_kind]]}", (infos[:should_reverse] ? pwm.revcomp : pwm).to_s)
 end
@@ -260,7 +262,7 @@ task 'print_motif_qualities' do
     raise 'Overlap'  if novel_chipseq_uniprots.intersect?(hocomoco10_uniprots) || novel_chipseq_uniprots.intersect?(cross_species_uniprots) || cross_species_uniprots.intersect?(hocomoco10_uniprots)
     raise 'Hocomoco10 not covered' unless hocomoco10_motifs(model_kind).map{|motif| motif.split('.').first }.all?{|uniprot| infos.map{|info| info[:uniprot] }.include?(uniprot) }
 
-    motifs_to_ban = ['ERF', 'ETV2_HUMAN', 'MNT_HUMAN\.H10MO\.D', 'MUSC_HUMAN\.H10MO\.D', 'SMRC1', 'ZNF639', 'CLOCK_.*\.H10MO', 'PKNX2', 'YBX1', 'KAISO_MOUSE\.H10MO\.B']
+    motifs_to_ban = ['ERF', 'ETV2_HUMAN', 'MNT_HUMAN\.H10MO\.D', 'MUSC_HUMAN\.H10MO\.D', 'SMRC1', 'ZN639', 'CLOCK_.*\.H10MO', 'PKNX2', 'YBOX1', 'KAISO_MOUSE\.H10MO\.B']
     infos.reject!{|info| # inherit, final_name, model, img
       motifs_to_ban.any?{|motif_pattern|
         pattern = /^(#{motif_pattern}\b|#{motif_pattern}_)/
@@ -275,7 +277,7 @@ task 'print_motif_qualities' do
     table = infos.map{|infos|
       original_motif, novelty, model_kind, motif_index = infos.values_at(:original_motif, :novelty, :model_kind, :motif_index)
       final_name = final_name(infos)
-      [novelty, final_name, original_motif, "#{model_kind}/logo/#{final_name}_direct.png",]
+      [novelty, final_name, original_motif, "#{model_kind}/logo/#{final_name}.png",]
     }
 
     File.open("final_collection/#{model_kind}.html", 'w') do |fw|
