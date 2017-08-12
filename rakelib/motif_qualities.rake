@@ -254,21 +254,24 @@ task 'print_motif_qualities' do
 
     hocomoco10_infos = collect_inherited_motif_infos(inherited_motifs, model_kind)
 
-    infos = novel_chipseq_infos + hocomoco10_infos + cross_species_infos
-
-    novel_chipseq_uniprots = novel_chipseq_infos.map{|info| info[:uniprot] }.to_set 
-    hocomoco10_uniprots = hocomoco10_infos.map{|info| info[:uniprot] }.to_set 
-    cross_species_uniprots = cross_species_infos.map{|info| info[:uniprot] }.to_set 
-    raise 'Overlap'  if novel_chipseq_uniprots.intersect?(hocomoco10_uniprots) || novel_chipseq_uniprots.intersect?(cross_species_uniprots) || cross_species_uniprots.intersect?(hocomoco10_uniprots)
-    raise 'Hocomoco10 not covered' unless hocomoco10_motifs(model_kind).map{|motif| motif.split('.').first }.all?{|uniprot| infos.map{|info| info[:uniprot] }.include?(uniprot) }
-
     motifs_to_ban = ['ERF', 'ETV2_HUMAN', 'MNT_HUMAN\.H10MO\.D', 'MUSC_HUMAN\.H10MO\.D', 'SMRC1', 'ZN639', 'CLOCK_.*\.H10MO', 'PKNX2', 'YBOX1', 'KAISO_MOUSE\.H10MO\.B']
-    infos.reject!{|info| # inherit, final_name, model, img
+    hocomoco10_infos.reject!{|info| # inherit, final_name, model, img
       motifs_to_ban.any?{|motif_pattern|
         pattern = /^(#{motif_pattern}\b|#{motif_pattern}_)/
         info[:uniprot].match(pattern) || info[:original_motif].match(pattern)
       }
     }
+
+    infos = novel_chipseq_infos + hocomoco10_infos + cross_species_infos
+
+    novel_chipseq_uniprots = novel_chipseq_infos.map{|info| info[:uniprot] }.to_set
+    hocomoco10_uniprots = hocomoco10_infos.map{|info| info[:uniprot] }.to_set
+    cross_species_uniprots = cross_species_infos.map{|info| info[:uniprot] }.to_set
+    raise 'Overlap'  if novel_chipseq_uniprots.intersect?(hocomoco10_uniprots) || novel_chipseq_uniprots.intersect?(cross_species_uniprots) || cross_species_uniprots.intersect?(hocomoco10_uniprots)
+    unless hocomoco10_motifs(model_kind).map{|motif| motif.split('.').first }.all?{|uniprot| infos.map{|info| info[:uniprot] }.include?(uniprot) }
+      $stderr.puts "Some HOCOMOCO v10 motifs not covered by new collection:"
+      $stderr.puts (hocomoco10_motifs(model_kind).map{|motif| motif.split('.').first } - infos.map{|info| info[:uniprot] }).uniq
+   end
 
     infos.each{|info|
       put_motifs_to_final(info)
