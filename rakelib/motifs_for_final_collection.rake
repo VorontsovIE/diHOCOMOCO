@@ -227,7 +227,7 @@ def cross_species_infos(chipseq_infos, model_kind)
   }
 end
 
-task 'print_motif_qualities' do
+task 'choose_motifs_for_final_collection' do
   ['mono', 'di'].flat_map do |model_kind|
     FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
     FileUtils.mkdir_p "final_collection/#{model_kind}/pwm/"

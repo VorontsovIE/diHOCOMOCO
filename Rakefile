@@ -21,7 +21,8 @@ task :default do
 
   Rake::Task['calculate_occurence_scores'].invoke
 
-  Rake::Task['sequence_logos'].invoke # 30m; parallelizable
+  Rake::Task['choose_motifs_for_final_collection'].invoke
+  Rake::Task['sequence_logos'].invoke
   Rake::Task['make_final_collection'].invoke
   Rake::Task['final_collection_summary'].invoke
 end
