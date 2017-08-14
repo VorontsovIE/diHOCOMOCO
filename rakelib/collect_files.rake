@@ -18,11 +18,4 @@ namespace :collect_and_normalize_data do
     copy_files 'standard_motif_collections/pcm/hocomoco10_mouse/*.pcm', 'models/pcm/mono/hocomoco_legacy/%n.pcm'
     copy_files 'chipseq_models_11/mono/*.pcm', 'models/pcm/mono/chipseq/%n.pcm'
   end
-
-
-  desc 'Put words from different collections into standardified paths'
-  task :collect_words do
-    copy_files 'chipseq_models/mono/*.words', 'models/words/mono/chipseq/%n.words'
-    copy_files 'chipseq_models/di/*.words', 'models/words/di/chipseq/%n.words'
-  end
 end
