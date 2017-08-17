@@ -157,6 +157,7 @@ def inherited_motifs_infos_for_tf(uniprot, hocomoco10_tf_motifs, model_kind)
     original_quality = original_motif.split('.').last
     novel_quality = original_quality
     novel_quality = 'D'  if uniprot.start_with?('GLI2_') # manual curation
+    novel_quality = main_model_quality.succ  if original_quality == 'S'
     if model_kind == 'mono'
       should_reverse = to_reverse_mono.include?(original_motif.split('~').last)
     else
@@ -172,6 +173,8 @@ def inherited_motifs_infos_for_tf(uniprot, hocomoco10_tf_motifs, model_kind)
       original_pcm_fn: "hocomoco10/#{species}/#{model_kind}/pcm/#{original_motif}.#{PCM_EXT[model_kind]}",
       original_pwm_fn: "hocomoco10/#{species}/#{model_kind}/pwm/#{original_motif}.#{PWM_EXT[model_kind]}",
     }
+  }.reject{|infos|
+    infos[:quality] >= 'E'
   }
 end
 
