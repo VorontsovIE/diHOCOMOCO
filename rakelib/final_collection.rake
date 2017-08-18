@@ -58,7 +58,7 @@ BACKGROUND_BY_SPECIES = {
   'MOUSE' => '0.09124954151587066,0.05327746891945427,0.07340655447309075,0.07380976720188166,0.07444027240460285,0.0522326724288473,0.008258817805366036,0.07340655447309075,0.06218694059369016,0.04063209300331165,0.0522326724288473,0.05327746891945427,0.06371242131832879,0.06218694059369016,0.07444027240460285,0.09124954151587066',
 }
 
-def calculate_all_thresholds!(folder, arity)
+def calculate_all_thresholds!(folder, species, arity)
   additional_options = (arity == 'mono') ? ['--from-mono'] : []
   sh 'java', '-cp', 'ape.jar',
       'ru.autosome.ape.di.PrecalculateThresholds',
@@ -70,13 +70,45 @@ def calculate_all_thresholds!(folder, arity)
       '--silent'
 end
 
+
+def origin_by_motif_in_hocomoco10(motif)
+  collection_name = motif.split('~')[1]
+  {
+    'CD' => 'ChIP-Seq', # Actually these models aren't in collection
+    'CM' => 'ChIP-Seq',
+    'PAPAM' => 'ChIP-Seq',
+    'PAPAD' => 'ChIP-Seq',
+
+    'SMF' => 'HT-SELEX',
+    'SMI' => 'HT-SELEX',
+    'SDF' => 'HT-SELEX', # Actually these models aren't in collection
+    'SDI' => 'HT-SELEX', # Actually these models aren't in collection
+
+    'HL' => 'HOCOMOCO v9',
+  }[collection_name]
+end
+
 desc 'Collect final collection'
 task :repack_final_collection do
   requested_pvalues = [0.001, 0.0005, 0.0001]
+  infos_by_uniprot_id = UniprotInfo
+                        .each_in_file('uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv')
+                        .group_by(&:uniprot_id)
+
+  original_motifs_origin = ['HUMAN', 'MOUSE'].flat_map{|species|
+    ['mono', 'di'].flat_map{|arity|
+      File.readlines("hocomoco10/#{species}/#{arity}/final_collection.tsv").drop(1).map{|line|
+        motif, hocomoco10_motif_origin = line.chomp.split("\t").values_at(0, 12)
+        [motif, origin_by_motif_in_hocomoco10(hocomoco10_motif_origin)]
+      }
+    }
+  }.to_h
+
   rm_rf 'final_bundle'
   ['HUMAN', 'MOUSE'].each do |species|
     ['mono', 'di'].each do |arity|
       folder = "final_bundle/#{species}/#{arity}"
+
       FileUtils.mkdir_p "#{folder}/pcm"
       FileUtils.mkdir_p "#{folder}/pwm"
       FileUtils.mkdir_p "#{folder}/words"
@@ -93,7 +125,7 @@ task :repack_final_collection do
       thresholds_by_model = calculate_thresholds_by_model("#{folder}/pwm", species, arity, requested_pvalues)
       save_standard_thresholds!(File.join(folder, "standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
 
-      calculate_all_thresholds!(folder, arity)
+      calculate_all_thresholds!(folder, species, arity)
       save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model)
 
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pcm_#{species}_#{arity}.tar.gz"), 'pcm'
@@ -103,6 +135,101 @@ task :repack_final_collection do
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_#{species}_#{arity}.tar.gz"), 'logo'
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_large_#{species}_#{arity}.tar.gz"), 'logo_large'
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_small_#{species}_#{arity}.tar.gz"), 'logo_small'
+
+      motif_origin_infos = File.readlines("final_collection/#{arity}.tsv").map{|l|
+        l.chomp.split("\t")[0,3]
+      }.select{|origin, motif, original_motif|
+        motif.match(/.*_#{species}\./)
+      }
+      original_motifs = motif_origin_infos.map{|origin, motif, original_motif| [motif, original_motif] }.to_h
+      origins =  motif_origin_infos.map{|origin, motif, original_motif| [motif, origin] }.to_h
+
+      recognizers_by_level = PROTEIN_FAMILY_RECOGNIZERS[species]
+
+      model_kind = ModelKind.get(arity)
+      model_infos = Dir.glob("final_collection/#{arity}/pcm/*_#{species}*").map{|fn|
+        File.basename(fn, File.extname(fn))
+      }.sort.map{|motif|
+        pcm = model_kind.read_pcm("final_collection/#{arity}/pcm/#{motif}.#{model_kind.pcm_extension}")
+        num_words = File.readlines("#{folder}/words/#{motif}.words").map(&:strip).reject(&:empty?).size
+
+        human_auc_fn = "auc/#{arity}/HUMAN_datasets/#{original_motifs[motif]}.txt"
+        mouse_auc_fn = "auc/#{arity}/MOUSE_datasets/#{original_motifs[motif]}.txt"
+        if File.exist?(human_auc_fn)
+          aucs = File.readlines(human_auc_fn).map{|l| Float(l.chomp.split("\t")[1]) }
+          best_auc_human = aucs.max
+          num_datasets_human = aucs.size
+        end
+
+        if File.exist?(mouse_auc_fn)
+          aucs = File.readlines(mouse_auc_fn).map{|l| Float(l.chomp.split("\t")[1]) }
+          best_auc_mouse = aucs.max
+          num_datasets_mouse = aucs.size
+        end
+
+        original_motif = original_motifs[motif]
+
+        if original_motif.match(/~(CM|CD)~/)
+          release = 'HOCOMOCOv11'
+          source = 'ChIP-Seq'
+        else
+          prev_motif = original_motif.split('~').last
+          if original_motifs_origin[prev_motif] == 'HOCOMOCO v9'
+            release = 'HOCOMOCOv9'
+            source = 'Integrative'
+          else
+            release = 'HOCOMOCOv10'
+            source = original_motifs_origin[prev_motif]
+          end
+        end
+
+        uniprot = motif.split('.').first
+        quality = motif.split('.').last
+        rank = motif.split('.')[-2].to_i
+        uniprot_infos = infos_by_uniprot_id[uniprot]
+        motif_families = recognizers_by_level[3].subfamilies_by_uniprot_id(uniprot)
+        motif_subfamilies = recognizers_by_level[4].subfamilies_by_uniprot_id(uniprot)
+        comments = []
+
+        [
+          motif,
+          pcm.length,
+          pcm.consensus_string,
+          uniprot,
+          uniprot_infos.flat_map(&:uniprot_ac).join('; '),
+          uniprot_infos.flat_map(&:primary_gene_name).join('; '),
+          arity,
+          quality,
+          rank,
+          num_words,
+          best_auc_human, best_auc_mouse,
+          num_datasets_human, num_datasets_mouse,
+          release, source,
+          motif_families.join(':separator:'),
+          motif_subfamilies.join(':separator:'),
+          uniprot_infos.flat_map(&:hgnc_ids).join('; '),
+          uniprot_infos.flat_map(&:mgi_ids).join('; '),
+          uniprot_infos.flat_map(&:entrezgene_ids).join('; '),
+          comments.join(" "),
+        ]
+      }
+
+      headers = [
+        'Model name', 'Model length', 'Consensus', 'UniprotID', 'UniprotAC', 'Gene name',
+        'Model type', 'Model quality', 'Model rank', 'Number of words in alignment',
+        'Best AUC for human datasets', 'Best AUC for mouse datasets', 'Number of human datasets', 'Number of mouse datasets',
+        'Release version', 'Data source type', 'Motif family', 'Motif subfamily',
+        'HGNC', 'MGI', 'EntrezGene',
+        'Comment'
+      ]
+
+
+      File.open(File.join(folder, "final_collection.tsv"), 'w') do |fw|
+        fw.puts headers.join("\t")
+        model_infos.each do |infos|
+          fw.puts infos.join("\t")
+        end
+      end
     end
   end
 end
