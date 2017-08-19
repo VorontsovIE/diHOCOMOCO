@@ -88,6 +88,18 @@ def origin_by_motif_in_hocomoco10(motif)
   }[collection_name]
 end
 
+def copy_by_glob(glob_from, folder_to, banned_basenames: [])
+  FileUtils.mkdir_p folder_to
+  Dir.glob(glob_from).reject{|fn|
+    basename = File.basename(fn)
+    banned_basenames.any?{|pat|
+      pat.match(basename)
+    }
+  }.each{|fn|
+    FileUtils.cp(fn, folder_to)
+  }
+end
+
 desc 'Collect final collection'
 task :repack_final_collection do
   requested_pvalues = [0.001, 0.0005, 0.0001]
@@ -109,18 +121,13 @@ task :repack_final_collection do
     ['mono', 'di'].each do |arity|
       folder = "final_bundle/#{species}/#{arity}"
 
-      FileUtils.mkdir_p "#{folder}/pcm"
-      FileUtils.mkdir_p "#{folder}/pwm"
-      FileUtils.mkdir_p "#{folder}/words"
-      FileUtils.mkdir_p "#{folder}/logo"
-      FileUtils.mkdir_p "#{folder}/logo_large"
-      FileUtils.mkdir_p "#{folder}/logo_small"
-      Dir.glob("final_collection/#{arity}/pcm/*_#{species}.*").each{|fn| FileUtils.cp(fn, "#{folder}/pcm") }
-      Dir.glob("final_collection/#{arity}/pwm/*_#{species}.*").each{|fn| FileUtils.cp(fn, "#{folder}/pwm") }
-      Dir.glob("final_collection/#{arity}/words/*_#{species}.*").each{|fn| FileUtils.cp(fn, "#{folder}/words") }
-      Dir.glob("final_collection/#{arity}/logo/*_#{species}.*").each{|fn| FileUtils.cp(fn, "#{folder}/logo") }
-      Dir.glob("final_collection/#{arity}/logo_large/*_#{species}.*").each{|fn| FileUtils.cp(fn, "#{folder}/logo_large") }
-      Dir.glob("final_collection/#{arity}/logo_small/*_#{species}.*").each{|fn| FileUtils.cp(fn, "#{folder}/logo_small") }
+      banned_motifs = [/^GABP1_*/]
+      copy_by_glob("final_collection/#{arity}/pcm/*_#{species}.*", "#{folder}/pcm", banned_basenames: banned_motifs)
+      copy_by_glob("final_collection/#{arity}/pwm/*_#{species}.*", "#{folder}/pwm", banned_basenames: banned_motifs)
+      copy_by_glob("final_collection/#{arity}/words/*_#{species}.*", "#{folder}/words", banned_basenames: banned_motifs)
+      copy_by_glob("final_collection/#{arity}/logo/*_#{species}.*", "#{folder}/logo", banned_basenames: banned_motifs)
+      copy_by_glob("final_collection/#{arity}/logo_large/*_#{species}.*", "#{folder}/logo_large", banned_basenames: banned_motifs)
+      copy_by_glob("final_collection/#{arity}/logo_small/*_#{species}.*", "#{folder}/logo_small", banned_basenames: banned_motifs)
 
       thresholds_by_model = calculate_thresholds_by_model("#{folder}/pwm", species, arity, requested_pvalues)
       save_standard_thresholds!(File.join(folder, "standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
@@ -147,7 +154,7 @@ task :repack_final_collection do
       recognizers_by_level = PROTEIN_FAMILY_RECOGNIZERS[species]
 
       model_kind = ModelKind.get(arity)
-      model_infos = Dir.glob("final_collection/#{arity}/pcm/*_#{species}*").map{|fn|
+      model_infos = Dir.glob("final_bundle/#{species}/#{arity}/pcm/*").map{|fn|
         File.basename(fn, File.extname(fn))
       }.sort.map{|motif|
         pcm = model_kind.read_pcm("final_collection/#{arity}/pcm/#{motif}.#{model_kind.pcm_extension}")

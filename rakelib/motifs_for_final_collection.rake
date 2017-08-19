@@ -158,6 +158,7 @@ def inherited_motifs_infos_for_tf(uniprot, hocomoco10_tf_motifs, model_kind)
     novel_quality = original_quality
     novel_quality = 'D'  if uniprot.start_with?('GLI2_') # manual curation
     novel_quality = main_model_quality.succ  if original_quality == 'S'
+    novel_quality = 'D'  if uniprot == 'ZBTB4_HUMAN' # manual curation (not to drop ZBTB4 of S-quality which is a motif for methylated DNA)
     if model_kind == 'mono'
       should_reverse = to_reverse_mono.include?(original_motif.split('~').last)
     else
@@ -230,6 +231,7 @@ def cross_species_infos(chipseq_infos, model_kind)
   }
 end
 
+desc 'Select which motifs and with which names are put into collection'
 task 'choose_motifs_for_final_collection' do
   ['mono', 'di'].flat_map do |model_kind|
     FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
@@ -257,7 +259,7 @@ task 'choose_motifs_for_final_collection' do
 
     hocomoco10_infos = collect_inherited_motif_infos(inherited_motifs, model_kind)
 
-    motifs_to_ban = ['ERF', 'ETV2_HUMAN', 'MNT_HUMAN\.H10MO\.D', 'MUSC_HUMAN\.H10MO\.D', 'SMRC1', 'ZN639', 'CLOCK_.*\.H10MO', 'PKNX2', 'YBOX1', 'KAISO_MOUSE\.H10MO\.B']
+    motifs_to_ban = ['ERF', 'ETV2_HUMAN', 'MNT_HUMAN\.H10MO\.D', 'MUSC_HUMAN\.H10MO\.D', 'SMRC1', 'ZN639', 'CLOCK_.*\.H10MO', 'PKNX2', 'YBOX1', 'KAISO_MOUSE\.H10MO\.B', 'GABP1']
     hocomoco10_infos.reject!{|info| # inherit, final_name, model, img
       motifs_to_ban.any?{|motif_pattern|
         pattern = /^(#{motif_pattern}\b|#{motif_pattern}_)/
