@@ -19,6 +19,7 @@ module Ape
     opts = []
     opts += ['--discretization', discretization.to_s]  if discretization
     opts += ['--background', background.to_s]  if background
+    opts += ['--pvalues-from-stdin']
     opts += additional_options
 
     result = nil
@@ -34,7 +35,7 @@ module Ape
     }.map{|line|
       line.chomp.split("\t")
     }.map{|row|
-      [row[0].to_f, row[3].to_f]
+      [row[0].to_f, background ? row[2].to_f : row[3].to_f]
     }.to_h
   end
 end
