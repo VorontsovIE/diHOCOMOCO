@@ -150,7 +150,7 @@ class AUCs
   def weighted_auc(model, &dataset_quality_block)
     return nil  if datasets.empty?
     return nil  if models.empty? # In this case we can't estimate dataset weights
-    dataset_quality_block = ->(dataset){ dataset_quality(daaset) } unless block_given?
+    dataset_quality_block = ->(dataset){ dataset_quality(dataset) } unless block_given?
 
     quality_norm_factor = datasets.map{|dataset|
       dataset_quality_block.call(dataset)
