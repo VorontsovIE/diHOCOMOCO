@@ -17,12 +17,12 @@ end
 def report(message, program_name = nil)
   $program_name = "[#{program_name}]" if program_name != nil
   return if $NO_REPORT
-  puts "LLIB #{Ytilib.time} #{$program_name}\t#{message}" if !block_given? || yield
+  $stderr.puts "LLIB #{Ytilib.time} #{$program_name}\t#{message}" if !block_given? || yield
 end
 
 def checkerr(message = "checkerr failed")  
   if !block_given? || yield
-    puts "LLIB #{Ytilib.time} [error]\t#{message}" unless $NO_REPORT
+    $stderr.puts "LLIB #{Ytilib.time} [error]\t#{message}" unless $NO_REPORT
     raise "LLIB #{Ytilib.time} #{$program_name}\n\t#{message}\n" 
   end
 end
