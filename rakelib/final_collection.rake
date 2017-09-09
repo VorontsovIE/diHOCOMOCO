@@ -103,6 +103,22 @@ def get_auc_stats(auc_fn)
   { best_auc: aucs.max, num_datasets: aucs.size }
 end
 
+def get_release_and_source(original_motif)
+  if original_motif.match(/~(CM|CD)~/)
+    release = 'HOCOMOCOv11'
+    source = 'ChIP-Seq'
+  else
+    prev_motif = original_motif.split('~').last
+    if original_motifs_origin[prev_motif] == 'HOCOMOCO v9'
+      release = 'HOCOMOCOv9'
+      source = 'Integrative'
+    else
+      release = 'HOCOMOCOv10'
+      source = original_motifs_origin[prev_motif]
+    end
+  end
+end
+
 desc 'Collect final collection'
 task :repack_final_collection do
   requested_pvalues = [0.001, 0.0005, 0.0001]
@@ -168,20 +184,7 @@ task :repack_final_collection do
         best_auc_mouse, num_datasets_mouse = get_auc_stats("auc/#{arity}/MOUSE_datasets/#{original_motifs[motif]}.txt").values_at(:best_auc, :num_datasets)
 
         original_motif = original_motifs[motif]
-
-        if original_motif.match(/~(CM|CD)~/)
-          release = 'HOCOMOCOv11'
-          source = 'ChIP-Seq'
-        else
-          prev_motif = original_motif.split('~').last
-          if original_motifs_origin[prev_motif] == 'HOCOMOCO v9'
-            release = 'HOCOMOCOv9'
-            source = 'Integrative'
-          else
-            release = 'HOCOMOCOv10'
-            source = original_motifs_origin[prev_motif]
-          end
-        end
+        release, source = get_release_and_source(original_motif)
 
         uniprot = motif.split('.').first
         quality = motif.split('.').last
