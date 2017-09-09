@@ -226,35 +226,40 @@ def make_collection_summary(folder, species, arity)
   end
 end
 
+
+def repack_collection(species, arity, folder, motif_glob)
+  rm_rf folder
+  copy_by_glob("final_collection/#{arity}/pcm/#{motif_glob}", "#{folder}/pcm")
+  copy_by_glob("final_collection/#{arity}/pwm/#{motif_glob}", "#{folder}/pwm")
+  copy_by_glob("final_collection/#{arity}/words/#{motif_glob}", "#{folder}/words")
+  copy_by_glob("final_collection/#{arity}/logo/#{motif_glob}", "#{folder}/logo")
+  copy_by_glob("final_collection/#{arity}/logo_large/#{motif_glob}", "#{folder}/logo_large")
+  copy_by_glob("final_collection/#{arity}/logo_small/#{motif_glob}", "#{folder}/logo_small")
+
+  make_collection_summary(folder, species, arity)
+
+  requested_pvalues = [0.001, 0.0005, 0.0001]
+  thresholds_by_model = calculate_thresholds_by_model("#{folder}/pwm", species, arity, requested_pvalues)
+  save_standard_thresholds!(File.join(folder, "standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
+
+  calculate_all_thresholds!(folder, species, arity)
+  save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model)
+
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pcm_#{species}_#{arity}.tar.gz"), 'pcm'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pwm_#{species}_#{arity}.tar.gz"), 'pwm'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "words_#{species}_#{arity}.tar.gz"), 'words'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "thresholds_#{species}_#{arity}.tar.gz"), 'thresholds'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_#{species}_#{arity}.tar.gz"), 'logo'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_large_#{species}_#{arity}.tar.gz"), 'logo_large'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_small_#{species}_#{arity}.tar.gz"), 'logo_small'
+end
+
 desc 'Collect final collection'
 task :repack_final_collection do
   ['HUMAN', 'MOUSE'].each do |species|
     ['mono', 'di'].each do |arity|
-      folder = "final_bundle/#{species}/#{arity}"
-      rm_rf folder
-
-      copy_by_glob("final_collection/#{arity}/pcm/*_#{species}.*", "#{folder}/pcm")
-      copy_by_glob("final_collection/#{arity}/pwm/*_#{species}.*", "#{folder}/pwm")
-      copy_by_glob("final_collection/#{arity}/words/*_#{species}.*", "#{folder}/words")
-      copy_by_glob("final_collection/#{arity}/logo/*_#{species}.*", "#{folder}/logo")
-      copy_by_glob("final_collection/#{arity}/logo_large/*_#{species}.*", "#{folder}/logo_large")
-      copy_by_glob("final_collection/#{arity}/logo_small/*_#{species}.*", "#{folder}/logo_small")
-
-      make_collection_summary(folder, species, arity)
-      requested_pvalues = [0.001, 0.0005, 0.0001]
-      thresholds_by_model = calculate_thresholds_by_model("#{folder}/pwm", species, arity, requested_pvalues)
-      save_standard_thresholds!(File.join(folder, "standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
-
-      calculate_all_thresholds!(folder, species, arity)
-      save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model)
-
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pcm_#{species}_#{arity}.tar.gz"), 'pcm'
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pwm_#{species}_#{arity}.tar.gz"), 'pwm'
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "words_#{species}_#{arity}.tar.gz"), 'words'
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "thresholds_#{species}_#{arity}.tar.gz"), 'thresholds'
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_#{species}_#{arity}.tar.gz"), 'logo'
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_large_#{species}_#{arity}.tar.gz"), 'logo_large'
-      sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_small_#{species}_#{arity}.tar.gz"), 'logo_small'
+      repack_collection(species, arity, "final_bundle/full/#{species}/#{arity}", "*_#{species}.*")
+      repack_collection(species, arity, "final_bundle/core/#{species}/#{arity}", "*_#{species}.H11??.0.{A,B,C}*")
     end
   end
 end
