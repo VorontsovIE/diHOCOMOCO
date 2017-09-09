@@ -105,16 +105,13 @@ end
 
 def get_release_and_source(original_motif, original_motifs_origin)
   if original_motif.match(/~(CM|CD)~/)
-    release = 'HOCOMOCOv11'
-    source = 'ChIP-Seq'
+    ['HOCOMOCOv11', 'ChIP-Seq']
   else
     prev_motif = original_motif.split('~').last
     if original_motifs_origin[prev_motif] == 'HOCOMOCO v9'
-      release = 'HOCOMOCOv9'
-      source = 'Integrative'
+      ['HOCOMOCOv9', 'Integrative']
     else
-      release = 'HOCOMOCOv10'
-      source = original_motifs_origin[prev_motif]
+      ['HOCOMOCOv10', original_motifs_origin[prev_motif]]
     end
   end
 end
@@ -179,26 +176,62 @@ def store_collection_summary(species, arity, motif_names, num_words_by_motif:, p
   end
 end
 
-desc 'Collect final collection'
-task :repack_final_collection do
-  requested_pvalues = [0.001, 0.0005, 0.0001]
+def make_collection_summary(folder, species, arity)
   infos_by_uniprot_id = UniprotInfo
                         .each_in_file('uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv')
                         .group_by(&:uniprot_id)
 
+ 
+  # we should get data for both species in order to know origin of motif obtained as cross-species
   original_motifs_origin = ['HUMAN', 'MOUSE'].flat_map{|species|
-    ['mono', 'di'].flat_map{|arity|
-      File.readlines("hocomoco10/#{species}/#{arity}/final_collection.tsv").drop(1).map{|line|
-        motif, hocomoco10_motif_origin = line.chomp.split("\t").values_at(0, 12)
-        [motif, origin_by_motif_in_hocomoco10(hocomoco10_motif_origin)]
-      }
+    File.readlines("hocomoco10/#{species}/#{arity}/final_collection.tsv").drop(1).map{|line|
+      motif, hocomoco10_motif_origin = line.chomp.split("\t").values_at(0, 12)
+      [motif, origin_by_motif_in_hocomoco10(hocomoco10_motif_origin)]
     }
   }.to_h
 
-  rm_rf 'final_bundle'
+  motif_origin_infos = File.readlines("final_collection/#{arity}.tsv").map{|l|
+    l.chomp.split("\t")[0,3]
+  }.select{|origin, motif, original_motif|
+    motif.match(/.*_#{species}\./)
+  }
+  original_motifs = motif_origin_infos.map{|origin, motif, original_motif| [motif, original_motif] }.to_h
+
+  motif_names = Dir.glob("#{folder}/pcm/*").map{|fn|
+    File.basename(fn, File.extname(fn))
+  }.sort
+
+  num_words_by_motif = motif_names.map{|motif|
+    num_words = File.readlines("#{folder}/words/#{motif}.words").map(&:strip).reject(&:empty?).size
+    [motif, num_words]
+  }.to_h
+
+  model_kind = ModelKind.get(arity)
+
+  pcm_by_motif = motif_names.map{|motif|
+    pcm = model_kind.read_pcm("#{folder}/pcm/#{motif}.#{model_kind.pcm_extension}")
+    [motif, pcm]
+  }.to_h
+
+  File.open(File.join(folder, "final_collection.tsv"), 'w') do |fw|
+    store_collection_summary(
+      species, arity, motif_names,
+      num_words_by_motif: num_words_by_motif,
+      pcm_by_motif: pcm_by_motif,
+      infos_by_uniprot_id: infos_by_uniprot_id,
+      original_motifs: original_motifs,
+      original_motifs_origin: original_motifs_origin,
+      output_stream: fw
+    )
+  end
+end
+
+desc 'Collect final collection'
+task :repack_final_collection do
   ['HUMAN', 'MOUSE'].each do |species|
     ['mono', 'di'].each do |arity|
       folder = "final_bundle/#{species}/#{arity}"
+      rm_rf folder
 
       copy_by_glob("final_collection/#{arity}/pcm/*_#{species}.*", "#{folder}/pcm")
       copy_by_glob("final_collection/#{arity}/pwm/*_#{species}.*", "#{folder}/pwm")
@@ -207,6 +240,8 @@ task :repack_final_collection do
       copy_by_glob("final_collection/#{arity}/logo_large/*_#{species}.*", "#{folder}/logo_large")
       copy_by_glob("final_collection/#{arity}/logo_small/*_#{species}.*", "#{folder}/logo_small")
 
+      make_collection_summary(folder, species, arity)
+      requested_pvalues = [0.001, 0.0005, 0.0001]
       thresholds_by_model = calculate_thresholds_by_model("#{folder}/pwm", species, arity, requested_pvalues)
       save_standard_thresholds!(File.join(folder, "standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
 
@@ -220,42 +255,6 @@ task :repack_final_collection do
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_#{species}_#{arity}.tar.gz"), 'logo'
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_large_#{species}_#{arity}.tar.gz"), 'logo_large'
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_small_#{species}_#{arity}.tar.gz"), 'logo_small'
-
-      motif_names = Dir.glob("final_bundle/#{species}/#{arity}/pcm/*").map{|fn|
-        File.basename(fn, File.extname(fn))
-      }.sort
-
-      motif_origin_infos = File.readlines("final_collection/#{arity}.tsv").map{|l|
-        l.chomp.split("\t")[0,3]
-      }.select{|origin, motif, original_motif|
-        motif.match(/.*_#{species}\./)
-      }
-      original_motifs = motif_origin_infos.map{|origin, motif, original_motif| [motif, original_motif] }.to_h
-
-      num_words_by_motif = motif_names.map{|motif|
-        num_words = File.readlines("#{folder}/words/#{motif}.words").map(&:strip).reject(&:empty?).size
-        [motif, num_words]
-      }.to_h
-
-
-      model_kind = ModelKind.get(arity)
-
-      pcm_by_motif = motif_names.map{|motif|
-        pcm = model_kind.read_pcm("final_collection/#{arity}/pcm/#{motif}.#{model_kind.pcm_extension}")
-        [motif, pcm]
-      }.to_h
-
-      File.open(File.join(folder, "final_collection.tsv"), 'w') do |fw|
-        store_collection_summary(
-          species, arity, motif_names,
-          num_words_by_motif: num_words_by_motif,
-          pcm_by_motif: pcm_by_motif,
-          infos_by_uniprot_id: infos_by_uniprot_id,
-          original_motifs: original_motifs,
-          original_motifs_origin: original_motifs_origin,
-          output_stream: fw
-        )
-      end
     end
   end
 end
