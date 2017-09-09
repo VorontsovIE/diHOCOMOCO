@@ -95,6 +95,14 @@ def copy_by_glob(glob_from, folder_to)
   }
 end
 
+def get_auc_stats(auc_fn)
+  return({ best_auc: nil, num_datasets: nil })  unless File.exist?(auc_fn)
+  aucs = File.readlines(auc_fn).map{|l|
+    Float(l.chomp.split("\t")[1])
+  }
+  { best_auc: aucs.max, num_datasets: aucs.size }
+end
+
 desc 'Collect final collection'
 task :repack_final_collection do
   requested_pvalues = [0.001, 0.0005, 0.0001]
@@ -148,25 +156,16 @@ task :repack_final_collection do
       recognizers_by_level = PROTEIN_FAMILY_RECOGNIZERS[species]
 
       model_kind = ModelKind.get(arity)
-      model_infos = Dir.glob("final_bundle/#{species}/#{arity}/pcm/*").map{|fn|
+      motif_names = Dir.glob("final_bundle/#{species}/#{arity}/pcm/*").map{|fn|
         File.basename(fn, File.extname(fn))
-      }.sort.map{|motif|
+      }.sort
+
+      model_infos = motif_names.map{|motif|
         pcm = model_kind.read_pcm("final_collection/#{arity}/pcm/#{motif}.#{model_kind.pcm_extension}")
         num_words = File.readlines("#{folder}/words/#{motif}.words").map(&:strip).reject(&:empty?).size
 
-        human_auc_fn = "auc/#{arity}/HUMAN_datasets/#{original_motifs[motif]}.txt"
-        mouse_auc_fn = "auc/#{arity}/MOUSE_datasets/#{original_motifs[motif]}.txt"
-        if File.exist?(human_auc_fn)
-          aucs = File.readlines(human_auc_fn).map{|l| Float(l.chomp.split("\t")[1]) }
-          best_auc_human = aucs.max
-          num_datasets_human = aucs.size
-        end
-
-        if File.exist?(mouse_auc_fn)
-          aucs = File.readlines(mouse_auc_fn).map{|l| Float(l.chomp.split("\t")[1]) }
-          best_auc_mouse = aucs.max
-          num_datasets_mouse = aucs.size
-        end
+        best_auc_human, num_datasets_human = get_auc_stats("auc/#{arity}/HUMAN_datasets/#{original_motifs[motif]}.txt").values_at(:best_auc, :num_datasets)
+        best_auc_mouse, num_datasets_mouse = get_auc_stats("auc/#{arity}/MOUSE_datasets/#{original_motifs[motif]}.txt").values_at(:best_auc, :num_datasets)
 
         original_motif = original_motifs[motif]
 
