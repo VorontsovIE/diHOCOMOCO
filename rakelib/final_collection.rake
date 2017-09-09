@@ -103,7 +103,7 @@ def get_auc_stats(auc_fn)
   { best_auc: aucs.max, num_datasets: aucs.size }
 end
 
-def get_release_and_source(original_motif)
+def get_release_and_source(original_motif, original_motifs_origin)
   if original_motif.match(/~(CM|CD)~/)
     release = 'HOCOMOCOv11'
     source = 'ChIP-Seq'
@@ -116,6 +116,66 @@ def get_release_and_source(original_motif)
       release = 'HOCOMOCOv10'
       source = original_motifs_origin[prev_motif]
     end
+  end
+end
+
+def store_collection_summary(species, arity, motif_names, num_words_by_motif:, pcm_by_motif:, original_motifs:, original_motifs_origin:, infos_by_uniprot_id:, output_stream:)
+  recognizers_by_level = PROTEIN_FAMILY_RECOGNIZERS[species]
+
+  model_infos = motif_names.map{|motif|
+    pcm = pcm_by_motif[motif]
+    num_words = num_words_by_motif[motif]
+
+    original_motif = original_motifs[motif]
+
+    best_auc_human, num_datasets_human = get_auc_stats("auc/#{arity}/HUMAN_datasets/#{original_motif}.txt").values_at(:best_auc, :num_datasets)
+    best_auc_mouse, num_datasets_mouse = get_auc_stats("auc/#{arity}/MOUSE_datasets/#{original_motif}.txt").values_at(:best_auc, :num_datasets)
+
+    release, source = get_release_and_source(original_motif, original_motifs_origin)
+
+    uniprot = motif.split('.').first
+    quality = motif.split('.').last
+    rank = motif.split('.')[-2].to_i
+    uniprot_infos = infos_by_uniprot_id[uniprot]
+    motif_families = recognizers_by_level[3].subfamilies_by_uniprot_id(uniprot)
+    motif_subfamilies = recognizers_by_level[4].subfamilies_by_uniprot_id(uniprot)
+    comments = []
+
+    [
+      motif,
+      pcm.length,
+      pcm.consensus_string,
+      uniprot,
+      uniprot_infos.flat_map(&:uniprot_ac).join('; '),
+      uniprot_infos.flat_map(&:primary_gene_name).join('; '),
+      arity,
+      quality,
+      rank,
+      num_words,
+      best_auc_human, best_auc_mouse,
+      num_datasets_human, num_datasets_mouse,
+      release, source,
+      motif_families.join(':separator:'),
+      motif_subfamilies.join(':separator:'),
+      uniprot_infos.flat_map(&:hgnc_ids).join('; '),
+      uniprot_infos.flat_map(&:mgi_ids).join('; '),
+      uniprot_infos.flat_map(&:entrezgene_ids).join('; '),
+      comments.join(" "),
+    ]
+  }
+
+  headers = [
+    'Model name', 'Model length', 'Consensus', 'UniprotID', 'UniprotAC', 'Gene name',
+    'Model type', 'Model quality', 'Model rank', 'Number of words in alignment',
+    'Best AUC for human datasets', 'Best AUC for mouse datasets', 'Number of human datasets', 'Number of mouse datasets',
+    'Release version', 'Data source type', 'Motif family', 'Motif subfamily',
+    'HGNC', 'MGI', 'EntrezGene',
+    'Comment'
+  ]
+
+  output_stream.puts headers.join("\t")
+  model_infos.each do |infos|
+    output_stream.puts infos.join("\t")
   end
 end
 
@@ -161,77 +221,40 @@ task :repack_final_collection do
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_large_#{species}_#{arity}.tar.gz"), 'logo_large'
       sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_small_#{species}_#{arity}.tar.gz"), 'logo_small'
 
+      motif_names = Dir.glob("final_bundle/#{species}/#{arity}/pcm/*").map{|fn|
+        File.basename(fn, File.extname(fn))
+      }.sort
+
       motif_origin_infos = File.readlines("final_collection/#{arity}.tsv").map{|l|
         l.chomp.split("\t")[0,3]
       }.select{|origin, motif, original_motif|
         motif.match(/.*_#{species}\./)
       }
       original_motifs = motif_origin_infos.map{|origin, motif, original_motif| [motif, original_motif] }.to_h
-      origins =  motif_origin_infos.map{|origin, motif, original_motif| [motif, origin] }.to_h
 
-      recognizers_by_level = PROTEIN_FAMILY_RECOGNIZERS[species]
+      num_words_by_motif = motif_names.map{|motif|
+        num_words = File.readlines("#{folder}/words/#{motif}.words").map(&:strip).reject(&:empty?).size
+        [motif, num_words]
+      }.to_h
+
 
       model_kind = ModelKind.get(arity)
-      motif_names = Dir.glob("final_bundle/#{species}/#{arity}/pcm/*").map{|fn|
-        File.basename(fn, File.extname(fn))
-      }.sort
 
-      model_infos = motif_names.map{|motif|
+      pcm_by_motif = motif_names.map{|motif|
         pcm = model_kind.read_pcm("final_collection/#{arity}/pcm/#{motif}.#{model_kind.pcm_extension}")
-        num_words = File.readlines("#{folder}/words/#{motif}.words").map(&:strip).reject(&:empty?).size
-
-        best_auc_human, num_datasets_human = get_auc_stats("auc/#{arity}/HUMAN_datasets/#{original_motifs[motif]}.txt").values_at(:best_auc, :num_datasets)
-        best_auc_mouse, num_datasets_mouse = get_auc_stats("auc/#{arity}/MOUSE_datasets/#{original_motifs[motif]}.txt").values_at(:best_auc, :num_datasets)
-
-        original_motif = original_motifs[motif]
-        release, source = get_release_and_source(original_motif)
-
-        uniprot = motif.split('.').first
-        quality = motif.split('.').last
-        rank = motif.split('.')[-2].to_i
-        uniprot_infos = infos_by_uniprot_id[uniprot]
-        motif_families = recognizers_by_level[3].subfamilies_by_uniprot_id(uniprot)
-        motif_subfamilies = recognizers_by_level[4].subfamilies_by_uniprot_id(uniprot)
-        comments = []
-
-        [
-          motif,
-          pcm.length,
-          pcm.consensus_string,
-          uniprot,
-          uniprot_infos.flat_map(&:uniprot_ac).join('; '),
-          uniprot_infos.flat_map(&:primary_gene_name).join('; '),
-          arity,
-          quality,
-          rank,
-          num_words,
-          best_auc_human, best_auc_mouse,
-          num_datasets_human, num_datasets_mouse,
-          release, source,
-          motif_families.join(':separator:'),
-          motif_subfamilies.join(':separator:'),
-          uniprot_infos.flat_map(&:hgnc_ids).join('; '),
-          uniprot_infos.flat_map(&:mgi_ids).join('; '),
-          uniprot_infos.flat_map(&:entrezgene_ids).join('; '),
-          comments.join(" "),
-        ]
-      }
-
-      headers = [
-        'Model name', 'Model length', 'Consensus', 'UniprotID', 'UniprotAC', 'Gene name',
-        'Model type', 'Model quality', 'Model rank', 'Number of words in alignment',
-        'Best AUC for human datasets', 'Best AUC for mouse datasets', 'Number of human datasets', 'Number of mouse datasets',
-        'Release version', 'Data source type', 'Motif family', 'Motif subfamily',
-        'HGNC', 'MGI', 'EntrezGene',
-        'Comment'
-      ]
-
+        [motif, pcm]
+      }.to_h
 
       File.open(File.join(folder, "final_collection.tsv"), 'w') do |fw|
-        fw.puts headers.join("\t")
-        model_infos.each do |infos|
-          fw.puts infos.join("\t")
-        end
+        store_collection_summary(
+          species, arity, motif_names,
+          num_words_by_motif: num_words_by_motif,
+          pcm_by_motif: pcm_by_motif,
+          infos_by_uniprot_id: infos_by_uniprot_id,
+          original_motifs: original_motifs,
+          original_motifs_origin: original_motifs_origin,
+          output_stream: fw
+        )
       end
     end
   end
