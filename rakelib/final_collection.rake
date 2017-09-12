@@ -8,21 +8,23 @@ require 'motif_family_recognizer'
 require 'ape_find_threshold'
 require 'formatters'
 
+HOCOMOCO_PREFIX = 'HOCOMOCOv11_'
+
 # whole collection in a single file (one for all PCMs, one for all PWMs etc)
 def save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model)
   model_kind = ModelKind.get(arity)
   pcms = Dir.glob("#{folder}/pcm/*").sort.map{|fn| model_kind.read_pcm(fn) }
   pwms = Dir.glob("#{folder}/pwm/*").sort.map{|fn| model_kind.read_pwm(fn) }
 
-  File.write File.join(folder, "HOCOMOCOv11_pcms_#{species}_#{arity}.txt"), pcms.map(&:to_s).join("\n")
-  File.write File.join(folder, "HOCOMOCOv11_pwms_#{species}_#{arity}.txt"), pwms.map(&:to_s).join("\n")
+  File.write File.join(folder, "#{HOCOMOCO_PREFIX}pcms_#{species}_#{arity}.txt"), pcms.map(&:to_s).join("\n")
+  File.write File.join(folder, "#{HOCOMOCO_PREFIX}pwms_#{species}_#{arity}.txt"), pwms.map(&:to_s).join("\n")
 
   if arity == 'mono'
-    File.write File.join(folder, "HOCOMOCOv11_#{species}_mono_meme_format.meme"), in_meme_format(pcms)
-    File.write File.join(folder, "HOCOMOCOv11_#{species}_mono_transfac_format.txt"), in_transfac_format(pcms)
-    File.write File.join(folder, "HOCOMOCOv11_#{species}_mono_jaspar_format.txt"), in_jaspar_format(pcms)
+    File.write File.join(folder, "#{HOCOMOCO_PREFIX}#{species}_mono_meme_format.meme"), in_meme_format(pcms)
+    File.write File.join(folder, "#{HOCOMOCO_PREFIX}#{species}_mono_transfac_format.txt"), in_transfac_format(pcms)
+    File.write File.join(folder, "#{HOCOMOCO_PREFIX}#{species}_mono_jaspar_format.txt"), in_jaspar_format(pcms)
     requested_pvalues.each do |requested_pvalue|
-      File.write File.join(folder, "HOCOMOCOv11_#{species}_mono_homer_format_#{requested_pvalue}.motif"), in_homer_format(pcms, thresholds_by_model, pvalue: requested_pvalue)
+      File.write File.join(folder, "#{HOCOMOCO_PREFIX}#{species}_mono_homer_format_#{requested_pvalue}.motif"), in_homer_format(pcms, thresholds_by_model, pvalue: requested_pvalue)
     end
   end
 end
@@ -176,7 +178,7 @@ def store_collection_summary(species, arity, motif_names, num_words_by_motif:, p
   end
 end
 
-def make_collection_summary(folder, species, arity)
+def make_collection_summary(folder, species, arity, output_file)
   infos_by_uniprot_id = UniprotInfo
                         .each_in_file('uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv')
                         .group_by(&:uniprot_id)
@@ -213,7 +215,7 @@ def make_collection_summary(folder, species, arity)
     [motif, pcm]
   }.to_h
 
-  File.open(File.join(folder, "final_collection.tsv"), 'w') do |fw|
+  File.open(output_file, 'w') do |fw|
     store_collection_summary(
       species, arity, motif_names,
       num_words_by_motif: num_words_by_motif,
@@ -236,22 +238,22 @@ def repack_collection(species, arity, folder, motif_glob)
   copy_by_glob("final_collection/#{arity}/logo_large/#{motif_glob}", "#{folder}/logo_large")
   copy_by_glob("final_collection/#{arity}/logo_small/#{motif_glob}", "#{folder}/logo_small")
 
-  make_collection_summary(folder, species, arity)
+  make_collection_summary(folder, species, arity, File.join(folder, "#{HOCOMOCO_PREFIX}final_collection_#{species}_#{arity}.tsv"))
 
   requested_pvalues = [0.001, 0.0005, 0.0001]
   thresholds_by_model = calculate_thresholds_by_model("#{folder}/pwm", species, arity, requested_pvalues)
-  save_standard_thresholds!(File.join(folder, "standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
+  save_standard_thresholds!(File.join(folder, "#{HOCOMOCO_PREFIX}standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
 
   calculate_all_thresholds!(folder, species, arity)
   save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model)
 
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pcm_#{species}_#{arity}.tar.gz"), 'pcm'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "pwm_#{species}_#{arity}.tar.gz"), 'pwm'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "words_#{species}_#{arity}.tar.gz"), 'words'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "thresholds_#{species}_#{arity}.tar.gz"), 'thresholds'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_#{species}_#{arity}.tar.gz"), 'logo'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_large_#{species}_#{arity}.tar.gz"), 'logo_large'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "logo_small_#{species}_#{arity}.tar.gz"), 'logo_small'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}pcm_#{species}_#{arity}.tar.gz"), 'pcm'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}pwm_#{species}_#{arity}.tar.gz"), 'pwm'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}words_#{species}_#{arity}.tar.gz"), 'words'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}thresholds_#{species}_#{arity}.tar.gz"), 'thresholds'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}logo_#{species}_#{arity}.tar.gz"), 'logo'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}logo_large_#{species}_#{arity}.tar.gz"), 'logo_large'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}logo_small_#{species}_#{arity}.tar.gz"), 'logo_small'
 end
 
 desc 'Collect final collection'
