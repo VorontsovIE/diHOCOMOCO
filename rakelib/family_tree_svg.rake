@@ -3,6 +3,8 @@ require 'best_models'
 require 'auc_infos'
 require 'motif_family_recognizer'
 
+HOCOMOCO_PREFIX = 'HOCOMOCOv11_'
+
 class TFClassification::ClassificationTerm
   def to_json(while_condition:, infos_proc:)
     return nil  unless while_condition.call(self)
@@ -32,11 +34,12 @@ task :family_tree_svg do
   uniprot_infos = UniprotInfo.each_in_file('uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv');
   uniprot_ids_by_ac = uniprot_infos.group_by(&:uniprot_ac).map{|uniprot_ac, infos| [uniprot_ac, infos.map(&:uniprot_id)] }.to_h;
 
+  ['core', 'full'].each do |full_or_core|
   ['HUMAN', 'MOUSE'].each do |species|
     tf_ontology = TFClassification.from_file("TFOntologies/TFClass_#{species.downcase}.obo")
 
     ['mono', 'di'].each do |arity|
-      uniprots_covered = File.readlines("final_bundle/#{species}/#{arity}/final_collection.tsv").drop(1).map{|l|
+      uniprots_covered = File.readlines("final_bundle/hocomoco11/#{full_or_core}/#{species}/#{arity}/#{HOCOMOCO_PREFIX}final_collection_#{species}_#{arity}.tsv").drop(1).map{|l|
         l.chomp.split("\t")[3]
       }
 
@@ -62,10 +65,11 @@ task :family_tree_svg do
           }
         }
       )
-      File.open("final_bundle/#{species}/#{arity}/family_tree_#{species}_#{arity}.json", 'w'){|fw|
+      File.open("final_bundle/hocomoco11/#{full_or_core}/#{species}/#{arity}/#{HOCOMOCO_PREFIX}family_tree_#{species}_#{arity}.json", 'w'){|fw|
         fw.puts json_str
       }
     end
+  end
   end
 end
 

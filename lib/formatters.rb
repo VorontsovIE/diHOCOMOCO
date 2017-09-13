@@ -24,7 +24,7 @@ end
 
 def in_transfac_format(motif_pcms)
   result = ""
-  result << "VV  HOCOMOCOv10, SEP 2015\n"
+  result << "VV  HOCOMOCOv11, SEP 2017\n"
   result << "XX\n"
   result << "//\n"
   motif_pcms.sort_by(&:name).each_with_index do |pcm, index|
