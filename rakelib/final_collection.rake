@@ -260,8 +260,8 @@ desc 'Collect final collection'
 task :repack_final_collection do
   ['HUMAN', 'MOUSE'].each do |species|
     ['mono', 'di'].each do |arity|
-      repack_collection(species, arity, "final_bundle/full/#{species}/#{arity}", "*_#{species}.*")
-      repack_collection(species, arity, "final_bundle/core/#{species}/#{arity}", "*_#{species}.H11??.0.{A,B,C}*")
+      repack_collection(species, arity, "final_bundle/hocomoco11/full/#{species}/#{arity}", "*_#{species}.*")
+      repack_collection(species, arity, "final_bundle/hocomoco11/core/#{species}/#{arity}", "*_#{species}.H11??.0.{A,B,C}*")
     end
   end
 end
