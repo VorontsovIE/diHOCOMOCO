@@ -58,9 +58,9 @@ $stdin.each_line.lazy.map(&:chomp).each_slice(2).chunk{|seqName, hitInfo|
   logroc_xy = roc.map{|point| [point.fpr == 0 ? 0 : Math.log(point.fpr), point.tpr] }.drop(1)  # we drop point (log 0; 0)
 
   puts(pvalues) and next  if print_pvalues
-  puts(pvalues) and  next  if print_corrected_pvalues
+  puts(corrected_pvalues) and  next  if print_corrected_pvalues
   puts(roc.map{|point| "#{point.fpr}\t#{point.tpr}" }) and next  if print_roc
-  puts(logroc_xy.map{|point| "#{point.fpr}\t#{point.tpr}" }) and next  if print_logroc
+  puts(logroc_xy.map{|logfpr, tpr| "#{logfpr}\t#{tpr}" }) and next  if print_logroc
 
   roc_auc = calculate_auc(roc)
   logroc_auc = calculate_auc_by_xy(logroc_xy)
