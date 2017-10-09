@@ -2,11 +2,11 @@ require 'auc_infos'
 
 ['mono', 'di'].each do |model_type|
   task "waucs_for_slices_#{model_type}" do
-    all_aucs_all_species = AUCs.all_aucs_in_folder("auc/#{model_type}/*_datasets/*")
+    all_aucs_all_species = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
 
     all_aucs_by_species = {
-      'HUMAN' => AUCs.all_aucs_in_folder("auc/#{model_type}/HUMAN_datasets/*"),
-      'MOUSE' => AUCs.all_aucs_in_folder("auc/#{model_type}/MOUSE_datasets/*"),
+      'HUMAN' => AUCs.all_logaucs_in_folder("auc/#{model_type}/HUMAN_datasets/*"),
+      'MOUSE' => AUCs.all_logaucs_in_folder("auc/#{model_type}/MOUSE_datasets/*"),
     }
 
     ['HUMAN', 'MOUSE'].each do |species|
@@ -18,7 +18,7 @@ require 'auc_infos'
         auc_infos = AUCs.auc_infos_for_slice(all_aucs, fn, model_type)
         auc_infos_other_species = AUCs.auc_infos_for_slice(all_aucs_other_species, fn, model_type)
         auc_infos_all_species = AUCs.auc_infos_for_slice(all_aucs_all_species, fn, model_type)
-        slice_type =  File.basename(fn, '.txt').split('.').last[0]
+        slice_type = File.basename(fn, '.txt').split('.').last[0]
 
         if slice_type == 'T'
           req_uniprot =  File.basename(fn, '.txt').split('.').first + '_' + species
@@ -59,7 +59,7 @@ end
 task :dataset_waucs_for_slices do
  ['mono', 'di'].each do |model_type|
     FileUtils.mkdir_p "wauc_datasets/#{model_type}"
-    all_aucs = AUCs.all_aucs_in_folder("auc/#{model_type}/*_datasets/*")
+    all_aucs = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
     Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
       auc_infos = AUCs.auc_infos_for_slice(all_aucs, fn, model_type)
       infos = auc_infos.datasets.map{|dataset|

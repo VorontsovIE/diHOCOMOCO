@@ -231,13 +231,28 @@ class AUCs
     result
   end
 
+  def self.all_logaucs_in_folder(glob)
+    initial_hsh = Hash.new{|h,k| h[k] = {} }
+    FileList[glob].map{|fn|
+      model = Model.new_by_name(fn.pathmap('%n'))
+      auc_by_dataset = File.readlines(fn).map{|line|
+        dataset, _auc, logauc = line.chomp.split("\t")
+        [dataset, logauc.to_f]
+      }.to_h
+      [model, auc_by_dataset]
+    } #.to_h
+    .each_with_object(initial_hsh){|(model, auc_by_dataset), hsh|
+      hsh[model].merge!(auc_by_dataset)
+    }
+  end
+
   def self.all_aucs_in_folder(glob)
     initial_hsh = Hash.new{|h,k| h[k] = {} }
     FileList[glob].map{|fn|
       model = Model.new_by_name(fn.pathmap('%n'))
       auc_by_dataset = File.readlines(fn).map{|line|
-        dataset, auc, logauc = line.chomp.split("\t")
-        [dataset, logauc.to_f]
+        dataset, auc, _logauc = line.chomp.split("\t")
+        [dataset, auc.to_f]
       }.to_h
       [model, auc_by_dataset]
     } #.to_h
