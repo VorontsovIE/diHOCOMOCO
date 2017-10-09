@@ -43,7 +43,7 @@ require 'auc_infos'
             best_auc = [best_auc_on_species, best_auc_other_species].max
           else
             wauc = auc_infos.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
-            best_auc_on = auc_infos.best_auc(model)
+            best_auc = auc_infos.best_auc(model)
           end
 
           [model.full_name, wauc, best_auc ]
@@ -72,4 +72,3 @@ task :dataset_waucs_for_slices do
     }
   end
 end
-
