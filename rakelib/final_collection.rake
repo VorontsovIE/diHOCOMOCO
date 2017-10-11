@@ -8,23 +8,21 @@ require 'motif_family_recognizer'
 require 'ape_find_threshold'
 require 'formatters'
 
-HOCOMOCO_PREFIX = 'HOCOMOCOv11_'
-
 # whole collection in a single file (one for all PCMs, one for all PWMs etc)
-def save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model)
+def save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model, hocomoco_prefix)
   model_kind = ModelKind.get(arity)
   pcms = Dir.glob("#{folder}/pcm/*").sort.map{|fn| model_kind.read_pcm(fn) }
   pwms = Dir.glob("#{folder}/pwm/*").sort.map{|fn| model_kind.read_pwm(fn) }
 
-  File.write File.join(folder, "#{HOCOMOCO_PREFIX}pcms_#{species}_#{arity}.txt"), pcms.map(&:to_s).join("\n")
-  File.write File.join(folder, "#{HOCOMOCO_PREFIX}pwms_#{species}_#{arity}.txt"), pwms.map(&:to_s).join("\n")
+  File.write File.join(folder, "#{hocomoco_prefix}pcms_#{species}_#{arity}.txt"), pcms.map(&:to_s).join("\n")
+  File.write File.join(folder, "#{hocomoco_prefix}pwms_#{species}_#{arity}.txt"), pwms.map(&:to_s).join("\n")
 
   if arity == 'mono'
-    File.write File.join(folder, "#{HOCOMOCO_PREFIX}#{species}_mono_meme_format.meme"), in_meme_format(pcms)
-    File.write File.join(folder, "#{HOCOMOCO_PREFIX}#{species}_mono_transfac_format.txt"), in_transfac_format(pcms)
-    File.write File.join(folder, "#{HOCOMOCO_PREFIX}#{species}_mono_jaspar_format.txt"), in_jaspar_format(pcms)
+    File.write File.join(folder, "#{hocomoco_prefix}#{species}_mono_meme_format.meme"), in_meme_format(pcms)
+    File.write File.join(folder, "#{hocomoco_prefix}#{species}_mono_transfac_format.txt"), in_transfac_format(pcms)
+    File.write File.join(folder, "#{hocomoco_prefix}#{species}_mono_jaspar_format.txt"), in_jaspar_format(pcms)
     requested_pvalues.each do |requested_pvalue|
-      File.write File.join(folder, "#{HOCOMOCO_PREFIX}#{species}_mono_homer_format_#{requested_pvalue}.motif"), in_homer_format(pcms, thresholds_by_model, pvalue: requested_pvalue)
+      File.write File.join(folder, "#{hocomoco_prefix}#{species}_mono_homer_format_#{requested_pvalue}.motif"), in_homer_format(pcms, thresholds_by_model, pvalue: requested_pvalue)
     end
   end
 end
@@ -229,7 +227,7 @@ def make_collection_summary(folder, species, arity, output_file)
 end
 
 
-def repack_collection(species, arity, folder, motif_glob)
+def repack_collection(species, arity, folder, motif_glob, hocomoco_prefix)
   rm_rf folder
   copy_by_glob("final_collection/#{arity}/pcm/#{motif_glob}", "#{folder}/pcm")
   copy_by_glob("final_collection/#{arity}/pwm/#{motif_glob}", "#{folder}/pwm")
@@ -238,30 +236,29 @@ def repack_collection(species, arity, folder, motif_glob)
   copy_by_glob("final_collection/#{arity}/logo_large/#{motif_glob}", "#{folder}/logo_large")
   copy_by_glob("final_collection/#{arity}/logo_small/#{motif_glob}", "#{folder}/logo_small")
 
-  make_collection_summary(folder, species, arity, File.join(folder, "#{HOCOMOCO_PREFIX}final_collection_#{species}_#{arity}.tsv"))
-
+  make_collection_summary(folder, species, arity, File.join(folder, "#{hocomoco_prefix}final_collection_#{species}_#{arity}.tsv"))
   requested_pvalues = [0.001, 0.0005, 0.0001]
   thresholds_by_model = calculate_thresholds_by_model("#{folder}/pwm", species, arity, requested_pvalues)
-  save_standard_thresholds!(File.join(folder, "#{HOCOMOCO_PREFIX}standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
+  save_standard_thresholds!(File.join(folder, "#{hocomoco_prefix}standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
 
   calculate_all_thresholds!(folder, species, arity)
-  save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model)
+  save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model, hocomoco_prefix)
 
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}pcm_#{species}_#{arity}.tar.gz"), 'pcm'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}pwm_#{species}_#{arity}.tar.gz"), 'pwm'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}words_#{species}_#{arity}.tar.gz"), 'words'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}thresholds_#{species}_#{arity}.tar.gz"), 'thresholds'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}logo_#{species}_#{arity}.tar.gz"), 'logo'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}logo_large_#{species}_#{arity}.tar.gz"), 'logo_large'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{HOCOMOCO_PREFIX}logo_small_#{species}_#{arity}.tar.gz"), 'logo_small'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}pcm_#{species}_#{arity}.tar.gz"), 'pcm'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}pwm_#{species}_#{arity}.tar.gz"), 'pwm'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}words_#{species}_#{arity}.tar.gz"), 'words'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}thresholds_#{species}_#{arity}.tar.gz"), 'thresholds'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}logo_#{species}_#{arity}.tar.gz"), 'logo'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}logo_large_#{species}_#{arity}.tar.gz"), 'logo_large'
+  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}logo_small_#{species}_#{arity}.tar.gz"), 'logo_small'
 end
 
 desc 'Collect final collection'
 task :repack_final_collection do
   ['HUMAN', 'MOUSE'].each do |species|
     ['mono', 'di'].each do |arity|
-      repack_collection(species, arity, "final_bundle/hocomoco11/full/#{species}/#{arity}", "*_#{species}.*")
-      repack_collection(species, arity, "final_bundle/hocomoco11/core/#{species}/#{arity}", "*_#{species}.H11??.0.{A,B,C}*")
+      repack_collection(species, arity, "final_bundle/hocomoco11/full/#{species}/#{arity}", "*_#{species}.*", 'HOCOMOCOv11_full_')
+      repack_collection(species, arity, "final_bundle/hocomoco11/core/#{species}/#{arity}", "*_#{species}.H11??.0.{A,B,C}*", 'HOCOMOCOv11_core_')
     end
   end
 end
