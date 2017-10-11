@@ -1,7 +1,7 @@
 require 'auc_infos'
 
 ['mono', 'di'].each do |model_type|
-  task "waucs_for_slices_#{model_type}" do
+  task "wlogaucs_for_slices_#{model_type}" do
     all_aucs_all_species = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
 
     all_aucs_by_species = {
@@ -10,7 +10,7 @@ require 'auc_infos'
     }
 
     ['HUMAN', 'MOUSE'].each do |species|
-      FileUtils.mkdir_p "wauc/#{model_type}/#{species}"
+      FileUtils.mkdir_p "wlogauc/#{model_type}/#{species}"
       all_aucs = all_aucs_by_species[species]
       other_species = ['HUMAN', 'MOUSE'].detect{|s| s != species }
       all_aucs_other_species = all_aucs_by_species[other_species]
@@ -50,16 +50,33 @@ require 'auc_infos'
         }.sort_by{|model, wauc, maxauc|
           wauc
         }.reverse
-        File.write("wauc/#{model_type}/#{species}/#{File.basename(fn)}", infos.map{|l| l.join("\t") }.join("\n")) unless infos.empty?
+        File.write("wlogauc/#{model_type}/#{species}/#{File.basename(fn)}", infos.map{|l| l.join("\t") }.join("\n")) unless infos.empty?
       }
     end
+  end
+end
+
+task :dataset_wlogaucs_for_slices do
+ ['mono', 'di'].each do |model_type|
+    FileUtils.mkdir_p "wlogauc_datasets/#{model_type}"
+    all_aucs = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
+    Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
+      auc_infos = AUCs.auc_infos_for_slice(all_aucs, fn, model_type)
+      infos = auc_infos.datasets.map{|dataset|
+        wauc_ds = auc_infos.dataset_quality(dataset)
+        [dataset, wauc_ds]
+      }.sort_by{|ds, wauc_ds|
+        wauc_ds
+      }.reverse
+      File.write("wlogauc_datasets/#{model_type}/#{File.basename(fn)}", infos.map{|l| l.join("\t") }.join("\n"))
+    }
   end
 end
 
 task :dataset_waucs_for_slices do
  ['mono', 'di'].each do |model_type|
     FileUtils.mkdir_p "wauc_datasets/#{model_type}"
-    all_aucs = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
+    all_aucs = AUCs.all_aucs_in_folder("auc/#{model_type}/*_datasets/*")
     Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
       auc_infos = AUCs.auc_infos_for_slice(all_aucs, fn, model_type)
       infos = auc_infos.datasets.map{|dataset|

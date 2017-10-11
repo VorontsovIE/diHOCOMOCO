@@ -109,7 +109,7 @@ def collect_novel_motifs(model_kind, species)
   to_reverse_mono = File.readlines('curation/to_reverse_mono.txt').map(&:strip)
   to_reverse_di = File.readlines('curation/to_reverse_di.txt').map(&:strip)
   uniprots_failed_curation = File.readlines('curation/uniprots_failed_curation.txt').map(&:strip)
-  Dir.glob("wauc/#{model_kind}/#{species}/*.txt").sort.map{|slice_fn|
+  Dir.glob("wlogauc/#{model_kind}/#{species}/*.txt").sort.map{|slice_fn|
     model, logauc = best_model_in_slice(slice_fn)
     auc_by_ds = aucs_for_model(model, model_kind)
     slice = File.basename(slice_fn, '.txt')
