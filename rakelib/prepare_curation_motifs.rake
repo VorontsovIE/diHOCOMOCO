@@ -1,16 +1,16 @@
 require 'auc_infos'
 
 ['mono', 'di'].each do |model_type|
-  task "waucs_for_slices_#{model_type}" do
-    all_aucs_all_species = AUCs.all_aucs_in_folder("auc/#{model_type}/*_datasets/*")
+  task "wlogaucs_for_slices_#{model_type}" do
+    all_aucs_all_species = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
 
     all_aucs_by_species = {
-      'HUMAN' => AUCs.all_aucs_in_folder("auc/#{model_type}/HUMAN_datasets/*"),
-      'MOUSE' => AUCs.all_aucs_in_folder("auc/#{model_type}/MOUSE_datasets/*"),
+      'HUMAN' => AUCs.all_logaucs_in_folder("auc/#{model_type}/HUMAN_datasets/*"),
+      'MOUSE' => AUCs.all_logaucs_in_folder("auc/#{model_type}/MOUSE_datasets/*"),
     }
 
     ['HUMAN', 'MOUSE'].each do |species|
-      FileUtils.mkdir_p "wauc/#{model_type}/#{species}"
+      FileUtils.mkdir_p "wlogauc/#{model_type}/#{species}"
       all_aucs = all_aucs_by_species[species]
       other_species = ['HUMAN', 'MOUSE'].detect{|s| s != species }
       all_aucs_other_species = all_aucs_by_species[other_species]
@@ -18,7 +18,7 @@ require 'auc_infos'
         auc_infos = AUCs.auc_infos_for_slice(all_aucs, fn, model_type)
         auc_infos_other_species = AUCs.auc_infos_for_slice(all_aucs_other_species, fn, model_type)
         auc_infos_all_species = AUCs.auc_infos_for_slice(all_aucs_all_species, fn, model_type)
-        slice_type =  File.basename(fn, '.txt').split('.').last[0]
+        slice_type = File.basename(fn, '.txt').split('.').last[0]
 
         if slice_type == 'T'
           req_uniprot =  File.basename(fn, '.txt').split('.').first + '_' + species
@@ -43,16 +43,33 @@ require 'auc_infos'
             best_auc = [best_auc_on_species, best_auc_other_species].max
           else
             wauc = auc_infos.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
-            best_auc_on = auc_infos.best_auc(model)
+            best_auc = auc_infos.best_auc(model)
           end
 
           [model.full_name, wauc, best_auc ]
         }.sort_by{|model, wauc, maxauc|
           wauc
         }.reverse
-        File.write("wauc/#{model_type}/#{species}/#{File.basename(fn)}", infos.map{|l| l.join("\t") }.join("\n")) unless infos.empty?
+        File.write("wlogauc/#{model_type}/#{species}/#{File.basename(fn)}", infos.map{|l| l.join("\t") }.join("\n")) unless infos.empty?
       }
     end
+  end
+end
+
+task :dataset_wlogaucs_for_slices do
+ ['mono', 'di'].each do |model_type|
+    FileUtils.mkdir_p "wlogauc_datasets/#{model_type}"
+    all_aucs = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
+    Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
+      auc_infos = AUCs.auc_infos_for_slice(all_aucs, fn, model_type)
+      infos = auc_infos.datasets.map{|dataset|
+        wauc_ds = auc_infos.dataset_quality(dataset)
+        [dataset, wauc_ds]
+      }.sort_by{|ds, wauc_ds|
+        wauc_ds
+      }.reverse
+      File.write("wlogauc_datasets/#{model_type}/#{File.basename(fn)}", infos.map{|l| l.join("\t") }.join("\n"))
+    }
   end
 end
 
@@ -72,4 +89,3 @@ task :dataset_waucs_for_slices do
     }
   end
 end
-
