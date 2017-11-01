@@ -3,8 +3,6 @@ require 'best_models'
 require 'auc_infos'
 require 'motif_family_recognizer'
 
-HOCOMOCO_PREFIX = 'HOCOMOCOv11_'
-
 class TFClassification::ClassificationTerm
   def to_json(while_condition:, infos_proc:)
     return nil  unless while_condition.call(self)
@@ -35,41 +33,44 @@ task :family_tree_svg do
   uniprot_ids_by_ac = uniprot_infos.group_by(&:uniprot_ac).map{|uniprot_ac, infos| [uniprot_ac, infos.map(&:uniprot_id)] }.to_h;
 
   ['core', 'full'].each do |full_or_core|
-  ['HUMAN', 'MOUSE'].each do |species|
-    tf_ontology = TFClassification.from_file("TFOntologies/TFClass_#{species.downcase}.obo")
+    hocomoco_prefix = "HOCOMOCOv11_#{full_or_core}_"
+    ['HUMAN', 'MOUSE'].each do |species|
+      tf_ontology = TFClassification.from_file("TFOntologies/TFClass_#{species.downcase}.obo")
+      ['mono', 'di'].each do |arity|
+        motif_annotation_fn = "final_bundle/hocomoco11/#{full_or_core}/#{species}/#{arity}/#{hocomoco_prefix}final_collection_#{species}_#{arity}.tsv"
+        resulting_tree_fn = "final_bundle/hocomoco11/#{full_or_core}/#{species}/#{arity}/#{hocomoco_prefix}family_tree_#{species}_#{arity}.json"
 
-    ['mono', 'di'].each do |arity|
-      uniprots_covered = File.readlines("final_bundle/hocomoco11/#{full_or_core}/#{species}/#{arity}/#{HOCOMOCO_PREFIX}final_collection_#{species}_#{arity}.tsv").drop(1).map{|l|
-        l.chomp.split("\t")[3]
-      }
-
-      json_str = tf_ontology.root.to_json(
-        while_condition: ->(node){
-          uniprots_in_subtree = uniprots_in_subtree(node, uniprot_ids_by_ac, species)
-          !uniprots_in_subtree.empty? && node.deepness <= 2
-        },
-        infos_proc:->(node){
-          uniprots_in_subtree = uniprots_in_subtree(node, uniprot_ids_by_ac, species)
-
-          uniprots_in_subtree_covered = uniprots_in_subtree.select{|uniprot_id|
-            uniprots_covered.include?(uniprot_id)
-          }
-
-          {
-            total_tfs: uniprots_in_subtree.size,
-            size: uniprots_in_subtree.size,
-            covered_tfs: uniprots_in_subtree_covered.size,
-            name: node.name,
-            family_id: node.id,
-            url: "/search?species=#{species}&arity=#{arity}&family_id=#{node.id}"
-          }
+        uniprots_covered = File.readlines(motif_annotation_fn).drop(1).map{|l|
+          l.chomp.split("\t")[3]
         }
-      )
-      File.open("final_bundle/hocomoco11/#{full_or_core}/#{species}/#{arity}/#{HOCOMOCO_PREFIX}family_tree_#{species}_#{arity}.json", 'w'){|fw|
-        fw.puts json_str
-      }
+
+        json_str = tf_ontology.root.to_json(
+          while_condition: ->(node){
+            uniprots_in_subtree = uniprots_in_subtree(node, uniprot_ids_by_ac, species)
+            !uniprots_in_subtree.empty? && node.deepness <= 2
+          },
+          infos_proc:->(node){
+            uniprots_in_subtree = uniprots_in_subtree(node, uniprot_ids_by_ac, species)
+
+            uniprots_in_subtree_covered = uniprots_in_subtree.select{|uniprot_id|
+              uniprots_covered.include?(uniprot_id)
+            }
+
+            {
+              total_tfs: uniprots_in_subtree.size,
+              size: uniprots_in_subtree.size,
+              covered_tfs: uniprots_in_subtree_covered.size,
+              name: node.name,
+              family_id: node.id,
+              url: "/search?species=#{species}&arity=#{arity}&family_id=#{node.id}"
+            }
+          }
+        )
+        File.open(resulting_tree_fn, 'w'){|fw|
+          fw.puts json_str
+        }
+      end
     end
-  end
   end
 end
 
