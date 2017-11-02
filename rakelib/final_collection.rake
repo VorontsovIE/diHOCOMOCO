@@ -58,18 +58,22 @@ BACKGROUND_BY_SPECIES = {
   'MOUSE' => '0.09124954151587066,0.05327746891945427,0.07340655447309075,0.07380976720188166,0.07444027240460285,0.0522326724288473,0.008258817805366036,0.07340655447309075,0.06218694059369016,0.04063209300331165,0.0522326724288473,0.05327746891945427,0.06371242131832879,0.06218694059369016,0.07444027240460285,0.09124954151587066',
 }
 
-def calculate_all_thresholds!(folder, species, arity)
+def calculate_all_thresholds(folder, species, arity)
   additional_options = (arity == 'mono') ? ['--from-mono'] : []
-  sh 'java', '-cp', 'ape.jar',
-      'ru.autosome.ape.di.PrecalculateThresholds',
-      File.join(folder, "pwm"), File.join(folder, "thresholds"),
+  Dir.glob(File.join(folder, 'pwm', '*')).each do |fn|
+    cmd = [
+     'java', '-cp', 'ape.jar', 'ru.autosome.ape.di.PrecalculateThresholds',
+      fn, File.join(folder, "thresholds"),
+      '--single-motif',
       '--background', BACKGROUND_BY_SPECIES[species],
       '--pvalues', *['1e-15', '1.0', '1.01', 'mul'].join(','),
       '--discretization', 10000.to_s,
       *additional_options,
-      '--silent'
+      '--silent',
+    ].shelljoin
+    puts cmd
+  end
 end
-
 
 def origin_by_motif_in_hocomoco10(motif)
   collection_name = motif.split('~')[1]
@@ -241,9 +245,10 @@ def repack_collection(species, arity, folder, motif_glob, hocomoco_prefix)
   thresholds_by_model = calculate_thresholds_by_model("#{folder}/pwm", species, arity, requested_pvalues)
   save_standard_thresholds!(File.join(folder, "#{hocomoco_prefix}standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
 
-  calculate_all_thresholds!(folder, species, arity)
   save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model, hocomoco_prefix)
+end
 
+def archive_results(species, arity, folder, hocomoco_prefix)
   sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}pcm_#{species}_#{arity}.tar.gz"), 'pcm'
   sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}pwm_#{species}_#{arity}.tar.gz"), 'pwm'
   sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}words_#{species}_#{arity}.tar.gz"), 'words'
@@ -259,6 +264,26 @@ task :repack_final_collection do
     ['mono', 'di'].each do |arity|
       repack_collection(species, arity, "final_bundle/hocomoco11/full/#{species}/#{arity}", "*_#{species}.*", 'HOCOMOCOv11_full_')
       repack_collection(species, arity, "final_bundle/hocomoco11/core/#{species}/#{arity}", "*_#{species}.H11??.0.{A,B,C}*", 'HOCOMOCOv11_core_')
+    end
+  end
+end
+
+desc 'Archive final bundle subfolders'
+task :archive_final_bundle do
+  ['HUMAN', 'MOUSE'].each do |species|
+    ['mono', 'di'].each do |arity|
+      archive_results(species, arity, "final_bundle/hocomoco11/full/#{species}/#{arity}", 'HOCOMOCOv11_full_')
+      archive_results(species, arity, "final_bundle/hocomoco11/core/#{species}/#{arity}", 'HOCOMOCOv11_core_')
+    end
+  end
+end
+
+desc 'Threshold precalcuation for final bundle'
+task :precalc_thresholds_for_final_bundle do
+  ['HUMAN', 'MOUSE'].each do |species|
+    ['mono', 'di'].each do |arity|
+      calculate_all_thresholds("final_bundle/hocomoco11/full/#{species}/#{arity}", species, arity)
+      calculate_all_thresholds("final_bundle/hocomoco11/core/#{species}/#{arity}", species, arity)
     end
   end
 end
