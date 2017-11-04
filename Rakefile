@@ -20,10 +20,10 @@ task :default do
 
   Rake::Task['choose_motifs_for_final_collection'].invoke
   Rake::Task['sequence_logos'].invoke
-
-  Rake::Task['collect_and_normalize_data:collect_words'].invoke
   Rake::Task['collect_and_normalize_data:rename_words'].invoke
-
-  Rake::Task['make_final_collection'].invoke
-  Rake::Task['final_collection_summary'].invoke
+  Rake::Task['repack_final_collection'].invoke
+  ## --> Don't forget to manually put comments to annotations here
+  Rake::Task['precalc_thresholds_for_final_bundle'].invoke
+  Rake::Task['family_tree_svg'].invoke
+  Rake::Task['archive_final_bundle'].invoke
 end
