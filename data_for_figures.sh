@@ -9,17 +9,17 @@ find control/control/ -xtype f \
 ./calculate_tpr_by_motif.sh 0.65 > figures/motif_tprs_by_pval_0.65.tsv
 
 # logROC-curves for all human motifs of specified TF (measured on all peaks of all TF datasets)
-for TF in CTCF_HUMAN ANDR_HUMAN ESR1_HUMAN MYC_HUMAN FOXA1_HUMAN; do
+for TF in EGR1_HUMAN; do # CTCF_HUMAN ANDR_HUMAN ESR1_HUMAN MYC_HUMAN FOXA1_HUMAN; do
   mkdir -p figures/logauc_curves/$TF
-  for MODEL in `find models/pwm/mono/all/$TF -xtype f | xargs -n1 basename -s .pwm`; do
-    MODEL_LENGTH=$(( $(cat models/pwm/mono/all/$TF/${MODEL}.pwm | wc -l) - 1 ))
+  for MODEL in `find models/pwm/di/all/$TF -xtype f | xargs -n1 basename -s .dpwm`; do
+    MODEL_LENGTH=$(cat models/pwm/di/all/$TF/${MODEL}.dpwm | wc -l)
     ( \
       echo $MODEL; \
       find control/control/ -name "$TF.*.mfa" \
         | xargs -r -n1 -I {CNTRL} echo "cat {CNTRL} \
         | ruby renameMultifastaSequences.rb all"  | bash \
-        | java -cp sarus.jar ru.autosome.SARUS - models/pwm/mono/all/$TF/${MODEL}.pwm besthit  \
-        | ruby calculate_auc.rb $MODEL_LENGTH models/thresholds/mono/HUMAN_background/$TF/${MODEL}.thr mono --print-logroc \
+        | java -cp sarus.jar ru.autosome.di.SARUS - models/pwm/di/all/$TF/${MODEL}.dpwm besthit  \
+        | ruby calculate_auc.rb $MODEL_LENGTH models/thresholds/di/HUMAN_background/$TF/${MODEL}.thr di --print-logroc \
     ) > "figures/logauc_curves/$TF/$MODEL"
   done
 done
