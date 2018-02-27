@@ -2,9 +2,9 @@ GEM
   remote: https://rubygems.org/
   specs:
     bioinform (0.2.2)
-    mini_portile2 (2.2.0)
-    nokogiri (1.8.0)
-      mini_portile2 (~> 2.2.0)
+    mini_portile2 (2.3.0)
+    nokogiri (1.8.2)
+      mini_portile2 (~> 2.3.0)
     rake (12.0.0)
     rmagick (2.16.0)
     rubyXL (3.3.26)
@@ -24,4 +24,4 @@ DEPENDENCIES
   sequence_logo (~> 1.2.0)
 
 BUNDLED WITH
-   1.15.3
+   1.16.1
