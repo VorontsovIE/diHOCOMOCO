@@ -197,6 +197,15 @@ class AUCs
     AUCs.new(auc_by_model_and_dataset, models: models, datasets: datasets.select{|ds| ds.match(/_#{species}\./) })
   end
 
+  def has_only_hocomoco_models?
+    models.all?{|model| model.full_name.match(/~(DI)?HL~/) }
+  end
+
+  def has_chipseq_models?(uniprot, model_type)
+    chipseq_dataset_code = (model_type == 'mono') ? 'CM' : 'CD'
+    models.any?{|model| model.full_name.start_with?("#{uniprot}~#{chipseq_dataset_code}~") }
+  end
+
   # Loads data for a single TF
   def self.from_folder(glob)
     auc_by_model_and_dataset = FileList[glob].map{|fn|

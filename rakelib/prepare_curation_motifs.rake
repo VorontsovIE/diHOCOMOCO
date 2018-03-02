@@ -1,5 +1,20 @@
 require 'auc_infos'
 
+def species_with_currated_motifs(tf)
+  ['mono', 'di'].flat_map{|model_type|
+    species_with_currated_motifs_for_model_type(tf, model_type)
+  }.uniq
+end
+
+def species_with_currated_motifs_for_model_type(tf, model_type)
+  currated_motifs = Dir.glob("curation/slices4bench_#{model_type}/#{tf}.*.txt").flat_map{|same_tf_slice_fn|
+    File.readlines(same_tf_slice_fn).map(&:strip).reject(&:empty?)
+  }.uniq.sort
+  species_with_currated_motifs = currated_motifs.map{|motif|
+    motif.split('.').first.split('_').last
+  }.uniq
+end
+
 ['mono', 'di'].each do |model_type|
   task "wlogaucs_for_slices_#{model_type}" do
     all_aucs_all_species = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
@@ -9,48 +24,46 @@ require 'auc_infos'
       'MOUSE' => AUCs.all_logaucs_in_folder("auc/#{model_type}/MOUSE_datasets/*"),
     }
 
-    ['HUMAN', 'MOUSE'].each do |species|
-      FileUtils.mkdir_p "wlogauc/#{model_type}/#{species}"
-      all_aucs = all_aucs_by_species[species]
-      other_species = ['HUMAN', 'MOUSE'].detect{|s| s != species }
+    ['HUMAN', 'MOUSE'].each do |target_species|
+      FileUtils.mkdir_p "wlogauc/#{model_type}/#{target_species}"
+      other_species = ['HUMAN', 'MOUSE'].detect{|s| s != target_species }
+      all_aucs_target_species = all_aucs_by_species[target_species]
       all_aucs_other_species = all_aucs_by_species[other_species]
       Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
-        auc_infos = AUCs.auc_infos_for_slice(all_aucs, fn, model_type)
+        tf = File.basename(fn, '.txt').split('.').first
+        species_to_consider = species_with_currated_motifs(tf)
+
+        auc_infos_target_species = AUCs.auc_infos_for_slice(all_aucs_target_species, fn, model_type)
         auc_infos_other_species = AUCs.auc_infos_for_slice(all_aucs_other_species, fn, model_type)
         auc_infos_all_species = AUCs.auc_infos_for_slice(all_aucs_all_species, fn, model_type)
         slice_type = File.basename(fn, '.txt').split('.').last[0]
 
         if slice_type == 'T'
-          req_uniprot =  File.basename(fn, '.txt').split('.').first + '_' + species
-          chipseq_dataset_code = (model_type == 'mono') ? 'CM' : 'CD'
-          if !auc_infos.models.all?{|model| model.full_name.match(/~(DI)?HL~/) }
-            if auc_infos.models.none?{|model| model.full_name.start_with?("#{req_uniprot}~#{chipseq_dataset_code}~") }
-              next
-            end
-          end
-
+          semiuniprot = File.basename(fn, '.txt').split('.').first
+          uniprot = semiuniprot + '_' + target_species
+          next if !auc_infos_target_species.has_only_hocomoco_models? && !auc_infos_target_species.has_chipseq_models?(uniprot, model_type)
         end
 
-        infos = auc_infos.models.map{|model|
+        infos = auc_infos_target_species.models.map{|model|
           if !auc_infos_other_species.datasets.empty?
-            wauc_on_species = auc_infos.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
+            wauc_target_species = auc_infos_target_species.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
             wauc_other_species = auc_infos_other_species.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
 
-            wauc = (wauc_on_species * auc_infos.datasets.size + wauc_other_species).to_f / (auc_infos.datasets.size + 1)
+            wauc = (wauc_target_species * auc_infos_target_species.datasets.size + wauc_other_species).to_f / (auc_infos_target_species.datasets.size + 1)
 
-            best_auc_on_species = auc_infos.best_auc(model)
+            best_auc_target_species = auc_infos_target_species.best_auc(model)
             best_auc_other_species = auc_infos_other_species.best_auc(model)
-            best_auc = [best_auc_on_species, best_auc_other_species].max
+            best_auc = [best_auc_target_species, best_auc_other_species].max
           else
-            wauc = auc_infos.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
-            best_auc = auc_infos.best_auc(model)
+            wauc = auc_infos_target_species.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
+            best_auc = auc_infos_target_species.best_auc(model)
           end
 
-          [model.full_name, wauc, best_auc ]
+          [model.full_name, wauc, best_auc]
         }.sort_by{|model, wauc, maxauc|
           wauc
         }.reverse
-        File.write("wlogauc/#{model_type}/#{species}/#{File.basename(fn)}", infos.map{|l| l.join("\t") }.join("\n")) unless infos.empty?
+        File.write("wlogauc/#{model_type}/#{target_species}/#{File.basename(fn)}", infos.map{|l| l.join("\t") }.join("\n")) unless infos.empty?
       }
     end
   end
