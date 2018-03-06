@@ -1,4 +1,5 @@
 require 'auc_infos'
+require 'set'
 
 def species_with_currated_motifs(tf)
   ['mono', 'di'].flat_map{|model_type|
@@ -15,6 +16,28 @@ def species_with_currated_motifs_for_model_type(tf, model_type)
   }.map{|motif|
     motif.split('.').first.split('_').last
   }.uniq
+end
+
+def tf_for_species_exist?(semiuniprot, species)
+  $species_for_tf ||= begin
+    result = Hash.new{|h,k| h[k] = Set.new }
+    Dir.glob('models/pwm/*/all/*/*.{d,}pwm').map{|fn|
+      File.basename(fn, '.pwm')
+    }.each{|motif|
+      semiuniprot, species = motif.split('~').first.split('_')
+      result[semiuniprot] << species
+    }
+
+    Dir.glob('models/pwm/**/*.{d,}pwm').map{|fn|
+      File.basename(fn, '.pwm')
+    }.each{|motif|
+      semiuniprot, species = motif.split('.').first.split('_')
+      result[semiuniprot] << species
+    }
+    result
+  end
+  raise "Unknown TF `#{semiuniprot}` for any species"  if $species_for_tf[semiuniprot].empty?
+  $species_for_tf[semiuniprot].include?(species)
 end
 
 ['mono', 'di'].each do |model_type|
