@@ -10,13 +10,6 @@ class MotifsSlice
     @additional_motifs = additional_motifs
   end
 
-  def auc_infos(all_aucs)
-    result = models.select{|model| all_aucs.has_key?(model) }.map{|model|
-      [model, all_aucs[model]]
-    }.to_h
-    AUCs.new(result)
-  end
-
   def species_with_currated_motifs
     chipseq_motifs.map{|motif|
       motif.split('.').first.split('_').last

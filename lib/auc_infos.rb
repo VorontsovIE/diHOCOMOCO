@@ -20,8 +20,8 @@ class AUCs
   def initialize(auc_by_model_and_dataset, models: nil, datasets: nil)
     @auc_by_model_and_dataset = auc_by_model_and_dataset
 
-    @models = models || @auc_by_model_and_dataset.keys.sort
-    @datasets = datasets || @auc_by_model_and_dataset.values.flat_map(&:keys).uniq.sort
+    @models = models || all_models
+    @datasets = datasets || all_datasets
   end
 
   # All models which were benchmarked, including models which were rejected
@@ -46,10 +46,6 @@ class AUCs
     auc_by_model_and_dataset == other.auc_by_model_and_dataset && \
     models == other.models && \
     datasets == other.datasets
-  end
-
-  def has_validation?
-    !datasets.empty?
   end
 
   def best_auc(model)
@@ -103,16 +99,6 @@ class AUCs
     weighted_auc_total / quality_norm_factor
   end
 
-  def best_model_among_collections(collections, banned_models: [])
-    models.select{|model|
-      collections.include?(model.collection_short_name)
-    }.reject{|model|
-      banned_models.include?(model)
-    }.max_by{|model|
-      weighted_auc(model)
-    }
-  end
-
   def without_bad_datasets(min_auc)
     return self.class.new(auc_by_model_and_dataset, models: [], datasets: [])  if models.empty?
 
@@ -146,72 +132,45 @@ class AUCs
     models.any?{|model| model.full_name.start_with?("#{uniprot}~#{chipseq_dataset_code}~") }
   end
 
-  # Loads data for a single TF
-  def self.from_folder(glob)
-    auc_by_model_and_dataset = FileList[glob].map{|fn|
-      model = Model.new_by_name(fn.pathmap('%n'))
-      auc_by_dataset = File.readlines(fn).map{|line|
-        dataset, auc, logauc = line.chomp.split("\t")
-        [dataset, logauc.to_f]
-      }.to_h
-      [model, auc_by_dataset]
-    }.to_h
-    self.new(auc_by_model_and_dataset)
+  def self.auc_infos_in_file(filename)
+    auc_by_dataset = {}
+    logauc_by_dataset = {}
+    File.readlines(fn).each{|line|
+      dataset, auc, logauc = line.chomp.split("\t")
+      auc_by_dataset[dataset] = Float(auc)
+      logauc_by_dataset[dataset] = Float(logauc)
+    }
+    {auc: auc_by_dataset, logauc: logauc_by_dataset}
   end
 
-  # Load hash {uniprot => AUCs} with iteratively filtered datasets and models
-  def self.load_auc_infos_for_uniprot(min_weight_for_dataset: 0, min_auc_for_model: 0)
-    semiuniprots = Dir.glob('auc/*').map{|fn| File.basename(fn).split('~')[0].split('_')[0] }.uniq
+  def self.auc_infos_in_folder(glob)
+    aucs_by_model = Hash.new{|h,k| h[k] = {} }
+    logaucs_by_model = Hash.new{|h,k| h[k] = {} }
 
-    result = semiuniprots.map{|uniprot|
-      [uniprot, self.from_folder("auc/#{uniprot}_*.txt")]
-    }.map{|uniprot, auc_infos|
-      auc_infos_prev = nil
-      while auc_infos != auc_infos_prev
-        auc_infos_prev = auc_infos
-        auc_infos = auc_infos.without_bad_datasets(min_weight_for_dataset).without_bad_models(min_auc_for_model)
-      end
-      [uniprot, auc_infos]
-    }.to_h
-
-    result.default_proc = ->(hsh,k) {
-      self.new(Hash.new{|hsh2, k2| {}}, models: [], datasets: [])
+    FileList[glob].each{|fn|
+      model = Model.new_by_name(fn.pathmap('%n'))
+      aucs_chunk = auc_infos_in_file(fn)
+      aucs_by_model[model].merge!( aucs_chunk[:auc] )
+      logaucs_by_model[model].merge!( aucs_chunk[:logauc] )
     }
-    result
+    {auc: aucs_by_model, logauc: logaucs_by_model}
   end
 
   def self.all_logaucs_in_folder(glob)
-    initial_hsh = Hash.new{|h,k| h[k] = {} }
-    FileList[glob].map{|fn|
-      model = Model.new_by_name(fn.pathmap('%n'))
-      auc_by_dataset = File.readlines(fn).map{|line|
-        dataset, _auc, logauc = line.chomp.split("\t")
-        [dataset, logauc.to_f]
-      }.to_h
-      [model, auc_by_dataset]
-    } #.to_h
-    .each_with_object(initial_hsh){|(model, auc_by_dataset), hsh|
-      hsh[model].merge!(auc_by_dataset)
-    }
+    auc_infos_in_folder(glob)[:logauc]
   end
 
   def self.all_aucs_in_folder(glob)
-    initial_hsh = Hash.new{|h,k| h[k] = {} }
-    FileList[glob].map{|fn|
-      model = Model.new_by_name(fn.pathmap('%n'))
-      auc_by_dataset = File.readlines(fn).map{|line|
-        dataset, auc, _logauc = line.chomp.split("\t")
-        [dataset, auc.to_f]
-      }.to_h
-      [model, auc_by_dataset]
-    } #.to_h
-    .each_with_object(initial_hsh){|(model, auc_by_dataset), hsh|
-      hsh[model].merge!(auc_by_dataset)
-    }
+    auc_infos_in_folder(glob)[:auc]
   end
 
-  def self.auc_infos_for_slice(all_aucs, slice_fn, model_type)
-    MotifsSlice.from_file(slice_fn, model_type).auc_infos(all_aucs)
+  def self.auc_infos_for_slice(all_aucs, motifs_slice)
+    result = motifs_slice.models.select{|model|
+      all_aucs.has_key?(model)
+    }.map{|model|
+      [model, all_aucs[model]]
+    }.to_h
+    AUCs.new(result)
   end
 
   def refined(min_weight_for_dataset: 0, min_auc_for_model: 0)

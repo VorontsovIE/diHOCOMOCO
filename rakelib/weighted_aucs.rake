@@ -57,9 +57,10 @@ end
         slice_type = motif_slice.slice_type
         species_to_consider = species_with_currated_motifs(tf).sort
 
-        auc_infos_target_species = AUCs.auc_infos_for_slice(all_aucs_target_species, fn, model_type)
-        auc_infos_other_species = AUCs.auc_infos_for_slice(all_aucs_other_species, fn, model_type)
-        auc_infos_all_species = AUCs.auc_infos_for_slice(all_aucs_all_species, fn, model_type)
+        motifs_slice = MotifsSlice.from_file(fn, model_type)
+        auc_infos_target_species = AUCs.auc_infos_for_slice(all_aucs_target_species, motifs_slice)
+        auc_infos_other_species = AUCs.auc_infos_for_slice(all_aucs_other_species, motifs_slice)
+        auc_infos_all_species = AUCs.auc_infos_for_slice(all_aucs_all_species, motifs_slice)
 
         consider_target = !auc_infos_target_species.datasets.empty? && species_to_consider.include?(target_species)
         consider_other = !auc_infos_other_species.datasets.empty? && species_to_consider.include?(other_species)
