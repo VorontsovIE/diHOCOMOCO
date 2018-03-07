@@ -16,4 +16,15 @@ class MotifsSlice
     }.to_h
     AUCs.new(result)
   end
+
+  def self.from_file(slice_fn, model_type)
+    case model_type.to_sym
+    when :mono
+      MonoMotifsSlice.from_file(slice_fn)
+    when :di
+      DiMotifsSlice.from_file(slice_fn)
+    else
+      raise "Undefined model type #{model_type}"
+    end
+  end
 end

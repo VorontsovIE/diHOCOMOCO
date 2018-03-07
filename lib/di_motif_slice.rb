@@ -17,7 +17,7 @@ class DiMotifsSlice < MotifsSlice
     motif_final = File.basename(slice_fn, '.txt')
     slice_type = motif_final.split('.').last[0]
     semiuniprot = motif_final.split('.').first  # without species part
-    all_motifs = File.readlines(slice_fn).map(&:chomp)
+    all_motifs = File.readlines(slice_fn).map(&:strip).reject(&:empty?)
 
     additional_motifs = all_motifs.select{|motif|
       motif.match(/~DIAD~/)

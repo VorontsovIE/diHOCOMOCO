@@ -55,13 +55,16 @@ end
       all_aucs_target_species = all_aucs_by_species[target_species]
       all_aucs_other_species = all_aucs_by_species[other_species]
       Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
-        tf = File.basename(fn, '.txt').split('.').first
+
+        motif_slice = MotifSlice.from_file(fn, model_type)
+
+        tf = motif_slice.semiuniprot
+        slice_type = motif_slice.slice_type
         species_to_consider = species_with_currated_motifs(tf).sort
 
         auc_infos_target_species = AUCs.auc_infos_for_slice(all_aucs_target_species, fn, model_type)
         auc_infos_other_species = AUCs.auc_infos_for_slice(all_aucs_other_species, fn, model_type)
         auc_infos_all_species = AUCs.auc_infos_for_slice(all_aucs_all_species, fn, model_type)
-        slice_type = File.basename(fn, '.txt').split('.').last[0]
 
         consider_target = !auc_infos_target_species.datasets.empty? && species_to_consider.include?(target_species)
         consider_other = !auc_infos_other_species.datasets.empty? && species_to_consider.include?(other_species)

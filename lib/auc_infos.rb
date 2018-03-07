@@ -211,14 +211,7 @@ class AUCs
   end
 
   def self.auc_infos_for_slice(all_aucs, slice_fn, model_type)
-    case model_type.to_sym
-    when :mono
-      MonoMotifsSlice.from_file(slice_fn).auc_infos(all_aucs)
-    when :di
-      DiMotifsSlice.from_file(slice_fn).auc_infos(all_aucs)
-    else
-      raise "Undefined model type #{model_type}"
-    end
+    MotifsSlice.from_file(slice_fn, model_type).auc_infos(all_aucs)
   end
 
   def refined(min_weight_for_dataset: 0, min_auc_for_model: 0)
