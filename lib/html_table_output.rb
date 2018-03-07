@@ -1,4 +1,3 @@
-require 'quality_assessor'
 require 'joint_model'
 
 def cell_html(content, html_options = {})
@@ -39,35 +38,6 @@ def print_html_table(stream:, &block)
 end
 
 ###############
-
-def print_html_table_for_grouped_models(auc_infos_for_uniprot, grouped_models, quality_assessor, stream: $stdout)
-  print_html_table(stream: stream) do
-    grouped_models.each do |uniprot, models|
-      print_logos_for_models(auc_infos_for_uniprot[uniprot], models, uniprot, quality_assessor, stream: stream)
-    end
-  end
-end
-
-def print_logos_for_models(auc_infos, models, uniprot, quality_assessor, stream: $stdout)
-  num_models = models.size
-  models.each_with_index do |model, index|
-    auc = auc_infos.weighted_auc(model) && auc_infos.weighted_auc(model).round(3)
-    quality = quality_assessor.calculate_quality(model)
-
-    classes = row_classes(index, num_models)
-
-    stream.print "<tr class=\"#{classes.join(' ')}\">"
-    stream.print cell_html(uniprot, rowspan: num_models)  if index == 0
-    stream.print cell_html(quality)
-    stream.print cell_html(auc)
-    stream.print cell_html(model.full_name)
-    stream.print cell_html(img_html(model.path_to_logo_direct))
-    stream.print cell_html(img_html(model.path_to_logo_revcomp))
-    stream.puts '</tr>'
-  end
-end
-
-################
 
 def print_html_table_by_model_infos(model_infos, stream: $stdout)
   print_html_table(stream: stream) do
