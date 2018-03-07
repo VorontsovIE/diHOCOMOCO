@@ -153,7 +153,7 @@ class AUCs
       aucs_by_model[model].merge!( aucs_chunk[:auc] )
       logaucs_by_model[model].merge!( aucs_chunk[:logauc] )
     }
-    {auc: aucs_by_model, logauc: logaucs_by_model}
+    {auc: AUCs.new(aucs_by_model), logauc: AUCs.new(logaucs_by_model)}
   end
 
   def self.all_logaucs_in_folder(glob)
@@ -164,13 +164,9 @@ class AUCs
     auc_infos_in_folder(glob)[:auc]
   end
 
-  def self.auc_infos_for_slice(all_aucs, motifs_slice)
-    result = motifs_slice.models.select{|model|
-      all_aucs.has_key?(model)
-    }.map{|model|
-      [model, all_aucs[model]]
-    }.to_h
-    AUCs.new(result)
+  def auc_infos_for_slice(motifs_slice)
+    models_to_take = motifs_slice.models.select{|model| models.include?(model) }
+    AUCs.new(auc_by_model_and_dataset, models: models_to_take)
   end
 
   def refined(min_weight_for_dataset: 0, min_auc_for_model: 0)

@@ -7,7 +7,7 @@ task :dataset_wlogaucs_for_slices do
     all_aucs = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
     Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
       motifs_slice = MotifsSlice.from_file(fn, model_type)
-      auc_infos = AUCs.auc_infos_for_slice(all_aucs, motifs_slice)
+      auc_infos = all_aucs.auc_infos_for_slice(motifs_slice)
       infos = auc_infos.datasets.map{|dataset|
         wauc_ds = auc_infos.dataset_quality(dataset)
         [dataset, wauc_ds]
@@ -25,7 +25,7 @@ task :dataset_waucs_for_slices do
     all_aucs = AUCs.all_aucs_in_folder("auc/#{model_type}/*_datasets/*")
     Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
       motifs_slice = MotifsSlice.from_file(fn, model_type)
-      auc_infos = AUCs.auc_infos_for_slice(all_aucs, motifs_slice)
+      auc_infos = all_aucs.auc_infos_for_slice(motifs_slice)
       infos = auc_infos.datasets.map{|dataset|
         wauc_ds = auc_infos.dataset_quality(dataset)
         [dataset, wauc_ds]

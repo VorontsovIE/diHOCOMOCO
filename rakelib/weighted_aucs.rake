@@ -51,16 +51,15 @@ end
       all_aucs_other_species = all_aucs_by_species[other_species]
       Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
 
-        motif_slice = MotifSlice.from_file(fn, model_type)
+        motifs_slice = MotifsSlice.from_file(fn, model_type)
 
-        tf = motif_slice.semiuniprot
-        slice_type = motif_slice.slice_type
+        tf = motifs_slice.semiuniprot
+        slice_type = motifs_slice.slice_type
         species_to_consider = species_with_currated_motifs(tf).sort
 
-        motifs_slice = MotifsSlice.from_file(fn, model_type)
-        auc_infos_target_species = AUCs.auc_infos_for_slice(all_aucs_target_species, motifs_slice)
-        auc_infos_other_species = AUCs.auc_infos_for_slice(all_aucs_other_species, motifs_slice)
-        auc_infos_all_species = AUCs.auc_infos_for_slice(all_aucs_all_species, motifs_slice)
+        auc_infos_target_species = all_aucs_target_species.auc_infos_for_slice(motifs_slice)
+        auc_infos_other_species = all_aucs_other_species.auc_infos_for_slice(motifs_slice)
+        auc_infos_all_species = all_aucs_all_species.auc_infos_for_slice(motifs_slice)
 
         consider_target = !auc_infos_target_species.datasets.empty? && species_to_consider.include?(target_species)
         consider_other = !auc_infos_other_species.datasets.empty? && species_to_consider.include?(other_species)
