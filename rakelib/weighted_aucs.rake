@@ -8,14 +8,9 @@ def species_with_currated_motifs(tf)
 end
 
 def species_with_currated_motifs_for_model_type(tf, model_type)
-  currated_motifs = Dir.glob("curation/slices4bench_#{model_type}/#{tf}.*.txt").flat_map{|same_tf_slice_fn|
-    File.readlines(same_tf_slice_fn).map(&:strip).reject(&:empty?)
+  Dir.glob("curation/slices4bench_#{model_type}/#{tf}.*.txt").flat_map{|same_tf_slice_fn|
+    MotifSlice.from_file(same_tf_slice_fn, model_type).species_with_currated_motifs
   }.uniq.sort
-  species_with_currated_motifs = currated_motifs.select{|motif|
-    motif.split('.')[1].start_with?('PEAKS') # ChIP-seq, not legacy hocomoco or other sources
-  }.map{|motif|
-    motif.split('.').first.split('_').last
-  }.uniq
 end
 
 def tf_for_species_exist?(semiuniprot, species)

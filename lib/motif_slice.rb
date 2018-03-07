@@ -17,6 +17,12 @@ class MotifsSlice
     AUCs.new(result)
   end
 
+  def species_with_currated_motifs
+    chipseq_motifs.map{|motif|
+      motif.split('.').first.split('_').last
+    }.uniq.sort
+  end
+
   def self.from_file(slice_fn, model_type)
     case model_type.to_sym
     when :mono
