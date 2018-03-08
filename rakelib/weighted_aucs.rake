@@ -60,6 +60,7 @@ end
         auc_infos_target_species = all_aucs_target_species.auc_infos_for_slice(motifs_slice)
         auc_infos_other_species = all_aucs_other_species.auc_infos_for_slice(motifs_slice)
         auc_infos_all_species = all_aucs_all_species.auc_infos_for_slice(motifs_slice)
+        dataset_weighting = ->(dataset){ auc_infos_all_species.dataset_quality(dataset) }
 
         consider_target = !auc_infos_target_species.datasets.empty? && species_to_consider.include?(target_species)
         consider_other = !auc_infos_other_species.datasets.empty? && species_to_consider.include?(other_species)
@@ -79,8 +80,8 @@ end
 
         if consider_target && consider_other
           infos = auc_infos_all_species.models.map{|model|
-            wauc_target_species = auc_infos_target_species.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
-            wauc_other_species = auc_infos_other_species.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
+            wauc_target_species = auc_infos_target_species.weighted_auc(model, &dataset_weighting)
+            wauc_other_species = auc_infos_other_species.weighted_auc(model, &dataset_weighting)
 
             wauc = (wauc_target_species * auc_infos_target_species.datasets.size + wauc_other_species).to_f / (auc_infos_target_species.datasets.size + 1)
 
@@ -91,13 +92,13 @@ end
           }
         elsif consider_target
           infos = auc_infos_all_species.models.map{|model|
-            wauc = auc_infos_target_species.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
+            wauc = auc_infos_target_species.weighted_auc(model, &dataset_weighting)
             best_auc = auc_infos_target_species.best_auc(model)
             [model.full_name, wauc, best_auc]
           }
         elsif consider_other
           infos = auc_infos_all_species.models.map{|model|
-            wauc = auc_infos_target_species.weighted_auc(model){|dataset| auc_infos_all_species.dataset_quality(dataset) }
+            wauc = auc_infos_target_species.weighted_auc(model, &dataset_weighting)
             best_auc = auc_infos_other_species.best_auc(model)
             [model.full_name, wauc, best_auc]
           }
