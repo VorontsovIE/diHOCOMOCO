@@ -143,7 +143,7 @@ class AUCs
     {auc: auc_by_dataset, logauc: logauc_by_dataset}
   end
 
-  def self.auc_infos_in_folder(glob)
+  def self.in_folder(glob)
     aucs_by_model = Hash.new{|h,k| h[k] = {} }
     logaucs_by_model = Hash.new{|h,k| h[k] = {} }
 
@@ -156,15 +156,7 @@ class AUCs
     {auc: AUCs.new(aucs_by_model), logauc: AUCs.new(logaucs_by_model)}
   end
 
-  def self.all_logaucs_in_folder(glob)
-    auc_infos_in_folder(glob)[:logauc]
-  end
-
-  def self.all_aucs_in_folder(glob)
-    auc_infos_in_folder(glob)[:auc]
-  end
-
-  def auc_infos_for_slice(motifs_slice)
+  def slice(motifs_slice)
     models_to_take = motifs_slice.models.select{|model| models.include?(model) }
     AUCs.new(auc_by_model_and_dataset, models: models_to_take)
   end

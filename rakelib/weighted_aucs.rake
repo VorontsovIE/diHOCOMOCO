@@ -37,11 +37,11 @@ end
 
 ['mono', 'di'].each do |model_type|
   task "wlogaucs_for_slices_#{model_type}" do
-    all_aucs_all_species = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
+    all_aucs_all_species = AUCs.in_folder("auc/#{model_type}/*_datasets/*")[:logauc]
 
     all_aucs_by_species = {
-      'HUMAN' => AUCs.all_logaucs_in_folder("auc/#{model_type}/HUMAN_datasets/*"),
-      'MOUSE' => AUCs.all_logaucs_in_folder("auc/#{model_type}/MOUSE_datasets/*"),
+      'HUMAN' => AUCs.in_folder("auc/#{model_type}/HUMAN_datasets/*")[:logauc],
+      'MOUSE' => AUCs.in_folder("auc/#{model_type}/MOUSE_datasets/*")[:logauc],
     }
 
     ['HUMAN', 'MOUSE'].each do |target_species|
@@ -57,9 +57,9 @@ end
         slice_type = motifs_slice.slice_type
         species_to_consider = species_with_currated_motifs(tf).sort
 
-        auc_infos_target_species = all_aucs_target_species.auc_infos_for_slice(motifs_slice)
-        auc_infos_other_species = all_aucs_other_species.auc_infos_for_slice(motifs_slice)
-        auc_infos_all_species = all_aucs_all_species.auc_infos_for_slice(motifs_slice)
+        auc_infos_target_species = all_aucs_target_species.slice(motifs_slice)
+        auc_infos_other_species = all_aucs_other_species.slice(motifs_slice)
+        auc_infos_all_species = all_aucs_all_species.slice(motifs_slice)
         dataset_weighting = ->(dataset){ auc_infos_all_species.dataset_quality(dataset) }
 
         consider_target = !auc_infos_target_species.datasets.empty? && species_to_consider.include?(target_species)
