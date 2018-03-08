@@ -23,10 +23,10 @@ def tf_for_species_exist?(semiuniprot, species)
       result[semiuniprot] << species
     }
 
-    Dir.glob('models/pwm/**/*.{d,}pwm').map{|fn|
-      File.basename(fn, '.pwm')
-    }.each{|motif|
-      semiuniprot, species = motif.split('.').first.split('_')
+    Dir.glob('control/control/*.mfa').map{|fn|
+      File.basename(fn, '.mfa')
+    }.each{|dataset|
+      semiuniprot, species = dataset.split('.').first.split('_')
       result[semiuniprot] << species
     }
     result
