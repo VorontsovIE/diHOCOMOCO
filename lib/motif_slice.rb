@@ -27,3 +27,6 @@ class MotifsSlice
     end
   end
 end
+
+require_relative 'mono_motif_slice'
+require_relative 'di_motif_slice'

@@ -20,20 +20,9 @@ class AUCs
   def initialize(auc_by_model_and_dataset, models: nil, datasets: nil)
     @auc_by_model_and_dataset = auc_by_model_and_dataset
 
-    @models = models || all_models
-    @datasets = datasets || all_datasets
-  end
-
-  # All models which were benchmarked, including models which were rejected
-  # Use with attention
-  def all_models
-    @all_models ||= @auc_by_model_and_dataset.keys
-  end
-
-  # All models which were benchmarked, including models which were rejected
-  # Use with attention
-  def all_datasets
-    @all_datasets ||= @auc_by_model_and_dataset.values.flat_map(&:keys).uniq
+    @models = models || @auc_by_model_and_dataset.keys
+    # datasets only for chosen models
+    @datasets = datasets || @models.map{|model| @auc_by_model_and_dataset[model] }.flat_map(&:keys).uniq
   end
 
   def to_s
@@ -73,10 +62,8 @@ class AUCs
   def dataset_quality(dataset)
     return nil  if models.empty? # it's impossible to calculate dataset weight without good models
 
-    unless @dataset_qualities_cache && @dataset_qualities_cache[dataset] # caching
-      @dataset_qualities_cache ||= {}
-      @dataset_qualities_cache[dataset] = mean(aucs_for_dataset(dataset).values)
-    end
+    @dataset_qualities_cache ||= {}
+    @dataset_qualities_cache[dataset] ||= mean(aucs_for_dataset(dataset).values)
     @dataset_qualities_cache[dataset]
   end
 
@@ -135,7 +122,7 @@ class AUCs
   def self.auc_infos_in_file(filename)
     auc_by_dataset = {}
     logauc_by_dataset = {}
-    File.readlines(fn).each{|line|
+    File.readlines(filename).each{|line|
       dataset, auc, logauc = line.chomp.split("\t")
       auc_by_dataset[dataset] = Float(auc)
       logauc_by_dataset[dataset] = Float(logauc)
@@ -144,19 +131,21 @@ class AUCs
   end
 
   def self.in_folder(glob)
-    aucs_by_model = Hash.new{|h,k| h[k] = {} }
-    logaucs_by_model = Hash.new{|h,k| h[k] = {} }
+    aucs_by_model = {}
+    logaucs_by_model = {}
 
     FileList[glob].each{|fn|
       model = Model.new_by_name(fn.pathmap('%n'))
       aucs_chunk = auc_infos_in_file(fn)
+      aucs_by_model[model] ||= {}
+      logaucs_by_model[model] ||= {}
       aucs_by_model[model].merge!( aucs_chunk[:auc] )
       logaucs_by_model[model].merge!( aucs_chunk[:logauc] )
     }
     {auc: AUCs.new(aucs_by_model), logauc: AUCs.new(logaucs_by_model)}
   end
 
-  def slice(motifs_slice)
+  def slice_by_motifs(motifs_slice)
     models_to_take = motifs_slice.models.select{|model| models.include?(model) }
     AUCs.new(auc_by_model_and_dataset, models: models_to_take)
   end

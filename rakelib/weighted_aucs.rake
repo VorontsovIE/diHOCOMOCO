@@ -1,4 +1,5 @@
 require 'auc_infos'
+require 'motif_slice'
 require 'set'
 
 def species_with_currated_motifs(semiuniprot)
@@ -9,7 +10,7 @@ end
 
 def species_with_currated_motifs_for_model_type(semiuniprot, model_type)
   Dir.glob("curation/slices4bench_#{model_type}/#{semiuniprot}.*.txt").flat_map{|same_tf_slice_fn|
-    MotifSlice.from_file(same_tf_slice_fn, model_type).species_with_currated_motifs
+    MotifsSlice.from_file(same_tf_slice_fn, model_type).species_with_currated_motifs
   }.uniq.sort
 end
 
@@ -36,7 +37,7 @@ def tf_for_species_exist?(semiuniprot, species)
 end
 
 
-def process_single_slice(motifs_slice, target_species, other_species, target_species_aucs, other_species_aucs, all_species_aucs)
+def process_single_slice(motifs_slice, target_species, other_species, target_species_aucs, other_species_aucs, all_species_aucs, model_type)
   species_to_consider = species_with_currated_motifs(motifs_slice.semiuniprot).sort
 
   dataset_weighting = ->(dataset){ all_species_aucs.dataset_quality(dataset) }
@@ -44,11 +45,10 @@ def process_single_slice(motifs_slice, target_species, other_species, target_spe
   consider_target = !target_species_aucs.datasets.empty? && species_to_consider.include?(target_species)
   consider_other = !other_species_aucs.datasets.empty? && species_to_consider.include?(other_species)
 
-
   return  if !consider_target && !consider_other
 
   # ToDo: di-processing doesn't know that mono models of target species exist
-  has_target_species_models = all_species_aucs.models.any?{|model| model.split('.')[0].split('_').last == target_species }
+  has_target_species_models = all_species_aucs.models.any?{|model| model.species == target_species }
   return  if target_species_aucs.datasets.empty? && !has_target_species_models
 
   if motifs_slice.slice_type == 'T'
@@ -101,7 +101,7 @@ end
     ['HUMAN', 'MOUSE'].each do |target_species|
       FileUtils.mkdir_p "wlogauc/#{model_type}/#{target_species}"
       other_species = ['HUMAN', 'MOUSE'].detect{|s| s != target_species }
-      Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
+      Dir.glob("curation/slices4bench_#{model_type}/*.txt").sort.each{|fn|
         motifs_slice = MotifsSlice.from_file(fn, model_type)
 
         species_to_consider = species_with_currated_motifs(motifs_slice.semiuniprot).sort
@@ -109,10 +109,13 @@ end
         infos = process_single_slice(
           motifs_slice,
           target_species, other_species,
-          all_aucs_by_species[target_species].slice(motifs_slice),
-          all_aucs_by_species[other_species].slice(motifs_slice),
-          all_species_all_aucs.slice(motifs_slice)
-        ).sort_by{|model, wauc, maxauc|
+          all_aucs_by_species[target_species].slice_by_motifs(motifs_slice),
+          all_aucs_by_species[other_species].slice_by_motifs(motifs_slice),
+          all_species_all_aucs.slice_by_motifs(motifs_slice),
+          model_type
+        )
+        next if !infos || infos.empty?
+        infos = infos.sort_by{|model, wauc, maxauc|
           wauc
         }.reverse
 

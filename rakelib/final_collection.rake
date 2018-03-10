@@ -1,5 +1,4 @@
 require 'models'
-require 'best_models'
 require 'information_content'
 require 'auc_infos'
 require 'motif_family_recognizer'
