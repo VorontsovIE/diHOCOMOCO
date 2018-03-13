@@ -91,36 +91,43 @@ end
 
 ['mono', 'di'].each do |model_type|
   task "wlogaucs_for_slices_#{model_type}" do
-    all_species_all_aucs = AUCs.in_folder("auc/#{model_type}/*_datasets/*")[:logauc]
+    semiuniprots = Dir.glob("auc/#{model_type}/*_datasets/*").map{|fn|
+      File.basename(fn)
+    }.map{|basename|
+      basename.split('~').first.split('_').first
+    }.uniq.sort
 
-    all_aucs_by_species = {
-      'HUMAN' => AUCs.in_folder("auc/#{model_type}/HUMAN_datasets/*")[:logauc],
-      'MOUSE' => AUCs.in_folder("auc/#{model_type}/MOUSE_datasets/*")[:logauc],
-    }
-
-    ['HUMAN', 'MOUSE'].each do |target_species|
-      FileUtils.mkdir_p "wlogauc/#{model_type}/#{target_species}"
-      other_species = ['HUMAN', 'MOUSE'].detect{|s| s != target_species }
-      Dir.glob("curation/slices4bench_#{model_type}/*.txt").sort.each{|fn|
-        motifs_slice = MotifsSlice.from_file(fn, model_type)
-
-        species_to_consider = species_with_currated_motifs(motifs_slice.semiuniprot).sort
-
-        infos = process_single_slice(
-          motifs_slice,
-          target_species, other_species,
-          all_aucs_by_species[target_species].slice_by_motifs(motifs_slice),
-          all_aucs_by_species[other_species].slice_by_motifs(motifs_slice),
-          all_species_all_aucs.slice_by_motifs(motifs_slice),
-          model_type
-        )
-        next if !infos || infos.empty?
-        infos = infos.sort_by{|model, wauc, maxauc|
-          wauc
-        }.reverse
-
-        File.write("wlogauc/#{model_type}/#{target_species}/#{File.basename(fn)}", infos.map{|l| l.join("\t") }.join("\n"))  if infos && !infos.empty?
+    semiuniprots.each do |semiuniprot|
+      all_species_all_aucs = AUCs.in_folder("auc/#{model_type}/*_datasets/#{semiuniprot}_{HUMAN,MOUSE}~*")[:logauc]
+      all_aucs_by_species = {
+        'HUMAN' => all_species_all_aucs.filter_datasets_by_species('HUMAN'),
+        'MOUSE' => all_species_all_aucs.filter_datasets_by_species('MOUSE'),
       }
+      ['HUMAN', 'MOUSE'].each do |target_species|
+        FileUtils.mkdir_p "wlogauc/#{model_type}/#{target_species}"
+        other_species = ['HUMAN', 'MOUSE'].detect{|s| s != target_species }
+        Dir.glob("curation/slices4bench_#{model_type}/#{semiuniprot}.*.txt").sort.each{|fn|
+          motifs_slice = MotifsSlice.from_file(fn, model_type)
+
+          species_to_consider = species_with_currated_motifs(motifs_slice.semiuniprot).sort
+
+          infos = process_single_slice(
+            motifs_slice,
+            target_species, other_species,
+            all_aucs_by_species[target_species].slice_by_motifs(motifs_slice),
+            all_aucs_by_species[other_species].slice_by_motifs(motifs_slice),
+            all_species_all_aucs.slice_by_motifs(motifs_slice),
+            model_type
+          )
+          next if !infos || infos.empty?
+          infos = infos.sort_by{|model, wauc, maxauc|
+            wauc
+          }.reverse
+
+          File.write("wlogauc/#{model_type}/#{target_species}/#{File.basename(fn)}", infos.map{|l| l.join("\t") }.join("\n"))  if infos && !infos.empty?
+        }
+      end
+
     end
   end
 end
