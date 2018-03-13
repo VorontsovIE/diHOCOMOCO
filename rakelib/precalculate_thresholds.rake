@@ -25,13 +25,17 @@ task :precalculate_thresholds_di
         next  if Dir.exist?(output_folder) && FileList[File.join(pwm_folder, ext_glob)].pathmap('%n').sort == FileList[File.join(output_folder, '*.thr')].pathmap('%n').sort
         FileUtils.rm_rf output_folder
         FileUtils.mkdir_p output_folder
-        puts Ape.precalculate_thresholds_cmd pwm_folder,
-                                             output_folder: output_folder,
-                                             background: File.read(background_fn), # we always use dinucleotide background
-                                             threshold_grid: ['1e-15', '1.0', '1.01', 'mul'],
-                                             discretization: 1000,
-                                             additional_options: (model_type == 'mono') ? ['--from-mono'] : [], # same reasons: dinucleotide background
-                                             mode: :di
+        Dir.glob(File.join(pwm_folder, '*')).each do |pwm_fn|
+          additional_options = ['--single-motif']
+          additional_options << '--from-mono'  if model_type == 'mono'
+          puts Ape.precalculate_thresholds_cmd pwm_fn,
+                                               output_folder: output_folder,
+                                               background: File.read(background_fn), # we always use dinucleotide background
+                                               threshold_grid: ['1e-15', '1.0', '1.01', 'mul'],
+                                               discretization: 1000,
+                                               additional_options: additional_options, # same reasons: dinucleotide background
+                                               mode: :di
+        end
       end
     end
   end
