@@ -1,6 +1,6 @@
 require 'rake/file_list'
-require 'median'
-require 'models'
+require_relative 'median'
+require_relative 'models'
 
 def reccurUntilConverge(initial_value, &block)
   raise '#reccurUntilConverge has mandatory block as an argument'  unless block_given?
