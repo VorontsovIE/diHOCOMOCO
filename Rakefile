@@ -18,6 +18,8 @@ task :default do
   Rake::Task['precalculate_thresholds'].invoke
   Rake::Task['calculate_occurence_scores'].invoke
 
+  Rake::Task['calculate_wlogaucs'].invoke # here we should parallelize
+
   Rake::Task['choose_motifs_for_final_collection'].invoke
   Rake::Task['sequence_logos'].invoke
   Rake::Task['collect_and_normalize_data:rename_words'].invoke

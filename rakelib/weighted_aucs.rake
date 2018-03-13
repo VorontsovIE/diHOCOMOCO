@@ -11,3 +11,5 @@
     end
   end
 end
+
+task "calculate_wlogaucs" => ["wlogaucs_for_slices_mono", "wlogaucs_for_slices_di"]
