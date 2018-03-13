@@ -1,5 +1,17 @@
+require 'rake/file_list'
 require 'median'
 require 'models'
+
+def reccurUntilConverge(initial_value, &block)
+  raise '#reccurUntilConverge has mandatory block as an argument'  unless block_given?
+  prev_result = initial_value
+  result = yield(prev_result)
+  while result != prev_result
+    prev_result = result
+    result = yield(prev_result)
+  end
+  result
+end
 
 # An instance of class AUCs represents AUC values for a single TF
 #
@@ -21,8 +33,20 @@ class AUCs
     @auc_by_model_and_dataset = auc_by_model_and_dataset
 
     @models = models || @auc_by_model_and_dataset.keys
-    # datasets only for chosen models
-    @datasets = datasets || @models.map{|model| @auc_by_model_and_dataset[model] }.flat_map(&:keys).uniq
+    @datasets = datasets || @auc_by_model_and_dataset.values.flat_map(&:keys).uniq
+
+    @models, @datasets = reccurUntilConverge([@models, @datasets]){|models_subset, datasets_subset|
+      models_subset = models_subset.reject{|model|
+        model_datasets = auc_by_model_and_dataset[model].keys
+        (model_datasets & datasets_subset).empty?
+      }.sort
+
+      datasets_subset = models_subset.map{|model|
+       @auc_by_model_and_dataset[model]
+      }.flat_map(&:keys).uniq.sort
+
+      [models_subset, datasets_subset]
+    }
   end
 
   def to_s
@@ -110,6 +134,11 @@ class AUCs
     AUCs.new(auc_by_model_and_dataset, models: models, datasets: datasets.select{|ds| ds.match(/_#{species}\./) })
   end
 
+  def slice_by_motifs(motifs_slice)
+    models_to_take = motifs_slice.models.select{|model| models.include?(model) }
+    AUCs.new(auc_by_model_and_dataset, models: models_to_take)
+  end
+
   def has_only_hocomoco_models?
     models.all?{|model| model.full_name.match(/~(DI)?HL~/) }
   end
@@ -134,7 +163,7 @@ class AUCs
     aucs_by_model = {}
     logaucs_by_model = {}
 
-    FileList[glob].each{|fn|
+    Rake::FileList[glob].each{|fn|
       model = Model.new_by_name(fn.pathmap('%n'))
       aucs_chunk = auc_infos_in_file(fn)
       aucs_by_model[model] ||= {}
@@ -143,11 +172,6 @@ class AUCs
       logaucs_by_model[model].merge!( aucs_chunk[:logauc] )
     }
     {auc: AUCs.new(aucs_by_model), logauc: AUCs.new(logaucs_by_model)}
-  end
-
-  def slice_by_motifs(motifs_slice)
-    models_to_take = motifs_slice.models.select{|model| models.include?(model) }
-    AUCs.new(auc_by_model_and_dataset, models: models_to_take)
   end
 
   def refined(min_weight_for_dataset: 0, min_auc_for_model: 0)
