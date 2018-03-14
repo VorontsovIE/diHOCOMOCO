@@ -104,8 +104,6 @@ all_aucs_by_species = {
   Dir.glob("curation/slices4bench_#{model_type}/#{semiuniprot}.*.txt").sort.each{|fn|
     motifs_slice = MotifsSlice.from_file(fn, model_type)
 
-    species_to_consider = species_with_currated_motifs(motifs_slice.semiuniprot).sort
-
     infos = process_single_slice(
       motifs_slice,
       target_species, other_species,
