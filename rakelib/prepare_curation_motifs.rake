@@ -1,7 +1,22 @@
 require 'auc_infos'
+require 'set'
 
 ['mono', 'di'].each do |model_type|
   task "wlogaucs_for_slices_#{model_type}" do
+
+    currated_species_by_semiuniprot = Hash.new{|h,k| h[k] = Set.new }
+    Dir.glob("curation/slices4bench_*/*.txt").each{|fn|
+      semiuniprot = File.basename(fn).split('.').first
+      motifs_in_slice = File.readlines(fn).map(&:strip).reject(&:empty?)
+      motifs_in_slice.select{|motif|
+        motif.match /\.PEAKS/
+      }.map{|motif|
+        motif.split('.').first.split('_').last
+      }.uniq.each{|species|
+        currated_species_by_semiuniprot[semiuniprot] << species
+      }
+    }
+
     all_aucs_all_species = AUCs.all_logaucs_in_folder("auc/#{model_type}/*_datasets/*")
 
     all_aucs_by_species = {
@@ -15,6 +30,7 @@ require 'auc_infos'
       other_species = ['HUMAN', 'MOUSE'].detect{|s| s != species }
       all_aucs_other_species = all_aucs_by_species[other_species]
       Dir.glob("curation/slices4bench_#{model_type}/*.txt").each{|fn|
+        semiuniprot = File.basename(fn).split('.').first
         auc_infos = AUCs.auc_infos_for_slice(all_aucs, fn, model_type)
         auc_infos_other_species = AUCs.auc_infos_for_slice(all_aucs_other_species, fn, model_type)
         auc_infos_all_species = AUCs.auc_infos_for_slice(all_aucs_all_species, fn, model_type)
@@ -28,8 +44,9 @@ require 'auc_infos'
               next
             end
           end
-
         end
+
+        next  unless currated_species_by_semiuniprot[semiuniprot].include?(species)
 
         infos = auc_infos.models.map{|model|
           if !auc_infos_other_species.datasets.empty?
