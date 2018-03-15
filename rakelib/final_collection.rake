@@ -1,5 +1,5 @@
 require 'models'
-require 'joint_model'
+require 'information_content'
 require 'auc_infos'
 require 'motif_family_recognizer'
 require 'ape_find_threshold'
