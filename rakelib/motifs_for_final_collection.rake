@@ -1,5 +1,22 @@
 require 'set'
 
+def h10_uniprots(model_kind: nil)
+  if model_kind
+    @cache_hocomoco_10_uniprots_kind ||= {}
+    @cache_hocomoco_10_uniprots_kind[model_kind] ||= hocomoco10_motifs(model_kind).map{|motif| motif.split('.').first }.to_set
+  else
+    @cache_hocomoco_10_uniprots ||= (h10_uniprots(model_kind: 'mono') | h10_uniprots(model_kind: 'di'))
+  end
+end
+
+def dataset_uniprots
+  @cache_dataset_uniprots ||= Dir.glob('control/control/*.mfa').map{|fn| File.basename(fn).split('.').first }.to_set
+end
+
+def existing_uniprots
+  h10_uniprots | dataset_uniprots
+end
+
 PCM_EXT = {'mono' => 'pcm', 'di' => 'dpcm'}
 PWM_EXT = {'mono' => 'pwm', 'di' => 'dpwm'}
 COLLECTION_NAME = {'mono' => 'H11MO', 'di' => 'H11DI'}
@@ -196,8 +213,8 @@ def cross_species_infos(chipseq_infos, model_kind)
   chipseq_uniprots = chipseq_infos.map{|info| info[:uniprot] }.to_set
   can_be_cross_assigned = chipseq_uniprots.map{|uniprot| other_species(uniprot) }.to_set - chipseq_uniprots
   hocomoco10_motifs = hocomoco10_motifs(model_kind)
-  hocomoco10_uniprots = hocomoco10_motifs.map{|motif| motif.split('.').first }.to_set
-  should_be_cross_assigned = can_be_cross_assigned & hocomoco10_uniprots
+  should_be_cross_assigned = can_be_cross_assigned & existing_uniprots
+
   # puts ['Uniprot', 'origin', 'chosen motifs', 'alternative was'].join("\t")
   should_be_cross_assigned.flat_map{|uniprot|
     hocomoco10_variants = hocomoco10_motifs.select{|motif| motif.split('.').first == uniprot }
@@ -212,7 +229,7 @@ def cross_species_infos(chipseq_infos, model_kind)
     # else
     #   puts [uniprot, "Cross-species", chipseq_motifs.join("; "), (hocomoco10_variants + chipseq_motifs_number_2).join("; ")].join("\t")
     # end
-    if hocomoco10_best_quality < (chipseq_best_quality.ord + 1).chr
+    if hocomoco10_best_quality && (hocomoco10_best_quality < (chipseq_best_quality.ord + 1).chr)
       inherited_motifs_infos_for_tf(uniprot, hocomoco10_variants, model_kind).map{|info|
         info.merge(novelty: 'inherited (better than cross-species)')
       }
