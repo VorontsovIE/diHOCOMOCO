@@ -232,8 +232,10 @@ def cross_species_infos(chipseq_infos, model_kind)
 end
 
 desc 'Select which motifs and with which names are put into collection'
-task 'choose_motifs_for_final_collection' do
-  ['mono', 'di'].flat_map do |model_kind|
+task 'choose_motifs_for_final_collection' => ['choose_motifs_for_final_collection_mono','choose_motifs_for_final_collection_di']
+
+['mono', 'di'].flat_map do |model_kind|
+  task "choose_motifs_for_final_collection_#{model_kind}" do
     FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
     FileUtils.mkdir_p "final_collection/#{model_kind}/pwm/"
     FileUtils.mkdir_p "final_collection/#{model_kind}/logo/"
