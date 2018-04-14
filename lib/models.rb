@@ -20,7 +20,9 @@ module ModelKind
     def arity_type; 'mono'; end
     def pwm_extension; 'pwm'; end
     def pcm_extension; 'pcm'; end
-    def to_s; 'mono'; end
+    alias_method :to_s, :arity_type
+    alias_method :inspect, :arity_type
+    def sarus_class; 'ru.autosome.SARUS'; end
     def read_pcm(path_to_pcm)
       parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 4, nucleotides_in: :columns)
       infos = parser.parse(File.read(path_to_pcm))
@@ -39,7 +41,9 @@ module ModelKind
     def arity_type; 'di'; end
     def pwm_extension; 'dpwm'; end
     def pcm_extension; 'dpcm'; end
-    def to_s; 'di'; end
+    alias_method :to_s, :arity_type
+    alias_method :inspect, :arity_type
+    def sarus_class; 'ru.autosome.di.SARUS'; end
     def read_pcm(path_to_pcm)
       parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16, nucleotides_in: :columns)
       infos = parser.parse(File.read(path_to_pcm))
@@ -94,6 +98,7 @@ class Model
     [@uniprot, @collection_short_name, @model_name].join('~')
   end
 
+  def semiuniprot; @uniprot.split('_').first; end # species-independent protein name
   def species; @uniprot.split('_').last; end
 
   def path_to_pcm
@@ -163,6 +168,13 @@ end
 
 
 module Models
+  def self.models_by_type(model_kind)
+    glob = "models/pcm/#{model_kind.arity_type}/all/*/*.#{model_kind.pcm_extension}"
+    FileList[glob].pathmap('%n').uniq.sort.map{|name|
+      Model.new(name, model_kind.arity_type)
+    }
+  end
+
   def self.mono_models
     @mono_models ||= FileList["models/pcm/mono/all/*/*.pcm"].pathmap('%n').map{|name| Model.new(name, :mono) }
   end
