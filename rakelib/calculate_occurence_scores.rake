@@ -11,15 +11,6 @@ def join_fasta_renamed(mfa_files, output_stream:)
   }
 end
 
-desc 'Calculate scores for each model on each control'
-task :calculate_occurence_scores => [:calculate_occurence_scores_mono, :calculate_occurence_scores_di]
-
-desc 'Calculate scores for each mononucleotide model on each control'
-task :calculate_occurence_scores_mono
-
-desc 'Calculate scores for each dinucleotide model on each control'
-task :calculate_occurence_scores_di
-
 desc 'group controls for a protein into single file'
 task "group_controls" do
   FileUtils.mkdir_p "control/grouped"
@@ -35,8 +26,9 @@ task "group_controls" do
   end
 end
 
-[ModelKind::Mono.new, ModelKind::Di.new].each do |model_kind|
-  task "calculate_occurence_scores_#{model_kind}" do
+desc 'Calculate scores for each model on each control'
+task :calculate_occurence_scores do
+  [ModelKind::Mono.new, ModelKind::Di.new].each do |model_kind|
     models_by_factor = Models.models_by_type(model_kind).group_by(&:semiuniprot)
     ['HUMAN', 'MOUSE'].each do |species| # dataset characteristic; models can be of any species
       FileUtils.mkdir_p "auc/#{model_kind}/#{species}_datasets"
