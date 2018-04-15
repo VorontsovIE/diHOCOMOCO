@@ -1,8 +1,8 @@
 ####  Input:
 ####    >controlName:seqLength
-####    score	position	orientation
+####    pvalue	position	orientation
 ####    >controlName:seqLength
-####    score	position	orientation
+####    pvalue	position	orientation
 ####  each control has several sequences listed consequently
 #### Example:
 ## >ANDR_HUMAN.PEAKS033090.pics.control:100
@@ -15,14 +15,6 @@ require 'median'
 require 'sequence_dataset'
 require 'rake/ext/string'
 require 'roc_curve'
-
-def read_bsearch_table(filename)
-  File.readlines(filename).map{|l| l.chomp.split("\t").map(&:to_f) }
-end
-
-def pvalue_by_score(requested_score, bsearch_table)
-  (bsearch_table.bsearch{|score, pvalue| score >= requested_score } || bsearch_table.last).last
-end
 
 def correct_pvalues(pvalues, median_length:, model_length:)
   pvalues.map{|pvalue|
@@ -38,7 +30,6 @@ def tpr_by_fpr(roc_curve, fpr_list)
 end
 
 model_length = Integer(ARGV[0])
-thresholds_fn = ARGV[1]
 
 # prints pvalues or ROC curve instead(!) of AUC
 print_pvalues = ARGV.delete('--print-pvalues')
@@ -52,8 +43,6 @@ if ARGV.include?('--print-tpr-at')
   raise  if fpr_values.empty?
 end
 
-threshold_pvalue_table = read_bsearch_table(thresholds_fn)
-
 $stdin.each_line.lazy.map(&:chomp).each_slice(2).chunk{|seqName, hitInfo|
   seqName[1..-1].split(':').first # controlName
 }.each{|controlName, controlSequencesIter|
@@ -61,8 +50,7 @@ $stdin.each_line.lazy.map(&:chomp).each_slice(2).chunk{|seqName, hitInfo|
   pvalues = []
   controlSequencesIter.each{|seqName, hitInfo|
     controlSeqLengths << seqName.split(':').last.to_i
-    score = hitInfo.split("\t").first.to_f
-    pvalue = pvalue_by_score(score, threshold_pvalue_table)
+    pvalue = hitInfo.split("\t").first.to_f
     pvalues << pvalue
   }
 

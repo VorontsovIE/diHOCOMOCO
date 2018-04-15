@@ -48,9 +48,9 @@ end
           output_fn = "auc/#{model_kind}/#{species}_datasets/#{model.full_name}.txt"
           next  unless File.exist?(thresholds_fn)
           next  if File.exist?(output_fn)
-          puts "java -cp sarus.jar #{model_kind.sarus_class} #{control_fn.shellescape} #{model.path_to_pwm} besthit " + \
-               " | ruby calculate_auc.rb #{model.length} #{thresholds_fn} #{model_kind} " + \
-               " > #{output_fn.shellescape}"
+          puts "java -cp sarus.jar #{model_kind.sarus_class} #{control_fn} #{model.path_to_pwm} besthit  --output-scoring-mode pvalue  --pvalues-file #{thresholds_fn}" + \
+               " | ruby calculate_auc.rb #{model.length}" + \
+               " > #{output_fn}"
         }
       }
     end
