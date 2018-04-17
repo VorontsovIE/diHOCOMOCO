@@ -2,8 +2,6 @@ require 'models'
 
 module SequenceLogoGenerator
   def self.mono_cmd(pcm_file:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60, additional_options: [])
-    FileUtils.mkdir_p(output_folder)  unless Dir.exist?(output_folder)
-
     opts = []
     opts += ['--logo-folder', output_folder]
     opts += ['--orientation', orientation]
@@ -15,8 +13,6 @@ module SequenceLogoGenerator
   end
 
   def self.di_cmds(pcm_file:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60)
-    FileUtils.mkdir_p(output_folder)  unless Dir.exist?(output_folder)
-
     ['direct', 'revcomp'].map do |orient|
       next  unless orientation == 'both' || orientation == orient
       basename = File.basename(pcm_file, File.extname(pcm_file))
@@ -26,6 +22,24 @@ module SequenceLogoGenerator
       Shellwords.shelljoin(['ruby', './pmflogo/dpmflogo3.rb', pcm_file, output_file, *opts])
     end
   end
+
+  def print_di_cmd_if_necessary(pcm_file:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60)
+    motif = File.basename(pcm_file, File.extname(pcm_file))
+    output_fn = File.join(output_folder, "#{motif}.png")
+    cmd = di_cmd( pcm_file: pcm_file, output_folder: output_folder,
+                  orientation: orientation, x_unit: x_unit, y_unit: y_unit )
+    puts(cmd)  if !File.exist?(output_fn)
+  end
+
+  def print_mono_cmd_if_necessary(pcm_file:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60, additional_options: [])
+    motif = File.basename(pcm_file, File.extname(pcm_file))
+    output_fn = File.join(output_folder, "#{motif}.png")
+    cmd = mono_cmd( pcm_file: pcm_file, output_folder: output_folder,
+                    orientation: orientation, x_unit: x_unit, y_unit: y_unit,
+                    additional_options: additional_options )
+    puts(cmd)  if !File.exist?(output_fn)
+  end
+
 
 
   DefaultSizes = {
@@ -41,15 +55,18 @@ desc 'Draw sequence logos for all motifs'
 task :sequence_logos => ['sequence_logos:mono', 'sequence_logos:di']
 
 task "sequence_logos:mono" do
+  FileUtils.mkdir_p('final_collection/mono/logo/')
+  FileUtils.mkdir_p('final_collection/mono/logo_large/')
+  FileUtils.mkdir_p('final_collection/mono/logo_small/')
   Dir.glob('final_collection/mono/pcm/*.pcm').each do |fn|
-    puts SequenceLogoGenerator.mono_cmd(
+    SequenceLogoGenerator.print_mono_cmd_if_necessary(
       pcm_file: fn,
       output_folder: 'final_collection/mono/logo/',
       **SequenceLogoGenerator::DefaultSizes[:big],
       additional_options: ['--no-threshold-lines']
     )
 
-    puts SequenceLogoGenerator.mono_cmd(
+    SequenceLogoGenerator.print_mono_cmd_if_necessary(
       pcm_file: fn,
       output_folder: 'final_collection/mono/logo_large/',
       **SequenceLogoGenerator::DefaultSizes[:large],
@@ -58,14 +75,14 @@ task "sequence_logos:mono" do
 
     motif_length = ModelKind.get('mono').read_pcm(fn).length
     if motif_length > SequenceLogoGenerator::LongModelThreshold
-      puts SequenceLogoGenerator.mono_cmd(
+      SequenceLogoGenerator.print_mono_cmd_if_necessary(
         pcm_file: fn,
         output_folder: 'final_collection/mono/logo_small/',
         **SequenceLogoGenerator::DefaultSizes[:small_for_long_models],
         additional_options: ['--no-threshold-lines']
       )
     else
-      puts SequenceLogoGenerator.mono_cmd(
+      SequenceLogoGenerator.print_mono_cmd_if_necessary(
         pcm_file: fn,
         output_folder: 'final_collection/mono/logo_small/',
         **SequenceLogoGenerator::DefaultSizes[:small],
@@ -77,29 +94,33 @@ end
 
 
 task "sequence_logos:di" do
+  FileUtils.mkdir_p('final_collection/di/logo/')
+  FileUtils.mkdir_p('final_collection/di/logo_large/')
+  FileUtils.mkdir_p('final_collection/di/logo_small/')
   Dir.glob('final_collection/di/pcm/*.dpcm').each do |fn|
-    puts SequenceLogoGenerator.di_cmds(
+    SequenceLogoGenerator.print_di_cmd_if_necessary(
       pcm_file: fn,
       output_folder: 'final_collection/di/logo/',
       **SequenceLogoGenerator::DefaultSizes[:big]
     )
 
-    puts SequenceLogoGenerator.di_cmds(
+    SequenceLogoGenerator.print_di_cmd_if_necessary(
       pcm_file: fn,
       output_folder: 'final_collection/di/logo_large/',
       **SequenceLogoGenerator::DefaultSizes[:large]
     )
 
+
     motif_length = ModelKind.get('di').read_pcm(fn).length
     if motif_length > SequenceLogoGenerator::LongModelThreshold
-      puts SequenceLogoGenerator.mono_cmd(
+      SequenceLogoGenerator.print_mono_cmd_if_necessary(
         pcm_file: fn,
         output_folder: 'final_collection/di/logo_small/',
         **SequenceLogoGenerator::DefaultSizes[:small_for_long_models],
         additional_options: ['--no-threshold-lines', '--dinucleotide']
       )
     else
-      puts SequenceLogoGenerator.mono_cmd(
+      SequenceLogoGenerator.print_mono_cmd_if_necessary(
         pcm_file: fn,
         output_folder: 'final_collection/di/logo_small/',
         **SequenceLogoGenerator::DefaultSizes[:small],

@@ -303,7 +303,6 @@ task 'put_motifs_into_final_collection' do
   ['mono', 'di'].each do |model_kind|
     FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
     FileUtils.mkdir_p "final_collection/#{model_kind}/pwm/"
-    FileUtils.mkdir_p "final_collection/#{model_kind}/logo/"
     motif_infos = Dir.glob("final_collection/#{model_kind}/json_basic/*.json").map{|json_fn|
       JSON.parse(File.read(json_fn)).map{|k,v| [k.to_sym, v] }.to_h
     }
