@@ -1,4 +1,5 @@
 require 'set'
+require 'json'
 
 PCM_EXT = {'mono' => 'pcm', 'di' => 'dpcm'}
 PWM_EXT = {'mono' => 'pwm', 'di' => 'dpwm'}
@@ -67,19 +68,31 @@ def aucs_for_model(model, model_kind)
   }.inject([], &:+)
 end
 
-def put_motifs_to_final(infos) #model, final_name, model_kind, should_reverse
-  if infos[:model_kind] == 'mono'
-    pcm = Bioinform::MotifModel::PCM.from_file(infos[:original_pcm_fn])
-    pwm = Bioinform::MotifModel::PWM.from_file(infos[:original_pwm_fn])
-  else
-    pcm = ModelKind::Di.new.read_pcm(infos[:original_pcm_fn])
-    pwm = ModelKind::Di.new.read_pwm(infos[:original_pwm_fn])
-  end
-  final_name = final_name(infos)
-  pcm = pcm.model.named(final_name)
-  pwm = pwm.model.named(final_name)
-  File.write("final_collection/#{infos[:model_kind]}/pcm/#{final_name}.#{PCM_EXT[infos[:model_kind]]}", (infos[:should_reverse] ? pcm.revcomp : pcm).to_s)
-  File.write("final_collection/#{infos[:model_kind]}/pwm/#{final_name}.#{PWM_EXT[infos[:model_kind]]}", (infos[:should_reverse] ? pwm.revcomp : pwm).to_s)
+def motif_infos_dump(infos)
+  model_kind = ModelKind.get(infos[:model_kind])
+  {
+    model_kind: infos[:model_kind],
+    pcm: model_kind.read_pcm(infos[:original_pcm_fn], only_matrix: true),
+    pwm: model_kind.read_pwm(infos[:original_pwm_fn], only_matrix: true),
+    name: final_name(infos),
+    should_reverse: infos[:should_reverse],
+    original_motif: infos[:original_motif],
+    species: infos[:species],
+    uniprot: infos[:uniprot],
+    quality: infos[:quality],
+    motif_index: infos[:motif_index],
+    novelty: infos[:novelty],
+    logauc: infos[:logauc],
+  }
+end
+
+def process_motif_dump(infos)
+  model_kind = ModelKind.get(infos[:model_kind])
+  final_name = infos[:name]
+  pcm = model_kind.create_pcm(infos[:pcm]).named(final_name)
+  pwm = model_kind.create_pwm(infos[:pwm]).named(final_name)
+  File.write("final_collection/#{model_kind}/pcm/#{final_name}.#{model_kind.pcm_extension}", (infos[:should_reverse] ? pcm.revcomp : pcm).to_s)
+  File.write("final_collection/#{model_kind}/pwm/#{final_name}.#{model_kind.pwm_extension}", (infos[:should_reverse] ? pwm.revcomp : pwm).to_s)
 end
 
 def best_model_in_slice(slice_fn)
@@ -231,12 +244,10 @@ def cross_species_infos(chipseq_infos, model_kind)
   }
 end
 
-desc 'Select which motifs and with which names are put into collection'
+desc 'Select which motifs and with which names are put into collection (create JSON files for motifs)'
 task 'choose_motifs_for_final_collection' do
-  ['mono', 'di'].flat_map do |model_kind|
-    FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
-    FileUtils.mkdir_p "final_collection/#{model_kind}/pwm/"
-    FileUtils.mkdir_p "final_collection/#{model_kind}/logo/"
+  ['mono', 'di'].each do |model_kind|
+    FileUtils.mkdir_p "final_collection/#{model_kind}/json_basic/"
     novel_chipseq_infos = ['HUMAN', 'MOUSE'].flat_map{|species|
       collect_novel_motifs(model_kind, species)
     }
@@ -276,15 +287,33 @@ task 'choose_motifs_for_final_collection' do
     unless hocomoco10_motifs(model_kind).map{|motif| motif.split('.').first }.all?{|uniprot| infos.map{|info| info[:uniprot] }.include?(uniprot) }
       $stderr.puts "Some HOCOMOCO v10 motifs not covered by new collection:"
       $stderr.puts (hocomoco10_motifs(model_kind).map{|motif| motif.split('.').first } - infos.map{|info| info[:uniprot] }).uniq
-   end
+    end
 
     infos.each{|info|
-      put_motifs_to_final(info)
+      infos_dump = motif_infos_dump(info)
+      json_filename = "final_collection/#{infos_dump[:model_kind]}/json_basic/#{infos_dump[:name]}.json"
+      File.write(json_filename, infos_dump.to_json)
+    }
+  end
+end
+
+###################
+desc 'Take motif JSON files and put them into collection'
+task 'put_motifs_into_final_collection' do
+  ['mono', 'di'].each do |model_kind|
+    FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
+    FileUtils.mkdir_p "final_collection/#{model_kind}/pwm/"
+    FileUtils.mkdir_p "final_collection/#{model_kind}/logo/"
+    motif_infos = Dir.glob("final_collection/#{model_kind}/json_basic/*.json").map{|json_fn|
+      JSON.parse(File.read(json_fn)).map{|k,v| [k.to_sym, v] }.to_h
     }
 
-    table = infos.map{|infos|
-      original_motif, novelty, model_kind, motif_index = infos.values_at(:original_motif, :novelty, :model_kind, :motif_index)
-      final_name = final_name(infos)
+    motif_infos.each{|infos|
+      process_motif_dump(infos)
+    }
+
+    table = motif_infos.map{|infos|
+      original_motif, novelty, model_kind, motif_index, final_name = infos.values_at(:original_motif, :novelty, :model_kind, :motif_index, :name)
       [novelty, final_name, original_motif, "#{model_kind}/logo/#{final_name}.png",]
     }
 

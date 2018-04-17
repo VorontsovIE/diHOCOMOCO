@@ -16,46 +16,45 @@ module ModelKind
     end
   end
 
-  class Mono
-    def arity_type; 'mono'; end
-    def pwm_extension; 'pwm'; end
-    def pcm_extension; 'pcm'; end
-    alias_method :to_s, :arity_type
-    alias_method :inspect, :arity_type
-    def sarus_class; 'ru.autosome.SARUS'; end
-    def read_pcm(path_to_pcm)
-      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 4, nucleotides_in: :columns)
+  class Base
+    def initialize; raise NotImplementedError, "abstract class can't be instantiated"; end
+    def to_s; arity_type; end
+    def inspect; arity_type; end
+    def read_pcm(path_to_pcm, only_matrix: false)
+      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: alphabet_size, nucleotides_in: :columns)
       infos = parser.parse(File.read(path_to_pcm))
       name = infos[:name] || File.basename(path_to_pcm, ".#{pcm_extension}")
-      Bioinform::MotifModel::PCM.new(infos[:matrix]).named(name)
+      matrix = create_pcm(infos[:matrix])
+      only_matrix ? infos[:matrix] : create_pcm(infos[:matrix]).named(name)
     end
-    def read_pwm(path_to_pwm)
-      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 4, nucleotides_in: :columns)
+    def read_pwm(path_to_pwm, only_matrix: false)
+      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: alphabet_size, nucleotides_in: :columns)
       infos = parser.parse(File.read(path_to_pwm))
       name = infos[:name] || File.basename(path_to_pwm, ".#{pwm_extension}")
-      Bioinform::MotifModel::PWM.new(infos[:matrix]).named(name)
+      only_matrix ? infos[:matrix] : create_pwm(infos[:matrix]).named(name)
     end
   end
 
-  class Di
+  class Mono < Base
+    def initialize; end
+    def alphabet_size; 4; end
+    def arity_type; 'mono'; end
+    def pwm_extension; 'pwm'; end
+    def pcm_extension; 'pcm'; end
+    def sarus_class; 'ru.autosome.SARUS'; end
+    def create_pcm(matrix); Bioinform::MotifModel::PCM.new(matrix); end
+    def create_pwm(matrix); Bioinform::MotifModel::PWM.new(matrix); end
+  end
+
+  class Di < Base
+    def initialize; end
+    def alphabet_size; 16; end
     def arity_type; 'di'; end
     def pwm_extension; 'dpwm'; end
     def pcm_extension; 'dpcm'; end
-    alias_method :to_s, :arity_type
-    alias_method :inspect, :arity_type
     def sarus_class; 'ru.autosome.di.SARUS'; end
-    def read_pcm(path_to_pcm)
-      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16, nucleotides_in: :columns)
-      infos = parser.parse(File.read(path_to_pcm))
-      name = infos[:name] || File.basename(path_to_pcm, ".#{pcm_extension}")
-      Bioinform::MotifModel::DiPCM.new(infos[:matrix]).named(name)
-    end
-    def read_pwm(path_to_pwm)
-      parser = Bioinform::MatrixParser.new(fix_nucleotides_number: 16, nucleotides_in: :columns)
-      infos = parser.parse(File.read(path_to_pwm))
-      name = infos[:name] || File.basename(path_to_pwm, ".#{pwm_extension}")
-      Bioinform::MotifModel::DiPWM.new(infos[:matrix]).named(name)
-    end
+    def create_pcm(matrix); Bioinform::MotifModel::DiPCM.new(matrix); end
+    def create_pwm(matrix); Bioinform::MotifModel::DiPWM.new(matrix); end
   end
 end
 
