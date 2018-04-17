@@ -56,7 +56,7 @@ $stdin.each_line.lazy.map(&:chomp).each_slice(2).chunk{|seqName, hitInfo|
 
   corrected_pvalues = correct_pvalues(pvalues, median_length: median(controlSeqLengths), model_length: model_length)
   roc = roc_curve(corrected_pvalues)
-  logroc_xy = roc.map{|point| [point.fpr == 0 ? 0 : Math.log(point.fpr), point.tpr] }.drop(1)  # we drop point (log 0; 0)
+  logroc_xy = roc.map{|point| [point.fpr <= 0 ? 0 : Math.log(point.fpr), point.tpr] }.drop(1)  # we drop point (log 0; 0) and all points which got negative corrected pvalue due to floating point errors
 
   if print_pvalues
     puts(pvalues)
