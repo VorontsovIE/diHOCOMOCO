@@ -55,20 +55,26 @@ BACKGROUND_BY_SPECIES = {
   'MOUSE' => '0.09124954151587066,0.05327746891945427,0.07340655447309075,0.07380976720188166,0.07444027240460285,0.0522326724288473,0.008258817805366036,0.07340655447309075,0.06218694059369016,0.04063209300331165,0.0522326724288473,0.05327746891945427,0.06371242131832879,0.06218694059369016,0.07444027240460285,0.09124954151587066',
 }
 
+def calculate_thresholds_cmd(pwm_fn, output_fn, background, additional_options)
+  [
+   'java', '-cp', 'ape.jar', 'ru.autosome.ape.di.PrecalculateThresholds',
+    fn, '--single-motif',
+    '--background', background,
+    '--pvalues', *['1e-15', '1.0', '1.01', 'mul'].join(','),
+    '--discretization', 10000.to_s,
+    *additional_options,
+    '--silent',
+  ].shelljoin + " > #{output_fn.shellescape}"
+end
+
 def calculate_all_thresholds(folder, species, arity)
   additional_options = (arity == 'mono') ? ['--from-mono'] : []
   Dir.glob(File.join(folder, 'pwm', '*')).each do |fn|
-    cmd = [
-     'java', '-cp', 'ape.jar', 'ru.autosome.ape.di.PrecalculateThresholds',
-      fn, File.join(folder, "thresholds"),
-      '--single-motif',
-      '--background', BACKGROUND_BY_SPECIES[species],
-      '--pvalues', *['1e-15', '1.0', '1.01', 'mul'].join(','),
-      '--discretization', 10000.to_s,
-      *additional_options,
-      '--silent',
-    ].shelljoin
-    puts cmd
+    motif_name = File.basename(pwm_fn, File.extname(pwm_fn))
+    output_fn = "#{folder}/thresholds/#{motif_name}.thr"
+    unless File.exist?(output_fn)
+      puts calculate_thresholds_cmd(pwm_fn, output_fn, BACKGROUND_BY_SPECIES[species], additional_options)
+    end
   end
 end
 
