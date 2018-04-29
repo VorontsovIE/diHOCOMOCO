@@ -24,16 +24,31 @@ def save_collection_in_single_files!(folder, species, arity, requested_pvalues, 
   end
 end
 
+def read_threshold_pvalue_list(fn)
+  File.readlines(fn).map{|l| l.chomp.split("\t").map{|x| Float(x) } }
+end
+
+def calculate_thresholds_bsearch(threshold_pvalue_list, requested_pvalues)
+  requested_pvalues.map{|requested_pvalue|
+    ind = threshold_pvalue_list.bsearch_index{|threshold, pvalue| pvalue <= requested_pvalue }
+    if threshold_pvalue_list[ind][1] == requested_pvalue
+      threshold_pvalue_list[ind][0]
+    elsif ind == 0
+      threshold_pvalue_list.first[0]
+    elsif !ind
+      threshold_pvalue_list.last[0]
+    else
+      (threshold_pvalue_list[ind][0] + threshold_pvalue_list[ind - 1][0]) / 2.0
+    end
+  }
+end
+
 def calculate_thresholds_by_model(folder, species, arity, requested_pvalues)
-  Dir.glob(File.join(folder, '*')).map{|fn|
-    threshold_by_pvalue = Ape.run_find_threshold(
-      fn, requested_pvalues,
-      discretization: 10000,
-      background: BACKGROUND_BY_SPECIES[species],
-      mode: 'di',
-      additional_options: (arity == 'mono') ? ['--from-mono'] : []
-    )
-    [File.basename(fn, File.extname(fn)), threshold_by_pvalue]
+  Dir.glob("#{folder}/pwm/*").map{|fn|
+    model = File.basename(fn, File.extname(fn))
+    threshold_pvalue_list = read_threshold_pvalue_list("#{folder}/thresholds/#{model}.thr")
+    threshold_by_pvalue = calculate_thresholds_bsearch(threshold_pvalue_list, requested_pvalues)
+    [model, threshold_by_pvalue]
   }.map{|model, threshold_by_pvalue|
     rounded_thresholds = threshold_by_pvalue.map{|pvalue, threshold|
       [pvalue, threshold.round(6)]
@@ -245,7 +260,7 @@ def repack_collection(species, arity, folder, motif_glob, hocomoco_prefix)
 
   make_collection_summary(folder, species, arity, File.join(folder, "#{hocomoco_prefix}final_collection_#{species}_#{arity}.tsv"))
   requested_pvalues = [0.001, 0.0005, 0.0001]
-  thresholds_by_model = calculate_thresholds_by_model("#{folder}/pwm", species, arity, requested_pvalues)
+  thresholds_by_model = calculate_thresholds_by_model(folder, species, arity, requested_pvalues)
   save_standard_thresholds!(File.join(folder, "#{hocomoco_prefix}standard_thresholds_#{species}_#{arity}.txt"), thresholds_by_model, requested_pvalues)
 
   save_collection_in_single_files!(folder, species, arity, requested_pvalues, thresholds_by_model, hocomoco_prefix)
