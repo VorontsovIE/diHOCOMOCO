@@ -31,7 +31,22 @@ task :precalc_thresholds_for_final_bundle do
   ['HUMAN', 'MOUSE'].each do |species|
     ['mono', 'di'].each do |arity|
       calculate_all_thresholds("final_bundle/hocomoco11/full/#{species}/#{arity}", species, arity)
-      calculate_all_thresholds("final_bundle/hocomoco11/core/#{species}/#{arity}", species, arity)
+    end
+  end
+end
+
+desc 'Copy thresholds calculated for full collection into core collection'
+task :precalc_thresholds_for_final_bundle_core do
+  ['HUMAN', 'MOUSE'].each do |species|
+    ['mono', 'di'].each do |arity|
+      core_motifs = Dir.glob("final_bundle/hocomoco11/core/#{species}/#{arity}/pwm/*").map{|fn|
+        File.basename(fn, File.extname(fn))
+      }
+      core_motifs.each{|motif|
+        from = "final_bundle/hocomoco11/full/#{species}/#{arity}/thresholds/#{motif}.thr"
+        to = "final_bundle/hocomoco11/core/#{species}/#{arity}/thresholds/#{motif}.thr"
+        FileUtils.cp from, to
+      }
     end
   end
 end
