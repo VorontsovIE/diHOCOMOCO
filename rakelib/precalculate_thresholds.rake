@@ -11,6 +11,8 @@ task :precalculate_thresholds_di
 
 ['mono', 'di'].each do |model_type|
   task "precalculate_thresholds_#{model_type}" do
+    additional_options = ['--single-motif']
+    additional_options << '--from-mono'  if model_type == 'mono'  # we always use dinucleotide background
     SequenceDataset.each_dataset.map(&:uniprot).uniq.each do |uniprot|
       # Species defines background (it needn't match motif uniprot)
       ['HUMAN', 'MOUSE'].each do |species|
@@ -25,13 +27,17 @@ task :precalculate_thresholds_di
         next  if Dir.exist?(output_folder) && FileList[File.join(pwm_folder, ext_glob)].pathmap('%n').sort == FileList[File.join(output_folder, '*.thr')].pathmap('%n').sort
         FileUtils.rm_rf output_folder
         FileUtils.mkdir_p output_folder
-        puts Ape.precalculate_thresholds_cmd pwm_folder,
-                                             output_folder: output_folder,
-                                             background: File.read(background_fn), # we always use dinucleotide background
-                                             threshold_grid: ['1e-15', '1.0', '1.01', 'mul'],
-                                             discretization: 1000,
-                                             additional_options: (model_type == 'mono') ? ['--from-mono'] : [], # same reasons: dinucleotide background
-                                             mode: :di
+        Dir.glob("#{pwm_folder}/*").sort.each do |pwm_fn|
+          output_fn = File.join(output_folder, File.basename(pwm_fn, File.extname(pwm_fn)) + '.thr')
+          next  if File.exist?(output_fn)
+          puts Ape.precalculate_thresholds_cmd pwm_fn,
+                                               output_folder: output_folder,
+                                               background: File.read(background_fn), # we always use dinucleotide background
+                                               threshold_grid: ['1e-15', '1.0', '1.01', 'mul'],
+                                               discretization: 1000,
+                                               additional_options: additional_options,
+                                               mode: :di
+        end
       end
     end
   end

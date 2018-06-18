@@ -7,23 +7,24 @@ def calculate_all_thresholds(folder, species, arity)
   additional_options = (arity == 'mono') ? ['--from-mono'] : []
   Dir.glob(File.join(folder, 'pwm', '*')).each do |fn|
     motif_name = File.basename(pwm_fn, File.extname(pwm_fn))
-    output_fn = "#{folder}/thresholds/#{motif_name}.thr"
+    output_folder = "#{folder}/thresholds/"
+    output_fn = File.join(output_folder, "#{motif_name}.thr")
     unless File.exist?(output_fn)
-      puts calculate_thresholds_cmd(pwm_fn, output_fn, BACKGROUND_BY_SPECIES[species], additional_options)
+      puts calculate_thresholds_cmd(pwm_fn, output_folder, BACKGROUND_BY_SPECIES[species], additional_options)
     end
   end
 end
 
-def calculate_thresholds_cmd(pwm_fn, output_fn, background, additional_options)
+def calculate_thresholds_cmd(pwm_fn, output_folder, background, additional_options)
   [
    'java', '-cp', 'ape.jar', 'ru.autosome.ape.di.PrecalculateThresholds',
-    fn, '--single-motif',
+    fn, output_folder, '--single-motif',
     '--background', background,
     '--pvalues', *['1e-15', '1.0', '1.01', 'mul'].join(','),
     '--discretization', 10000.to_s,
     *additional_options,
     '--silent',
-  ].shelljoin + " > #{output_fn.shellescape}"
+  ].shelljoin
 end
 
 desc 'Threshold precalcuation for final bundle'
