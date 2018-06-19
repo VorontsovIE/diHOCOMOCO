@@ -187,6 +187,7 @@ def repack_collection(species, arity, folder, motif_glob, hocomoco_prefix)
   copy_by_glob("final_collection/#{arity}/pcm/#{motif_glob}", "#{folder}/pcm")
   copy_by_glob("final_collection/#{arity}/pwm/#{motif_glob}", "#{folder}/pwm")
   copy_by_glob("final_collection/#{arity}/words/#{motif_glob}", "#{folder}/words")
+  copy_by_glob("final_collection/#{arity}/thresholds/#{motif_glob}", "#{folder}/thresholds")
   copy_by_glob("final_collection/#{arity}/logo/#{motif_glob}", "#{folder}/logo")
   copy_by_glob("final_collection/#{arity}/logo_large/#{motif_glob}", "#{folder}/logo_large")
   copy_by_glob("final_collection/#{arity}/logo_small/#{motif_glob}", "#{folder}/logo_small")
@@ -214,6 +215,8 @@ task :repack_final_collection do
   ['HUMAN', 'MOUSE'].each do |species|
     ['mono', 'di'].each do |arity|
       repack_collection(species, arity, "final_bundle/hocomoco11/full/#{species}/#{arity}", "*_#{species}.*", 'HOCOMOCOv11_full_')
+      # ToDo: some motifs with 0-rank should be retracted, some 1-rank models should come to core
+      # so it's better to include in json-file list of collection bundles: ['full'] / ['full', 'core'] / ['retracted']
       repack_collection(species, arity, "final_bundle/hocomoco11/core/#{species}/#{arity}", "*_#{species}.H11??.0.{A,B,C}*", 'HOCOMOCOv11_core_')
     end
   end

@@ -22,8 +22,6 @@ def load_thresholds_by_model(folder, species, arity, requested_pvalues)
     model = File.basename(fn, File.extname(fn))
     threshold_pvalue_list = load_threshold_pvalue_list("#{folder}/thresholds/#{model}.thr")
     threshold_by_pvalue = thresholds_by_pvalues_bsearch(threshold_pvalue_list, requested_pvalues)
-    [model, threshold_by_pvalue]
-  }.map{|model, threshold_by_pvalue|
     rounded_thresholds = threshold_by_pvalue.map{|pvalue, threshold|
       [pvalue, threshold.round(6)]
     }.to_h

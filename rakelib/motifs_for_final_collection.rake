@@ -247,7 +247,7 @@ end
 desc 'Select which motifs and with which names are put into collection (create JSON files for motifs)'
 task 'choose_motifs_for_final_collection' do
   ['mono', 'di'].each do |model_kind|
-    FileUtils.mkdir_p "final_collection/#{model_kind}/json_basic/"
+    FileUtils.mkdir_p "final_collection/#{model_kind}/json/"
     novel_chipseq_infos = ['HUMAN', 'MOUSE'].flat_map{|species|
       collect_novel_motifs(model_kind, species)
     }
@@ -291,7 +291,7 @@ task 'choose_motifs_for_final_collection' do
 
     infos.each{|info|
       infos_dump = motif_infos_dump(info)
-      json_filename = "final_collection/#{infos_dump[:model_kind]}/json_basic/#{infos_dump[:name]}.json"
+      json_filename = "final_collection/#{infos_dump[:model_kind]}/json/#{infos_dump[:name]}.json"
       File.write(json_filename, infos_dump.to_json)
     }
   end
@@ -303,8 +303,8 @@ task 'put_motifs_into_final_collection' do
   ['mono', 'di'].each do |model_kind|
     FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
     FileUtils.mkdir_p "final_collection/#{model_kind}/pwm/"
-    motif_infos = Dir.glob("final_collection/#{model_kind}/json_basic/*.json").map{|json_fn|
-      JSON.parse(File.read(json_fn)).map{|k,v| [k.to_sym, v] }.to_h
+    motif_infos = Dir.glob("final_collection/#{model_kind}/json/*.json").map{|json_fn|
+      JSON.parse(File.read(json_fn), symbolize_names: true)
     }
 
     motif_infos.each{|infos|

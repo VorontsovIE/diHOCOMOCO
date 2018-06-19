@@ -45,7 +45,7 @@ namespace :collect_and_normalize_data do
     ['mono', 'di'].each do |model_kind|
       FileUtils.mkdir_p "final_collection/#{model_kind}/words"
       File.readlines("final_collection/#{model_kind}.tsv").drop(1).map{|line|
-	line.chomp.split("\t").first(3)
+        line.chomp.split("\t").first(3)
       }.each{|origin, motif_final_name, motif_original_name|
         original_name = motif_original_name.split('~').last  # name w/o 'uniprot~collection~' part
 
