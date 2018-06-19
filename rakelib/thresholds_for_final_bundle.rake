@@ -8,7 +8,7 @@ BACKGROUND_BY_SPECIES = {
 def calculate_thresholds_cmd(pwm_fn, output_folder, background, additional_options)
   [
    'java', '-cp', 'ape.jar', 'ru.autosome.ape.di.PrecalculateThresholds',
-    fn, output_folder, '--single-motif',
+    pwm_fn, output_folder, '--single-motif',
     '--background', background,
     '--pvalues', *['1e-15', '1.0', '1.01', 'mul'].join(','),
     '--discretization', 10000.to_s,
@@ -19,27 +19,25 @@ end
 
 desc 'Threshold precalcuation for final bundle'
 task :precalc_thresholds_for_final_bundle do
-  ['HUMAN', 'MOUSE'].each do |species|
-    ['mono', 'di'].each do |arity|
-      pwm_folder = "final_collection/#{arity}/pwm"
-      output_folder = "final_collection/#{arity}/thresholds"
-      pwm_ext = (arity == 'mono') ? 'pwm' : 'dpwm'
-      additional_options = (arity == 'mono') ? ['--from-mono'] : []
+  ['mono', 'di'].each do |arity|
+    output_folder = "final_collection/#{arity}/thresholds"
+    FileUtils.mkdir_p(output_folder)
+    pwm_folder = "final_collection/#{arity}/pwm"
+    model_kind = ModelKind.get(arity)
+    additional_options = (arity == 'mono') ? ['--from-mono'] : []
 
-      motifs = Dir.glob("#{pwm_folder}/*").map{|fn|
-        File.basename(fn, File.extname(fn))
-      }.select{|motif|
-        motif.split('.').first.split('_').last == species
-      }
+    motifs = Dir.glob("#{pwm_folder}/*").map{|fn|
+      File.basename(fn, File.extname(fn))
+    }
 
-      motifs.reject{|motif|
-        File.exist?("#{output_folder}/#{motif}.thr")
-      }.each{|motif|
-        pwm_fn = "#{pwm_folder}.#{pwm_ext}"
-        cmd = calculate_thresholds_cmd(pwm_fn, output_folder, BACKGROUND_BY_SPECIES[species], additional_options)
-        puts cmd
-      }
-    end
+    motifs.reject{|motif|
+      File.exist?("#{output_folder}/#{motif}.thr")
+    }.each{|motif|
+      species = motif.split('.').first.split('_').last
+      pwm_fn = "#{pwm_folder}/#{motif}.#{model_kind.pwm_extension}"
+      cmd = calculate_thresholds_cmd(pwm_fn, output_folder, BACKGROUND_BY_SPECIES[species], additional_options)
+      puts cmd
+    }
   end
 end
 

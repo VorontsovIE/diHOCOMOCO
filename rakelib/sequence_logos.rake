@@ -12,7 +12,7 @@ module SequenceLogoGenerator
     Shellwords.shelljoin(['sequence_logo', *opts, pcm_file])
   end
 
-  def self.di_cmds(pcm_file:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60)
+  def self.di_cmd(pcm_file:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60)
     ['direct', 'revcomp'].map do |orient|
       next  unless orientation == 'both' || orientation == orient
       basename = File.basename(pcm_file, File.extname(pcm_file))
@@ -23,7 +23,7 @@ module SequenceLogoGenerator
     end
   end
 
-  def print_di_cmd_if_necessary(pcm_file:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60)
+  def self.print_di_cmd_if_necessary(pcm_file:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60)
     motif = File.basename(pcm_file, File.extname(pcm_file))
     output_fn = File.join(output_folder, "#{motif}.png")
     cmd = di_cmd( pcm_file: pcm_file, output_folder: output_folder,
@@ -31,7 +31,7 @@ module SequenceLogoGenerator
     puts(cmd)  if !File.exist?(output_fn)
   end
 
-  def print_mono_cmd_if_necessary(pcm_file:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60, additional_options: [])
+  def self.print_mono_cmd_if_necessary(pcm_file:, output_folder:, orientation: 'both', x_unit: 30, y_unit: 60, additional_options: [])
     motif = File.basename(pcm_file, File.extname(pcm_file))
     output_fn = File.join(output_folder, "#{motif}.png")
     cmd = mono_cmd( pcm_file: pcm_file, output_folder: output_folder,
