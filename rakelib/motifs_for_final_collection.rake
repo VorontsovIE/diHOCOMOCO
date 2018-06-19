@@ -70,10 +70,18 @@ end
 
 def motif_infos_dump(infos)
   model_kind = ModelKind.get(infos[:model_kind])
+
+  original_name = infos[:original_motif].split('~').last  # name w/o 'uniprot~collection~' part
+  if original_name.match(/\.H10(MO|DI)\./)
+    words = File.readlines("models/words/#{model_kind}/hocomoco_legacy/#{original_name}.words").map(&:strip).reject(&:empty?)
+  else
+    words = File.readlines("models/words/#{model_kind}/chipseq/#{original_name}.#{model_kind.wordlist_extension}").drop(1).map{|l|
+      l.chomp.split("\t")[2]
+    }
+  end
+
   {
     model_kind: infos[:model_kind],
-    pcm: model_kind.read_pcm(infos[:original_pcm_fn], only_matrix: true),
-    pwm: model_kind.read_pwm(infos[:original_pwm_fn], only_matrix: true),
     name: final_name(infos),
     should_reverse: infos[:should_reverse],
     original_motif: infos[:original_motif],
@@ -83,6 +91,9 @@ def motif_infos_dump(infos)
     motif_index: infos[:motif_index],
     novelty: infos[:novelty],
     logauc: infos[:logauc],
+    pcm: model_kind.read_pcm(infos[:original_pcm_fn], only_matrix: true),
+    pwm: model_kind.read_pwm(infos[:original_pwm_fn], only_matrix: true),
+    words: words,
   }
 end
 
@@ -93,6 +104,7 @@ def process_motif_dump(infos)
   pwm = model_kind.create_pwm(infos[:pwm]).named(final_name)
   File.write("final_collection/#{model_kind}/pcm/#{final_name}.#{model_kind.pcm_extension}", (infos[:should_reverse] ? pcm.revcomp : pcm).to_s)
   File.write("final_collection/#{model_kind}/pwm/#{final_name}.#{model_kind.pwm_extension}", (infos[:should_reverse] ? pwm.revcomp : pwm).to_s)
+  File.write("final_collection/#{model_kind}/words/#{final_name}.words", infos[:words].map{|x| "#{x}\n" }.join)
 end
 
 def best_model_in_slice(slice_fn)
@@ -301,13 +313,15 @@ end
 desc 'Take motif JSON files and put them into collection'
 task 'put_motifs_into_final_collection' do
   ['mono', 'di'].each do |model_kind|
-    FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
-    FileUtils.mkdir_p "final_collection/#{model_kind}/pwm/"
     motif_infos = Dir.glob("final_collection/#{model_kind}/json/*.json").map{|json_fn|
       JSON.parse(File.read(json_fn), symbolize_names: true)
     }
 
+    FileUtils.mkdir_p "final_collection/#{model_kind}/pcm/"
+    FileUtils.mkdir_p "final_collection/#{model_kind}/pwm/"
+    FileUtils.mkdir_p "final_collection/#{model_kind}/words/"
     motif_infos.each{|infos|
+      # put pcm/pwm/words into final their folders
       process_motif_dump(infos)
     }
 

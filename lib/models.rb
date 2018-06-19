@@ -41,6 +41,7 @@ module ModelKind
     def arity_type; 'mono'; end
     def pwm_extension; 'pwm'; end
     def pcm_extension; 'pcm'; end
+    def wordlist_extension; 'list'; end
     def sarus_class; 'ru.autosome.SARUS'; end
     def create_pcm(matrix); Bioinform::MotifModel::PCM.new(matrix); end
     def create_pwm(matrix); Bioinform::MotifModel::PWM.new(matrix); end
@@ -52,6 +53,7 @@ module ModelKind
     def arity_type; 'di'; end
     def pwm_extension; 'dpwm'; end
     def pcm_extension; 'dpcm'; end
+    def wordlist_extension; 'dlist'; end
     def sarus_class; 'ru.autosome.di.SARUS'; end
     def create_pcm(matrix); Bioinform::MotifModel::DiPCM.new(matrix); end
     def create_pwm(matrix); Bioinform::MotifModel::DiPWM.new(matrix); end

@@ -38,28 +38,3 @@ namespace :collect_and_normalize_data do
     rename_motifs 'models/pcm/di/chipseq/*.dpcm', 'models/pcm/di/all/', short_collection_id: 'CD'
   end
 end
-
-namespace :collect_and_normalize_data do
-  desc 'Rename motif collection alignment words into standardized ones (works on a stage of final bundle assembly)'
-  task :rename_words do
-    ['mono', 'di'].each do |model_kind|
-      FileUtils.mkdir_p "final_collection/#{model_kind}/words"
-      File.readlines("final_collection/#{model_kind}.tsv").drop(1).map{|line|
-        line.chomp.split("\t").first(3)
-      }.each{|origin, motif_final_name, motif_original_name|
-        original_name = motif_original_name.split('~').last  # name w/o 'uniprot~collection~' part
-
-        output_fn = "final_collection/#{model_kind}/words/#{motif_final_name}.words"
-        if original_name.match(/\.H10(MO|DI)\./)
-          FileUtils.cp "models/words/#{model_kind}/hocomoco_legacy/#{original_name}.words", output_fn
-        else
-          ext = (model_kind == 'mono') ? 'list' : 'dlist'
-          words = File.readlines("models/words/#{model_kind}/chipseq/#{original_name}.#{ext}").drop(1).map{|l|
-            l.chomp.split("\t")[2]
-          }
-          File.write(output_fn, words.map{|x| "#{x}\n" }.join)
-        end
-      }
-    end
-  end
-end
