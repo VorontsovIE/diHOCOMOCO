@@ -80,10 +80,14 @@ def motif_infos_dump(infos)
     }
   end
 
+  bundle_list = ['full']
+  bundle_list << 'core'  if infos[:motif_index] == 0 && ['A','B','C'].include?(infos[:quality])
+
   {
-    model_kind: infos[:model_kind],
     name: final_name(infos),
+    bundle_list: bundle_list,
     should_reverse: infos[:should_reverse],
+    model_kind: infos[:model_kind],
     original_motif: infos[:original_motif],
     species: infos[:species],
     uniprot: infos[:uniprot],

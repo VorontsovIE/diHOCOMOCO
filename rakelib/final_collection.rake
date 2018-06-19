@@ -43,13 +43,6 @@ def origin_by_motif_in_hocomoco10(motif)
   }[collection_name]
 end
 
-def copy_by_glob(glob_from, folder_to)
-  FileUtils.mkdir_p folder_to
-  Dir.glob(glob_from).each{|fn|
-    FileUtils.cp(fn, folder_to)
-  }
-end
-
 def get_auc_stats(auc_fn)
   return({ best_auc: nil, num_datasets: nil })  unless File.exist?(auc_fn)
   aucs = File.readlines(auc_fn).map{|l|
@@ -182,16 +175,18 @@ def make_collection_summary(folder, species, arity, output_file)
 end
 
 
-def repack_collection(species, arity, folder, motif_glob, hocomoco_prefix)
+def repack_collection(species, arity, folder, motifs, hocomoco_prefix)
+  model_kind = ModelKind.get(arity)
   rm_rf folder
-  copy_by_glob("final_collection/#{arity}/pcm/#{motif_glob}", "#{folder}/pcm")
-  copy_by_glob("final_collection/#{arity}/pwm/#{motif_glob}", "#{folder}/pwm")
-  copy_by_glob("final_collection/#{arity}/words/#{motif_glob}", "#{folder}/words")
-  copy_by_glob("final_collection/#{arity}/thresholds/#{motif_glob}", "#{folder}/thresholds")
-  copy_by_glob("final_collection/#{arity}/logo/#{motif_glob}", "#{folder}/logo")
-  copy_by_glob("final_collection/#{arity}/logo_large/#{motif_glob}", "#{folder}/logo_large")
-  copy_by_glob("final_collection/#{arity}/logo_small/#{motif_glob}", "#{folder}/logo_small")
-
+  motifs.each do |motif|
+    FileUtils.cp("final_collection/#{arity}/pcm/#{motif}.#{model_kind.pcm_extension}", "#{folder}/pcm/")
+    FileUtils.cp("final_collection/#{arity}/pwm/#{motif}.#{model_kind.pwm_extension}", "#{folder}/pwm/")
+    FileUtils.cp("final_collection/#{arity}/words/#{motif}.words", "#{folder}/words/")
+    FileUtils.cp("final_collection/#{arity}/thresholds/#{motif}.thr", "#{folder}/thresholds/")
+    FileUtils.cp(['direct', 'revcomp'].map{|orient| "final_collection/#{arity}/logo/#{motif}_#{orient}.png" }, "#{folder}/logo/")
+    FileUtils.cp(['direct', 'revcomp'].map{|orient| "final_collection/#{arity}/logo_large/#{motif}_#{orient}.png" }, "#{folder}/logo_large/")
+    FileUtils.cp(['direct', 'revcomp'].map{|orient| "final_collection/#{arity}/logo_small/#{motif}_#{orient}.png" }, "#{folder}/logo_small/")
+  end
   make_collection_summary(folder, species, arity, File.join(folder, "#{hocomoco_prefix}final_collection_#{species}_#{arity}.tsv"))
   requested_pvalues = [0.001, 0.0005, 0.0001]
   thresholds_by_model = load_thresholds_by_model(folder, species, arity, requested_pvalues)
@@ -201,23 +196,42 @@ def repack_collection(species, arity, folder, motif_glob, hocomoco_prefix)
 end
 
 def archive_results(species, arity, folder, hocomoco_prefix)
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}pcm_#{species}_#{arity}.tar.gz"), 'pcm'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}pwm_#{species}_#{arity}.tar.gz"), 'pwm'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}words_#{species}_#{arity}.tar.gz"), 'words'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}thresholds_#{species}_#{arity}.tar.gz"), 'thresholds'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}logo_#{species}_#{arity}.tar.gz"), 'logo'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}logo_large_#{species}_#{arity}.tar.gz"), 'logo_large'
-  sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, "#{hocomoco_prefix}logo_small_#{species}_#{arity}.tar.gz"), 'logo_small'
+  {
+    "#{hocomoco_prefix}pcm_#{species}_#{arity}.tar.gz") => 'pcm',
+    "#{hocomoco_prefix}pwm_#{species}_#{arity}.tar.gz") => 'pwm',
+    "#{hocomoco_prefix}words_#{species}_#{arity}.tar.gz") => 'words',
+    "#{hocomoco_prefix}thresholds_#{species}_#{arity}.tar.gz") => 'thresholds',
+    "#{hocomoco_prefix}logo_#{species}_#{arity}.tar.gz") => 'logo',
+    "#{hocomoco_prefix}logo_large_#{species}_#{arity}.tar.gz") => 'logo_large',
+    "#{hocomoco_prefix}logo_small_#{species}_#{arity}.tar.gz") => 'logo_small',
+  }.each{|archive_name, folder_to_pack|
+    next  if File.exist?(archive_name)
+    next  if !File.exist?(folder_to_pack)
+    sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, archive_name), folder_to_pack
+  }
 end
 
-desc 'Collect final collection'
+def motifs_by_bundle(arity, species)
+  result = Hash.new{|h,k| h[k] = [] }
+  Dir.glob('final_collection/#{arity}/json/*.json').lazy.map{|fn|
+    JSON.parse(File.read(fn), symbolize_names: true)
+  }.select{|infos|
+    infos[:species] == species
+  }.each{|infos|
+    infos[:bundle_list].each{|bundle|
+      result[bundle] << infos[:name]
+    }
+  }
+  result
+end
+
+desc 'Make final bundles'
 task :repack_final_collection do
   ['HUMAN', 'MOUSE'].each do |species|
     ['mono', 'di'].each do |arity|
-      repack_collection(species, arity, "final_bundle/hocomoco11/full/#{species}/#{arity}", "*_#{species}.*", 'HOCOMOCOv11_full_')
-      # ToDo: some motifs with 0-rank should be retracted, some 1-rank models should come to core
-      # so it's better to include in json-file list of collection bundles: ['full'] / ['full', 'core'] / ['retracted']
-      repack_collection(species, arity, "final_bundle/hocomoco11/core/#{species}/#{arity}", "*_#{species}.H11??.0.{A,B,C}*", 'HOCOMOCOv11_core_')
+      motifs_by_bundle(arity, species).each{|bundle, motifs|
+        repack_collection(species, arity, "final_bundle/hocomoco11/#{bundle}/#{species}/#{arity}", motifs, "HOCOMOCOv11_#{bundle}_")
+      }
     end
   end
 end
@@ -226,8 +240,9 @@ desc 'Archive final bundle subfolders'
 task :archive_final_bundle do
   ['HUMAN', 'MOUSE'].each do |species|
     ['mono', 'di'].each do |arity|
-      archive_results(species, arity, "final_bundle/hocomoco11/full/#{species}/#{arity}", 'HOCOMOCOv11_full_')
-      archive_results(species, arity, "final_bundle/hocomoco11/core/#{species}/#{arity}", 'HOCOMOCOv11_core_')
+      motifs_by_bundle(arity, species).each_key{|bundle|
+        archive_results(species, arity, "final_bundle/hocomoco11/#{bundle}/#{species}/#{arity}", "HOCOMOCOv11_#{bundle}_")
+      }
     end
   end
 end
