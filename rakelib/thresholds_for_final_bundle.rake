@@ -44,12 +44,12 @@ end
 task :put_thresholds_to_json do
   requested_pvalues = [0.001, 0.0005, 0.0001]
   ['mono', 'di'].each do |arity|
-    motifs = Dir.glob('final_collection/#{arity}/json/*.json').sort.each{|json_fn|
+    motifs = Dir.glob("final_collection/#{arity}/json/*.json").sort.each{|json_fn|
       motif_infos = JSON.parse(File.read(json_fn), symbolize_names: true)
       motif = motif_infos[:name]
       motif_infos[:threshold_pvalue_list] = load_threshold_pvalue_list("final_collection/#{arity}/thresholds/#{motif}.thr")
       motif_infos[:standard_thresholds] = thresholds_by_pvalues_bsearch(motif_infos[:threshold_pvalue_list], requested_pvalues)
-      File.write(json_filename, motif_infos.to_json)
+      File.write(json_fn, motif_infos.to_json)
     }
   end
 end

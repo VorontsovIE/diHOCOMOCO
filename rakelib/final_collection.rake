@@ -8,7 +8,7 @@ require 'formatters'
 require 'thresholds_bsearch'
 
 # whole collection in a single file (one for all PCMs, one for all PWMs etc)
-def save_collection_in_single_files!(folder, species, arity, motif_infos, requested_pvalues, hocomoco_prefix)
+def save_collection_in_single_files!(folder, species, arity, infos_for_motifs, requested_pvalues, hocomoco_prefix)
   File.open("#{folder}/#{hocomoco_prefix}pcms_#{species}_#{arity}.txt", 'w') {|fw|
     infos_for_motifs.each{|motif_infos|
       fw.puts ">#{motif_infos[:name]}\n"
@@ -113,6 +113,9 @@ end
 def repack_collection(species, arity, infos_for_motifs, folder, hocomoco_prefix)
   model_kind = ModelKind.get(arity)
   rm_rf folder
+  ['pcm', 'pwm', 'words', 'thresholds', 'logo', 'logo_small', 'logo_large'].each{|subfolder|
+    FileUtils.mkdir_p "#{folder}/#{subfolder}/"
+  }
   infos_for_motifs.each do |motif_infos|
     motif = motif_infos[:name]
     FileUtils.cp("final_collection/#{arity}/pcm/#{motif}.#{model_kind.pcm_extension}", "#{folder}/pcm/")
@@ -127,7 +130,7 @@ def repack_collection(species, arity, infos_for_motifs, folder, hocomoco_prefix)
   requested_pvalues = [0.001, 0.0005, 0.0001]
   save_standard_thresholds!(File.join(folder, "#{hocomoco_prefix}standard_thresholds_#{species}_#{arity}.txt"), infos_for_motifs, requested_pvalues)
 
-  save_collection_in_single_files!(folder, species, arity, motif_infos, requested_pvalues, hocomoco_prefix)
+  save_collection_in_single_files!(folder, species, arity, infos_for_motifs, requested_pvalues, hocomoco_prefix)
 end
 
 def archive_results(species, arity, folder, hocomoco_prefix)
@@ -148,7 +151,7 @@ end
 
 def motifs_by_bundle(arity, species)
   result = Hash.new{|h,k| h[k] = [] }
-  Dir.glob('final_collection/#{arity}/json/*.json').lazy.map{|fn|
+  Dir.glob("final_collection/#{arity}/json/*.json").lazy.map{|fn|
     JSON.parse(File.read(fn), symbolize_names: true)
   }.select{|infos|
     infos[:species] == species
