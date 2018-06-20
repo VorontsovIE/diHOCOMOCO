@@ -29,10 +29,10 @@ def load_thresholds_by_model(folder, species, arity, requested_pvalues)
   }.to_h
 end
 
-def save_standard_thresholds!(filename, thresholds_by_model, requested_pvalues)
+def save_standard_thresholds!(filename, infos_for_motifs, requested_pvalues)
   header = ['# P-values', *requested_pvalues]
-  matrix = thresholds_by_model.map{|name, thresholds|
-    [name, *thresholds.values_at(*requested_pvalues)]
+  matrix = infos_for_motifs.map{|motif_infos|
+    [motif_infos[:name], *motif_infos[:standard_thresholds].values_at(*requested_pvalues)]
   }
   File.write(filename, [header, *matrix].map{|row| row.join("\t") }.join("\n"))
 end

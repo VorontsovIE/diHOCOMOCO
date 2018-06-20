@@ -1,5 +1,7 @@
 require 'set'
 require 'json'
+require 'uniprot_info'
+require 'motif_family_recognizer'
 
 PCM_EXT = {'mono' => 'pcm', 'di' => 'dpcm'}
 PWM_EXT = {'mono' => 'pwm', 'di' => 'dpwm'}
@@ -68,7 +70,41 @@ def aucs_for_model(model, model_kind)
   }.inject([], &:+)
 end
 
-def motif_infos_dump(infos)
+# we should get data for both species in order to know origin of motif obtained as cross-species
+def original_motifs_origin
+  @original_motifs_origin_cache ||= begin
+    ['mono', 'di'].flat_map{|arity|
+      ['HUMAN', 'MOUSE'].flat_map{|species|
+        File.readlines("hocomoco10/#{species}/#{arity}/final_collection.tsv").drop(1).map{|line|
+          motif, hocomoco10_motif_origin = line.chomp.split("\t").values_at(0, 12)
+          [motif, origin_by_motif_in_hocomoco10(hocomoco10_motif_origin)]
+        }
+      }
+    }.to_h
+  end
+end
+
+def get_release_and_source(original_motif)
+  if original_motif.match(/~(CM|CD)~/)
+    ['HOCOMOCOv11', 'ChIP-Seq']
+  else
+    prev_motif = original_motif.split('~').last
+    if original_motifs_origin[prev_motif] == 'HOCOMOCO v9'
+      ['HOCOMOCOv9', 'Integrative']
+    else
+      ['HOCOMOCOv10', original_motifs_origin[prev_motif]]
+    end
+  end
+end
+
+def infos_by_uniprot_id
+  @infos_by_uniprot_id_cache ||= begin
+    UniprotInfo.each_in_file('uniprot_HomoSapiens_and_MusMusculus_lots_of_infos.tsv')
+               .group_by(&:uniprot_id)
+  end
+end
+
+def motif_infos_dump(infos, arity)
   model_kind = ModelKind.get(infos[:model_kind])
 
   original_name = infos[:original_motif].split('~').last  # name w/o 'uniprot~collection~' part
@@ -83,20 +119,60 @@ def motif_infos_dump(infos)
   bundle_list = ['full']
   bundle_list << 'core'  if infos[:motif_index] == 0 && ['A','B','C'].include?(infos[:quality])
 
+  pcm = model_kind.read_pcm(infos[:original_pcm_fn])
+  pwm = model_kind.read_pwm(infos[:original_pwm_fn])
+
+  release, source = get_release_and_source(infos[:original_motif])
+
+  best_auc_human, num_datasets_human = get_auc_stats("auc/#{arity}/HUMAN_datasets/#{infos[:original_motif]}.txt").values_at(:best_auc, :num_datasets)
+  best_auc_mouse, num_datasets_mouse = get_auc_stats("auc/#{arity}/MOUSE_datasets/#{infos[:original_motif]}.txt").values_at(:best_auc, :num_datasets)
+
+  uniprot = infos[:uniprot]
+  uniprot_infos = infos_by_uniprot_id[uniprot]
+
+  recognizers_by_level = PROTEIN_FAMILY_RECOGNIZERS[infos[:species]]
+  motif_superclass = recognizers_by_level[1].subfamilies_by_uniprot_id(uniprot)
+  motif_class = recognizers_by_level[2].subfamilies_by_uniprot_id(uniprot)
+  motif_families = recognizers_by_level[3].subfamilies_by_uniprot_id(uniprot)
+  motif_subfamilies = recognizers_by_level[4].subfamilies_by_uniprot_id(uniprot)
+  motif_genus = recognizers_by_level[5].subfamilies_by_uniprot_id(uniprot)
+
   {
     name: final_name(infos),
     bundle_list: bundle_list,
     should_reverse: infos[:should_reverse],
-    model_kind: infos[:model_kind],
+    comments: "",
+    model_kind: infos[:model_kind], # aka `arity`
     original_motif: infos[:original_motif],
+    release: release,
+    source: source,
     species: infos[:species],
     uniprot: infos[:uniprot],
     quality: infos[:quality],
-    motif_index: infos[:motif_index],
+    motif_index: infos[:motif_index], # aka `rank`
     novelty: infos[:novelty],
     logauc: infos[:logauc],
-    pcm: model_kind.read_pcm(infos[:original_pcm_fn], only_matrix: true),
-    pwm: model_kind.read_pwm(infos[:original_pwm_fn], only_matrix: true),
+    length: pcm.length,
+    consensus_string: pcm.consensus_string,
+    num_words: words.size,
+    best_auc_human: best_auc_human, num_datasets_human: num_datasets_human,
+    best_auc_mouse: best_auc_mouse, num_datasets_mouse: num_datasets_mouse,
+    uniprot_infos: {
+      uniprot_acs: uniprot_infos.flat_map(&:uniprot_ac),
+      primary_gene_names: uniprot_infos.flat_map(&:primary_gene_name),
+      hgnc_ids: uniprot_infos.flat_map(&:hgnc_ids),
+      mgi_ids: uniprot_infos.flat_map(&:mgi_ids),
+      entrezgene_ids: uniprot_infos.flat_map(&:entrezgene_ids),
+    },
+    tfclass: {
+      motif_superclasses: motif_superclass.map(&:to_s),
+      motif_classes: motif_class.map(&:to_s),
+      motif_families: motif_families.map(&:to_s),
+      motif_subfamilies: motif_subfamilies.map(&:to_s),
+      motif_geni: motif_genus.map(&:to_s),
+    },
+    pcm: pcm.matrix,
+    pwm: pwm.matrix,
     words: words,
   }
 end
@@ -306,7 +382,7 @@ task 'choose_motifs_for_final_collection' do
     end
 
     infos.each{|info|
-      infos_dump = motif_infos_dump(info)
+      infos_dump = motif_infos_dump(info, model_kind)
       json_filename = "final_collection/#{infos_dump[:model_kind]}/json/#{infos_dump[:name]}.json"
       File.write(json_filename, infos_dump.to_json)
     }
