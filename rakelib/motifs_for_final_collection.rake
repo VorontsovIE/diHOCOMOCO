@@ -159,7 +159,7 @@ def motif_infos_dump(infos, arity)
     best_auc_mouse: best_auc_mouse, num_datasets_mouse: num_datasets_mouse,
     uniprot_infos: {
       uniprot_acs: uniprot_infos.flat_map(&:uniprot_ac),
-      primary_gene_names: uniprot_infos.flat_map(&:primary_gene_name),
+      gene_names: uniprot_infos.flat_map(&:primary_gene_name),
       hgnc_ids: uniprot_infos.flat_map(&:hgnc_ids),
       mgi_ids: uniprot_infos.flat_map(&:mgi_ids),
       entrezgene_ids: uniprot_infos.flat_map(&:entrezgene_ids),

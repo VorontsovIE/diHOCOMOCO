@@ -7,6 +7,52 @@ require 'ape_find_threshold'
 require 'formatters'
 require 'thresholds_bsearch'
 
+def save_annotation(infos_for_motifs, species, output_fn)
+  header = [
+    'Model',
+    'Transcription factor',
+    'Model length',
+    'Quality',
+    'Model rank',
+    'Consensus',
+    'Model release',
+    'Data source',
+    'Best auROC (human)',
+    'Best auROC (mouse)',
+    'Peak sets in benchmark (human)',
+    'Peak sets in benchmark (mouse)',
+    'Aligned words',
+    'TF family',
+    'TF subfamily',
+    ((species == 'HUMAN') ? 'HGNC': 'MGI'),
+    'EntrezGene',
+    'UniProt ID',
+    'UniProt AC',
+  ]
+  File.open(output_fn, 'w') do |fw|
+    fw.puts header.join("\t")
+    infos_for_motifs.each do |motif_infos|
+      row = []
+      row << motif_infos[:name]
+      row << motif_infos[:uniprot_infos][:gene_names].join('; ')
+      row += motif_infos.values_at(:length, :quality, :motif_index, :consensus_string, :release, :source)
+      row += motif_infos.values_at(:best_auc_human, :best_auc_mouse, :num_datasets_human, :num_datasets_mouse,  :num_words)
+      row += motif_infos[:tfclass].values_at(:motif_families, :motif_subfamilies).map{|xs| xs.join('; ') }
+      if motif_infos[:species] == 'HUMAN'
+        row << motif_infos[:uniprot_infos][:hgnc_ids].join('; ')
+      else
+        row << motif_infos[:uniprot_infos][:mgi_ids].join('; ')
+      end
+      row << motif_infos[:uniprot_infos][:entrezgene_ids].join('; ')
+      row << motif_infos[:uniprot_id]
+      row << motif_infos[:uniprot_infos][:uniprot_acs].join('; ')
+
+      fw.puts row.join("\t")
+    end
+  end
+end
+
+
 # whole collection in a single file (one for all PCMs, one for all PWMs etc)
 def save_collection_in_single_files!(folder, species, arity, infos_for_motifs, requested_pvalues, hocomoco_prefix)
   File.open("#{folder}/#{hocomoco_prefix}pcms_#{species}_#{arity}.txt", 'w') {|fw|
@@ -26,6 +72,7 @@ def save_collection_in_single_files!(folder, species, arity, infos_for_motifs, r
     }
   }
 
+  save_annotation(infos_for_motifs, species, File.join(folder, "#{hocomoco_prefix}annotation_#{species}_#{arity}.tsv"))
   if arity == 'mono'
     File.write File.join(folder, "#{hocomoco_prefix}#{species}_mono_meme_format.meme"), in_meme_format(infos_for_motifs)
     File.write File.join(folder, "#{hocomoco_prefix}#{species}_mono_transfac_format.txt"), in_transfac_format(infos_for_motifs)
@@ -70,7 +117,7 @@ def motif_summary(motif, arity)
     motif_infos[:consensus_string],
     motif_infos[:uniprot],
     uniprot_infos[:uniprot_acs].join('; '),
-    uniprot_infos[:primary_gene_names].join('; '),
+    uniprot_infos[:gene_names].join('; '),
     motif_infos[:model_kind], # aka `arity`
     motif_infos[:quality],
     motif_infos[:motif_index], # aka `rank`
@@ -143,8 +190,8 @@ def archive_results(species, arity, folder, hocomoco_prefix)
     "#{hocomoco_prefix}logo_large_#{species}_#{arity}.tar.gz" => 'logo_large',
     "#{hocomoco_prefix}logo_small_#{species}_#{arity}.tar.gz" => 'logo_small',
   }.each{|archive_name, folder_to_pack|
-    next  if File.exist?(archive_name)
-    next  if !File.exist?(folder_to_pack)
+    next  if File.exist?(File.join(folder, archive_name))
+    next  if !File.exist?(File.join(folder, folder_to_pack))
     sh 'tar', '-zhc', '-C', folder, '-f', File.join(folder, archive_name), folder_to_pack
   }
 end

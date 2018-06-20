@@ -27,4 +27,5 @@ task :default do
   Rake::Task['put_thresholds_to_json'].invoke
   Rake::Task['repack_final_collection'].invoke
   Rake::Task['family_tree_svg'].invoke
+  Rake::Task['archive_final_bundle'].invoke
 end
