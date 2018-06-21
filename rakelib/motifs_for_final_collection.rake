@@ -153,7 +153,6 @@ def motif_infos_dump(infos, arity)
     novelty: infos[:novelty],
     logauc: infos[:logauc],
     length: pcm.length,
-    consensus_string: pcm.consensus_string,
     num_words: words.size,
     best_auc_human: best_auc_human, num_datasets_human: num_datasets_human,
     best_auc_mouse: best_auc_mouse, num_datasets_mouse: num_datasets_mouse,

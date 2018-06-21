@@ -20,6 +20,7 @@ task :default do
   Rake::Task['calculate_occurence_scores'].invoke
 
   Rake::Task['choose_motifs_for_final_collection'].invoke
+  Rake::Task['improve_json'].invoke
   ## --> Don't forget to manually put comments to annotations here
   Rake::Task['put_motifs_into_final_collection'].invoke
   Rake::Task['sequence_logos'].invoke

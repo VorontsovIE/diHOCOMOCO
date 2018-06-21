@@ -237,3 +237,25 @@ task :archive_final_bundle do
     end
   end
 end
+
+desc 'Fix pcm/pwm orientation; add consensus string to JSON configs'
+task :improve_json do
+  ['mono', 'di'].each do |arity|
+    model_kind = ModelKind.get(arity)
+    Dir.glob("final_collection/#{arity}/json/*.json").each{|fn|
+      motif_infos = JSON.parse(File.read(fn), symbolize_names: true)
+
+      pcm = model_kind.create_pcm(motif_infos[:pcm])
+      pcm = pcm.revcomp  if motif_infos[:should_reverse]
+
+      pwm = model_kind.create_pwm(motif_infos[:pwm])
+      pwm = pwm.revcomp  if motif_infos[:should_reverse]
+
+      motif_infos[:pcm] = pcm.matrix
+      motif_infos[:pwm] = pwm.matrix
+      motif_infos[:consensus_string] = pcm.consensus_string
+      motif_infos[:should_reverse] = false
+      File.write(fn, motif_infos.to_json)
+    }
+  end
+end
