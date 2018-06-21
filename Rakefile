@@ -19,6 +19,7 @@ task :default do
   Rake::Task['group_controls'].invoke
   Rake::Task['calculate_occurence_scores'].invoke
 
+  Rake::Task['wlogaucs_for_slices'].invoke
   Rake::Task['choose_motifs_for_final_collection'].invoke
   Rake::Task['improve_json'].invoke
   ## --> Don't forget to manually put comments to annotations here

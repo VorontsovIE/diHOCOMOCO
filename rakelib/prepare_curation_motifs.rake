@@ -56,6 +56,8 @@ require 'auc_infos'
   end
 end
 
+task :wlogaucs_for_slices => ["wlogaucs_for_slices_mono", "wlogaucs_for_slices_di"]
+
 task :dataset_wlogaucs_for_slices do
  ['mono', 'di'].each do |model_type|
     FileUtils.mkdir_p "wlogauc_datasets/#{model_type}"
