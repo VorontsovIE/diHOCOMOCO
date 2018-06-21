@@ -104,17 +104,27 @@ def infos_by_uniprot_id
   end
 end
 
-def motif_infos_dump(infos, arity)
-  model_kind = ModelKind.get(infos[:model_kind])
-
-  original_name = infos[:original_motif].split('~').last  # name w/o 'uniprot~collection~' part
+def motif_words_filename(model_kind, original_motif_name)
+  original_name = original_motif_name.split('~').last  # name w/o 'uniprot~collection~' part
   if original_name.match(/\.H10(MO|DI)\./)
-    words = File.readlines("models/words/#{model_kind}/hocomoco_legacy/#{original_name}.words").map(&:strip).reject(&:empty?)
+    "models/words/#{model_kind}/hocomoco_legacy/#{original_name}.words"
   else
-    words = File.readlines("models/words/#{model_kind}/chipseq/#{original_name}.#{model_kind.wordlist_extension}").drop(1).map{|l|
+    "models/words/#{model_kind}/chipseq/#{original_name}.#{model_kind.wordlist_extension}"
+  end
+end
+
+def motif_words(words_fn)
+  if File.extname(words_fn) == '.words'
+    File.readlines(words_fn).map(&:strip).reject(&:empty?)
+  else # .list /.dlist
+    File.readlines(words_fn).drop(1).map{|l|
       l.chomp.split("\t")[2]
     }
   end
+end
+
+def motif_infos_dump(infos, arity)
+  model_kind = ModelKind.get(infos[:model_kind])
 
   bundle_list = ['full']
   bundle_list << 'core'  if infos[:motif_index] == 0 && ['A','B','C'].include?(infos[:quality])
@@ -122,6 +132,7 @@ def motif_infos_dump(infos, arity)
   pcm = model_kind.read_pcm(infos[:original_pcm_fn])
   pwm = model_kind.read_pwm(infos[:original_pwm_fn])
 
+  words_fn = motif_words_filename(model_kind, infos[:original_motif])
   release, source = get_release_and_source(infos[:original_motif])
 
   best_auc_human, num_datasets_human = get_auc_stats("auc/#{arity}/HUMAN_datasets/#{infos[:original_motif]}.txt").values_at(:best_auc, :num_datasets)
@@ -153,7 +164,6 @@ def motif_infos_dump(infos, arity)
     novelty: infos[:novelty],
     logauc: infos[:logauc],
     length: pcm.length,
-    num_words: words.size,
     best_auc_human: best_auc_human, num_datasets_human: num_datasets_human,
     best_auc_mouse: best_auc_mouse, num_datasets_mouse: num_datasets_mouse,
     uniprot_infos: {
@@ -170,9 +180,9 @@ def motif_infos_dump(infos, arity)
       motif_subfamilies: motif_subfamilies.map(&:to_s),
       motif_geni: motif_genus.map(&:to_s),
     },
-    pcm: pcm.matrix,
-    pwm: pwm.matrix,
-    words: words,
+    pcm_fn: infos[:original_pcm_fn],
+    pwm_fn: infos[:original_pwm_fn],
+    words_fn: words_fn,
   }
 end
 
@@ -181,8 +191,8 @@ def process_motif_dump(infos)
   final_name = infos[:name]
   pcm = model_kind.create_pcm(infos[:pcm]).named(final_name)
   pwm = model_kind.create_pwm(infos[:pwm]).named(final_name)
-  File.write("final_collection/#{model_kind}/pcm/#{final_name}.#{model_kind.pcm_extension}", (infos[:should_reverse] ? pcm.revcomp : pcm).to_s)
-  File.write("final_collection/#{model_kind}/pwm/#{final_name}.#{model_kind.pwm_extension}", (infos[:should_reverse] ? pwm.revcomp : pwm).to_s)
+  File.write("final_collection/#{model_kind}/pcm/#{final_name}.#{model_kind.pcm_extension}", pcm.to_s)
+  File.write("final_collection/#{model_kind}/pwm/#{final_name}.#{model_kind.pwm_extension}", pwm.to_s)
   File.write("final_collection/#{model_kind}/words/#{final_name}.words", infos[:words].map{|x| "#{x}\n" }.join)
 end
 
@@ -392,7 +402,7 @@ end
 desc 'Take motif JSON files and put them into collection'
 task 'put_motifs_into_final_collection' do
   ['mono', 'di'].each do |model_kind|
-    motif_infos = Dir.glob("final_collection/#{model_kind}/json/*.json").map{|json_fn|
+    motif_infos = Dir.glob("final_collection/#{model_kind}/json_processed/*.json").map{|json_fn|
       JSON.parse(File.read(json_fn), symbolize_names: true)
     }
 

@@ -109,7 +109,7 @@ def get_auc_stats(auc_fn)
 end
 
 def motif_summary(motif, arity)
-  motif_infos = JSON.parse(File.read("final_collection/#{arity}/json/#{motif}.json"), symbolize_names: true)
+  motif_infos = JSON.parse(File.read("final_collection/#{arity}/json_processed/#{motif}.json"), symbolize_names: true)
   uniprot_infos = motif_infos[:uniprot_infos]
   [
     motif,
@@ -198,7 +198,7 @@ end
 
 def motifs_by_bundle(arity, species)
   result = Hash.new{|h,k| h[k] = [] }
-  Dir.glob("final_collection/#{arity}/json/*.json").lazy.map{|fn|
+  Dir.glob("final_collection/#{arity}/json_processed/*.json").lazy.map{|fn|
     JSON.parse(File.read(fn), symbolize_names: true)
   }.select{|infos|
     infos[:species] == species
@@ -241,21 +241,33 @@ end
 desc 'Fix pcm/pwm orientation; add consensus string to JSON configs'
 task :improve_json do
   ['mono', 'di'].each do |arity|
+    FileUtils.mkdir_p("final_collection/#{arity}/json_processed")
     model_kind = ModelKind.get(arity)
     Dir.glob("final_collection/#{arity}/json/*.json").each{|fn|
       motif_infos = JSON.parse(File.read(fn), symbolize_names: true)
 
-      pcm = model_kind.create_pcm(motif_infos[:pcm])
-      pcm = pcm.revcomp  if motif_infos[:should_reverse]
+      pcm = model_kind.read_pcm(motif_infos[:pcm_fn])
+      pwm = model_kind.read_pwm(motif_infos[:pwm_fn])
 
-      pwm = model_kind.create_pwm(motif_infos[:pwm])
-      pwm = pwm.revcomp  if motif_infos[:should_reverse]
+      if motif_infos[:should_reverse]
+        pcm = pcm.revcomp
+        pwm = pwm.revcomp
+      end
 
+      words = motif_words(motif_infos[:words_fn])
+
+      motif_infos[:consensus_string] = pcm.consensus_string
+      motif_infos[:num_words] = words.size
       motif_infos[:pcm] = pcm.matrix
       motif_infos[:pwm] = pwm.matrix
-      motif_infos[:consensus_string] = pcm.consensus_string
-      motif_infos[:should_reverse] = false
-      File.write(fn, motif_infos.to_json)
+      motif_infos[:words] = words
+
+      motif_infos.delete(:pcm_fn)
+      motif_infos.delete(:pwm_fn)
+      motif_infos.delete(:words_fn)
+      motif_infos.delete(:should_reverse)
+
+      File.write("final_collection/#{arity}/json_processed/#{File.basename(fn)}", motif_infos.to_json)
     }
   end
 end
