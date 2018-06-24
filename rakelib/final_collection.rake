@@ -236,6 +236,7 @@ task :archive_final_bundle do
       }
     end
   end
+  sh "tar -zhc -C final_bundle/hocomoco11/ -f final_bundle/hocomoco11/retracted.tar.gz retracted"
 end
 
 desc 'Fix pcm/pwm orientation; add consensus string to JSON configs'
