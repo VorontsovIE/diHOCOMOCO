@@ -44,7 +44,7 @@ def save_annotation(infos_for_motifs, species, output_fn)
         row << motif_infos[:uniprot_infos][:mgi_ids].join('; ')
       end
       row << motif_infos[:uniprot_infos][:entrezgene_ids].join('; ')
-      row << motif_infos[:uniprot_id]
+      row << motif_infos[:uniprot]
       row << motif_infos[:uniprot_infos][:uniprot_acs].join('; ')
 
       fw.puts row.join("\t")
