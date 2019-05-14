@@ -100,6 +100,12 @@ if options[:clusters_list_file]
   bn = File.basename(options[:clusters_list_file], en)
   File.open(File.join(dn, "#{bn}.txt"), 'w') do |fw|
     clusters_with_centers.each{|central_motif, motifs|
+      fw.puts([central_motif, motifs.join(';')].join("\t"))
+    }
+  end
+
+  File.open(File.join(dn, "#{bn}_transfac.txt"), 'w') do |fw|
+    clusters_with_centers.each{|central_motif, motifs|
       species = central_motif.split('.')[0].split('_').last
       pcm_lines = File.readlines("final_bundle/hocomoco11/full/#{species}/mono/pcm/#{central_motif}.pcm").map(&:chomp)
       name = pcm_lines.first.gsub(/^>\s*/, '')
