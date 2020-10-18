@@ -4,7 +4,7 @@ Dinucleotides = Nucleotides.product(Nucleotides).map(&:join)
 module InitializeFromHash
   def normalized_hash(hsh)
     result = hsh.map{|k,v|
-      [k.to_s.upcase, v]
+      [k.to_s, v]
     }.to_h
     result.default = 0.0
     result

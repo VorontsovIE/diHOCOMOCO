@@ -1,7 +1,7 @@
 class FastaSequence
   attr_reader :sequence, :header
   def initialize(sequence, header)
-    @sequence = sequence
+    @sequence = sequence.upcase
     @header = header
   end
 
