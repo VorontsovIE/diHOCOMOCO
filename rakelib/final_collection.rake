@@ -272,3 +272,52 @@ task :improve_json do
     }
   end
 end
+
+desc 'Collect all hocomoco-11 json files into a single file'
+task :collect_json_bundle_hocomoco11 do
+  File.open('final_collection/hocomoco11_bundle.jsonl', 'w'){|fw|
+    Dir.glob("final_collection/*/json/*.json").each{|fn| fw.puts File.read(fn) }
+  }
+end
+
+desc 'Collect hocomoco-10 tsv tables into json a file'
+task :collect_json_bundle_hocomoco10 do
+  hocomoco10_infos = []
+  ['mono', 'di'].each{|arity|
+    ['HUMAN', 'MOUSE'].each{|species|
+      File.readlines("hocomoco10/#{species}/#{arity}/final_collection.tsv").drop(1).map{|line|
+        motif, hocomoco10_motif_origin = line.chomp.split("\t", 19)
+
+        name, length, consensus, uniprot_id, uniprot_ac, gene_name, model_kind, quality, \
+          num_words, weighted_auc, best_auc, datasets, hocomoco10_motif_origin, \
+          motif_family, motif_subfamily, hgnc, mgi, entrezgene, comment = line.chomp.split("\t")
+        raise 'Arity mismatch'  unless model_kind == arity
+        raise 'Species mismatch'  unless motif.split('.').first.split('_').last == species
+        info = {
+          name: name, length: length, consensus: consensus,
+          uniprot_id: uniprot_id, uniprot_ac: uniprot_ac,
+          gene_names: gene_name.split('; ').reject(&:empty?),
+          species: species, model_kind: model_kind, quality: quality,
+          num_words: Integer(num_words),
+          weighted_auc: (!weighted_auc || weighted_auc.empty?) ? nil : Float(weighted_auc),
+          best_auc:     (!best_auc     || best_auc.empty?)     ? nil : Float(best_auc),
+          datasets: datasets.split(', ').reject(&:empty?),
+          original_motifs: hocomoco10_motif_origin.split(', ').reject(&:empty?),
+          motif_families:     motif_family.split(':separator:').reject(&:empty?),
+          motif_subfamilies:  motif_subfamily.split(':separator:').reject(&:empty?),
+          hgnc_ids:              (hgnc || '').split('; ').reject(&:empty?),
+          mgi_ids:                (mgi || '').split('; ').reject(&:empty?),
+          entrezgene_ids:  (entrezgene || '').split('; ').reject(&:empty?),
+          comment: comment || '',
+        }
+        hocomoco10_infos << info
+      }
+    }
+  }
+
+  File.open('final_collection/hocomoco10_bundle.jsonl', 'w'){|fw|
+    hocomoco10_infos.each{|info|
+      fw.puts(info.to_json)
+    }
+  }
+end
